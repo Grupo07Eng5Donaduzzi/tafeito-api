@@ -4,11 +4,15 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   Post,
   Put,
+  UseGuards,
 } from "@nestjs/common";
+import { FirebaseAuthGuard } from "@users/infra/firebase/firebase-auth.guard";
+import { CurrentUser } from "@users/infra/firebase/current-user.decorator";
 
 @Controller("users")
 export class UsersController {
@@ -30,7 +34,12 @@ export class UsersController {
   }
 
   @Put("/update/:id")
-  async update(@Param("id") id: string, @Body() body: UpdateUserDto) {
+  @UseGuards(FirebaseAuthGuard)
+  async update(@Param("id") id: string, @Body() body: UpdateUserDto, @CurrentUser() currentUser) {
+    const user = await this.userService.findById(id);
+    if (!user || user.firebaseUid !== currentUser.uid) {
+      throw new ForbiddenException('Você só pode atualizar seu próprio perfil');
+    }
     return this.userService.edit(id, body);
   }
 

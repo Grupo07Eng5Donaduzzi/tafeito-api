@@ -49,6 +49,15 @@ export class UserService {
     const user = await this.userRepository.findById(id);
     if (!user) throw new NotFoundException();
 
+    if (dto.email !== undefined) {
+      const existing = await this.userRepository.findByEmail(dto.email);
+      if (existing && existing.id !== id) {
+        throw new ConflictException();
+      }
+      await this.firebaseAuthService.updateUser(user.firebaseUid, dto.email);
+      user.withEmail(dto.email);
+    }
+
     if (dto.name !== undefined) user.withName(dto.name);
     if (dto.identification !== undefined)
       user.withIdentification(dto.identification);

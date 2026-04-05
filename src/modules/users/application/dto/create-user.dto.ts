@@ -7,5 +7,6 @@ export class CreateUserDto {
 
 export class UpdateUserDto {
   name?: string;
+  email?: string;
   identification?: string; // CPF or CNPJ
 }
