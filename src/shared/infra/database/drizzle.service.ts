@@ -1,10 +1,10 @@
-import { Injectable, type OnModuleDestroy } from "@nestjs/common";
-import { usersSchema } from "@users/infra/schemas/user.schema";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { Injectable, type OnModuleDestroy } from '@nestjs/common';
+import { usersSchema } from '@users/infra/schemas/user.schema';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 
 const schema = {
-  usersSchema
+  usersSchema,
 };
 
 @Injectable()

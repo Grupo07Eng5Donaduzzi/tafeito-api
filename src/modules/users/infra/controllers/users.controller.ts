@@ -1,5 +1,8 @@
-import { CreateUserDto, UpdateUserDto } from "@users/application/dto/create-user.dto";
-import { UserService } from "@users/application/services/user.service";
+import {
+  CreateUserDto,
+  UpdateUserDto,
+} from '@users/application/dto/create-user.dto';
+import { UserService } from '@users/application/services/user.service';
 import {
   Body,
   Controller,
@@ -8,34 +11,34 @@ import {
   Param,
   Post,
   Put,
-} from "@nestjs/common";
+} from '@nestjs/common';
 
-@Controller("users")
+@Controller('users')
 export class UsersController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Get()
   async findAll() {
     return this.userService.list();
   }
 
-  @Get(":id")
-  async findById(@Param("id") id: string) {
+  @Get(':id')
+  async findById(@Param('id') id: string) {
     return this.userService.findById(id);
   }
 
-  @Post("/add")
+  @Post('/add')
   async create(@Body() body: CreateUserDto) {
     return this.userService.create(body);
   }
 
-  @Put("/update/:id")
-  async update(@Param("id") id: string, @Body() body: UpdateUserDto) {
+  @Put('/update/:id')
+  async update(@Param('id') id: string, @Body() body: UpdateUserDto) {
     return this.userService.edit(id, body);
   }
 
-  @Delete("/delete/:id")
-  async remove(@Param("id") id: string) {
+  @Delete('/delete/:id')
+  async remove(@Param('id') id: string) {
     return this.userService.remove(id);
   }
 }
