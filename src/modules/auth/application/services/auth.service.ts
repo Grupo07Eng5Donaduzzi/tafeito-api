@@ -8,9 +8,10 @@ import { UserService } from '@users/application/services/user.service';
 import { UserDto } from '@users/application/dto/user.dto';
 import type { StringValue } from 'ms';
 import jwt from 'jsonwebtoken';
+import { AuthJwtPayload } from '../../domain/models/auth-jwt-payload.model';
 
 interface JwtModule {
-  sign: (payload: any, secret: string, options?: any) => string;
+  sign: (payload: AuthJwtPayload, secret: string, options?: any) => string;
 }
 
 const jwtModule: JwtModule = jwt;
@@ -51,7 +52,7 @@ export class AuthService {
       );
     }
 
-    const payload = {
+    const payload: AuthJwtPayload = {
       sub: user.id,
       uid: user.firebaseUid,
       email: user.email,
