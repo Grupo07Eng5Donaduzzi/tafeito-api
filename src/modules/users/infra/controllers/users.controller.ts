@@ -1,5 +1,8 @@
-import { CreateUserDto, UpdateUserDto } from "@users/application/dto/create-user.dto";
-import { UserService } from "@users/application/services/user.service";
+import {
+  CreateUserDto,
+  UpdateUserDto,
+} from '@users/application/dto/create-user.dto';
+import { UserService } from '@users/application/services/user.service';
 import {
   Body,
   Controller,
@@ -9,42 +12,34 @@ import {
   Param,
   Post,
   Put,
-  UseGuards,
-} from "@nestjs/common";
-import { FirebaseAuthGuard } from "@users/infra/firebase/firebase-auth.guard";
-import { CurrentUser } from "@users/infra/firebase/current-user.decorator";
+} from '@nestjs/common';
 
-@Controller("users")
+@Controller('users')
 export class UsersController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Get()
   async findAll() {
     return this.userService.list();
   }
 
-  @Get(":id")
-  async findById(@Param("id") id: string) {
+  @Get(':id')
+  async findById(@Param('id') id: string) {
     return this.userService.findById(id);
   }
 
-  @Post("/add")
+  @Post('/add')
   async create(@Body() body: CreateUserDto) {
     return this.userService.create(body);
   }
 
-  @Put("/update/:id")
-  @UseGuards(FirebaseAuthGuard)
-  async update(@Param("id") id: string, @Body() body: UpdateUserDto, @CurrentUser() currentUser) {
-    const user = await this.userService.findById(id);
-    if (!user || user.firebaseUid !== currentUser.uid) {
-      throw new ForbiddenException('Você só pode atualizar seu próprio perfil');
-    }
+  @Put('/update/:id')
+  async update(@Param('id') id: string, @Body() body: UpdateUserDto) {
     return this.userService.edit(id, body);
   }
 
-  @Delete("/delete/:id")
-  async remove(@Param("id") id: string) {
+  @Delete('/delete/:id')
+  async remove(@Param('id') id: string) {
     return this.userService.remove(id);
   }
 }

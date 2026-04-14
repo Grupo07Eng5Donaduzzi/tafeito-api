@@ -1,17 +1,20 @@
-import { CreateUserDto, UpdateUserDto } from "@users/application/dto/create-user.dto";
-import { UserDto } from "@users/application/dto/user.dto";
-import { User } from "@users/domain/models/user.entity";
+import {
+  CreateUserDto,
+  UpdateUserDto,
+} from '@users/application/dto/create-user.dto';
+import { UserDto } from '@users/application/dto/user.dto';
+import { User } from '@users/domain/models/user.entity';
 import {
   USER_REPOSITORY,
   type UserRepository,
-} from "@users/domain/repositories/user-repository.interface";
-import { FirebaseAuthService } from "@users/infra/firebase/firebase-auth.service";
+} from '@users/domain/repositories/user-repository.interface';
+import { FirebaseAuthService } from '@users/infra/firebase/firebase-auth.service';
 import {
   ConflictException,
   Inject,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
+} from '@nestjs/common';
 
 @Injectable()
 export class UserService {
@@ -19,7 +22,7 @@ export class UserService {
     @Inject(USER_REPOSITORY)
     private readonly userRepository: UserRepository,
     private readonly firebaseAuthService: FirebaseAuthService,
-  ) { }
+  ) {}
 
   async create(dto: CreateUserDto): Promise<UserDto> {
     const existing = await this.userRepository.findByEmail(dto.email);
