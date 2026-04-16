@@ -8,6 +8,13 @@
       "when": 1774842577355,
       "tag": "0000_goofy_prowler",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776208649650,
+      "tag": "0001_tranquil_nitro",
+      "breakpoints": true
     }
   ]
 }
