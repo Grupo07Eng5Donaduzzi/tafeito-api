@@ -1,6 +1,6 @@
-import { User } from "@users/domain/models/user.entity";
-import type { UserRepository } from "@users/domain/repositories/user-repository.interface";
-import { usersSchema } from "@users/infra/schemas/user.schema";
+import { User } from "@usuarios/domain/models/user.entity";
+import type { UserRepository } from "@usuarios/domain/repositories/user-repository.interface";
+import { usersSchema } from "@usuarios/infra/schemas/user.schema";
 import { Injectable } from "@nestjs/common";
 import { DrizzleService } from "@shared/infra/database/drizzle.service";
 import { eq } from "drizzle-orm";

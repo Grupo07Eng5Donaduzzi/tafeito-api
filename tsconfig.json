@@ -21,8 +21,11 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
+    "ignoreDeprecations": "5.0",
     "paths": {
-      "@users/*": ["src/modules/users/*"],
+      "@usuarios/*": ["src/modules/usuarios/*"],
+      "@servicos/*": ["src/modules/servicos/*"],
+      "@pedidos/*": ["src/modules/pedidos/*"],
       "@shared/*": ["src/shared/*"]
     }
   }

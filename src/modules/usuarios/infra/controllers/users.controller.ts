@@ -1,5 +1,5 @@
-import { CreateUserDto, UpdateUserDto } from "@users/application/dto/create-user.dto";
-import { UserService } from "@users/application/services/user.service";
+import { CreateUserDto, UpdateUserDto } from "@usuarios/application/dto/create-user.dto";
+import { UserService } from "@usuarios/application/services/user.service";
 import {
   Body,
   Controller,
@@ -10,7 +10,7 @@ import {
   Put,
 } from "@nestjs/common";
 
-@Controller("users")
+@Controller("usuarios")
 export class UsersController {
   constructor(private readonly userService: UserService) { }
 
@@ -24,17 +24,17 @@ export class UsersController {
     return this.userService.findById(id);
   }
 
-  @Post("/add")
+  @Post()
   async create(@Body() body: CreateUserDto) {
     return this.userService.create(body);
   }
 
-  @Put("/update/:id")
+  @Put(":id")
   async update(@Param("id") id: string, @Body() body: UpdateUserDto) {
     return this.userService.edit(id, body);
   }
 
-  @Delete("/delete/:id")
+  @Delete(":id")
   async remove(@Param("id") id: string) {
     return this.userService.remove(id);
   }
