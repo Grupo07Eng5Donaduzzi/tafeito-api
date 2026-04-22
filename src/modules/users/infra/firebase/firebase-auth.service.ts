@@ -29,6 +29,10 @@ export class FirebaseAuthService implements OnModuleInit {
     return record.uid;
   }
 
+  async updateUser(uid: string, email?: string): Promise<void> {
+    await this.auth.updateUser(uid, { email });
+  }
+
   async deleteUser(uid: string): Promise<void> {
     await this.auth.deleteUser(uid);
   }

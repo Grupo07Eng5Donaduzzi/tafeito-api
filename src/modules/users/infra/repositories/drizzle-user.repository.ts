@@ -25,6 +25,7 @@ export class DrizzleUserRepository implements UserRepository {
       .update(usersSchema)
       .set({
         name: user.name,
+        email: user.email,
         identification: user.identification,
         updatedAt: new Date(),
       })
