@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Delete, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ServiceService } from '../../application/services/service.service';
 
 @Controller('services')
@@ -11,5 +11,10 @@ export class ServicesController {
       return this.serviceService.listByCategory(category);
     }
     return this.serviceService.listAll();
+  }
+
+  @Delete(':id')
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.serviceService.remove(id);
   }
 }

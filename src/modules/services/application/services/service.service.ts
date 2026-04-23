@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DrizzleServiceRepository } from '../../infra/repositories/drizzle-service.repository';
 
 @Injectable()
@@ -11,5 +11,13 @@ export class ServiceService {
 
   async listByCategory(category: string): Promise<any[]> {
     return await this.repository.findByCategory(category);
+  }
+
+  async remove(id: string): Promise<void> {
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      throw new NotFoundException('Service not found');
+    }
+    await this.repository.deleteById(id);
   }
 }
