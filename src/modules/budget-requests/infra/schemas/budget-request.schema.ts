@@ -2,21 +2,20 @@ import { pgTable, uuid, text, timestamp, pgEnum, jsonb } from 'drizzle-orm/pg-co
 import { usersSchema } from '@users/infra/schemas/user.schema';
 import { servicesSchema } from '../../../services/infra/schemas/service.schema';
 
-export const statusEnum = pgEnum('status_solicitacao', ['pendente', 'respondida', 'cancelada']);
+export const statusEnum = pgEnum('status', ['pending', 'answered', 'cancelled']);
 
-export const solicitacoesOrcamentoSchema = pgTable('solicitacoes_orcamento', {
+export const budgetRequestsSchema = pgTable('budget_requests', {
   id: uuid('id').primaryKey().defaultRandom(),
-  usuarioId: uuid('usuario_id')
+  userId: uuid('user_id')
     .references(() => usersSchema.id)
     .notNull(),
-  servicoId: uuid('servico_id')
+  serviceId: uuid('service_id')
     .references(() => servicesSchema.id)
     .notNull(),
-  descricao: text('descricao').notNull(),
-  dataSolicitacao: timestamp('data_solicitacao', { withTimezone: true }).notNull(),
-  status: statusEnum('status').notNull().default('pendente'),
-  fotos: jsonb('fotos'),
+  description: text('description').notNull(),
+  requestDate: timestamp('request_date', { withTimezone: true }).notNull(),
+  status: statusEnum('status').notNull().default('pending'),
+  photos: jsonb('photos'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
 });
-
