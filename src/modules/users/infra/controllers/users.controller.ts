@@ -2,13 +2,15 @@ import {
   CreateUserDto,
   UpdateUserDto,
 } from '@users/application/dto/create-user.dto';
+import { UserDto } from '@users/application/dto/user.dto';
 import { UserService } from '@users/application/services/user.service';
+import { CurrentUser } from '@shared/infra/current-user.decorator';
 import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -17,6 +19,13 @@ import {
 @Controller('users')
 export class UsersController {
   constructor(private readonly userService: UserService) {}
+
+  @Get('me')
+  async getMe(@CurrentUser() userId: string): Promise<UserDto> {
+    const user = await this.userService.findById(userId);
+    if (!user) throw new NotFoundException();
+    return user;
+  }
 
   @Get()
   async findAll() {
