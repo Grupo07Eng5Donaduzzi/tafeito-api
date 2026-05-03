@@ -23,7 +23,10 @@
     "noFallthroughCasesInSwitch": false,
     "paths": {
       "@users/*": ["src/modules/users/*"],
-      "@shared/*": ["src/shared/*"]
+      "@shared/*": ["src/shared/*"],
+      "@chat/*": ["src/modules/chat/*"],
+      "@services/*": ["src/modules/services/*"],
+      "@auth/*": ["src/modules/auth/*"]
     }
   }
 }
