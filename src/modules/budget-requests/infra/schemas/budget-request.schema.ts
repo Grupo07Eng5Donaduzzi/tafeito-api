@@ -1,0 +1,21 @@
+import { pgTable, uuid, text, timestamp, pgEnum, jsonb } from 'drizzle-orm/pg-core';
+import { usersSchema } from '@users/infra/schemas/user.schema';
+import { servicesSchema } from '../../../services/infra/schemas/service.schema';
+
+export const statusEnum = pgEnum('status', ['pending', 'answered', 'cancelled']);
+
+export const budgetRequestsSchema = pgTable('budget_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .references(() => usersSchema.id)
+    .notNull(),
+  serviceId: uuid('service_id')
+    .references(() => servicesSchema.id)
+    .notNull(),
+  description: text('description').notNull(),
+  requestDate: timestamp('request_date', { withTimezone: true }).notNull(),
+  status: statusEnum('status').notNull().default('pending'),
+  photos: jsonb('photos'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+});
