@@ -1,10 +1,19 @@
-import { Injectable, type OnModuleDestroy } from "@nestjs/common";
-import { usersSchema } from "@users/infra/schemas/user.schema";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+import { Injectable, type OnModuleDestroy } from '@nestjs/common';
+import { usersSchema } from '@users/infra/schemas/user.schema';
+import { servicesSchema } from '../../../modules/services/infra/schemas/service.schema';
+import { budgetRequestsSchema } from '../../../modules/budget-requests/infra/schemas/budget-request.schema';
+import { messageSchema } from '../../../modules/chat/infra/schemas/message.schema';
+import { conversationSchema } from '../../../modules/chat/infra/schemas/conversation.schema';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 
 const schema = {
-  usersSchema
+  usersSchema,
+  servicesSchema,
+  budgetRequestsSchema,
+  messageSchema,
+  conversationSchema,
 };
 
 @Injectable()

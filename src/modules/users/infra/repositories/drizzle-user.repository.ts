@@ -1,13 +1,13 @@
-import { User } from "@users/domain/models/user.entity";
-import type { UserRepository } from "@users/domain/repositories/user-repository.interface";
-import { usersSchema } from "@users/infra/schemas/user.schema";
-import { Injectable } from "@nestjs/common";
-import { DrizzleService } from "@shared/infra/database/drizzle.service";
-import { eq } from "drizzle-orm";
+import { User } from '@users/domain/models/user.entity';
+import type { UserRepository } from '@users/domain/repositories/user-repository.interface';
+import { usersSchema } from '@users/infra/schemas/user.schema';
+import { Injectable } from '@nestjs/common';
+import { DrizzleService } from '@shared/infra/database/drizzle.service';
+import { eq } from 'drizzle-orm';
 
 @Injectable()
 export class DrizzleUserRepository implements UserRepository {
-  constructor(private readonly drizzleService: DrizzleService) { }
+  constructor(private readonly drizzleService: DrizzleService) {}
 
   async create(user: User): Promise<void> {
     await this.drizzleService.db.insert(usersSchema).values({
@@ -25,6 +25,7 @@ export class DrizzleUserRepository implements UserRepository {
       .update(usersSchema)
       .set({
         name: user.name,
+        email: user.email,
         identification: user.identification,
         updatedAt: new Date(),
       })

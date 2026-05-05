@@ -1,6 +1,6 @@
-import type { User } from "@users/domain/models/user.entity";
+import type { User } from '@users/domain/models/user.entity';
 
-export const USER_REPOSITORY = Symbol("USER_REPOSITORY");
+export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
 
 export interface UserRepository {
   create(user: User): Promise<void>;

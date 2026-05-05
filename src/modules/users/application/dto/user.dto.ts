@@ -1,4 +1,4 @@
-import type { User } from "@users/domain/models/user.entity";
+import type { User } from '@users/domain/models/user.entity';
 
 export class UserDto {
   private constructor(
@@ -9,7 +9,7 @@ export class UserDto {
     public identification: string,
     public createdAt: Date | undefined,
     public updatedAt: Date | undefined,
-  ) { }
+  ) {}
 
   public static from(user: User | null): UserDto | null {
     if (!user) return null;
