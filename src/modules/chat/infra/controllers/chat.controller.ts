@@ -1,0 +1,120 @@
+import {
+  Controller,
+  Post,
+  Get,
+  Delete,
+  Patch,
+  Body,
+  Param,
+  Query,
+  DefaultValuePipe,
+  ForbiddenException,
+  ParseIntPipe,
+} from '@nestjs/common';
+import { CurrentUser } from '@shared/infra/current-user.decorator';
+import { MessageService } from '../../application/services/message.service';
+import { ConversationService } from '../../application/services/conversation.service';
+import {
+  SendMessageDto,
+  MessageResponseDto,
+  MessageListDto,
+} from '../../application/dto/message.dto';
+import { ConversationResponseDto } from '../../application/dto/conversation.dto';
+
+@Controller('chat')
+export class ChatController {
+  constructor(
+    private readonly messageService: MessageService,
+    private readonly conversationService: ConversationService,
+  ) {}
+
+  // Messages endpoints
+  @Post('messages')
+  async sendMessage(
+    @Body() dto: SendMessageDto,
+    @CurrentUser() currentUserId: string,
+  ): Promise<MessageResponseDto> {
+    return this.messageService.sendMessageAsUser(
+      {
+        serviceId: dto.serviceId,
+        recipientId: dto.recipientId,
+        content: dto.content,
+      },
+      currentUserId,
+    );
+  }
+
+  @Get('messages/:id')
+  async getMessage(
+    @Param('id') id: string,
+    @CurrentUser() currentUserId: string,
+  ): Promise<MessageResponseDto> {
+    return this.messageService.getMessageByIdForUser(id, currentUserId);
+  }
+
+  @Get('services/:serviceId/messages')
+  async getServiceMessages(
+    @Param('serviceId') serviceId: string,
+    @CurrentUser() currentUserId: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(50), ParseIntPipe) pageSize: number,
+  ): Promise<MessageListDto> {
+    return this.messageService.getServiceMessagesForUser(
+      serviceId,
+      currentUserId,
+      page,
+      pageSize,
+    );
+  }
+
+  @Get('users/:userId/messages')
+  async getUserMessages(
+    @Param('userId') userId: string,
+    @CurrentUser() currentUserId: string,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+  ): Promise<MessageResponseDto[]> {
+    if (userId !== currentUserId) {
+      throw new ForbiddenException('You cannot list messages for this user');
+    }
+    return this.messageService.getUserMessages(userId, limit);
+  }
+
+  @Patch('messages/:id/read')
+  async markAsRead(
+    @Param('id') id: string,
+    @CurrentUser() currentUserId: string,
+  ): Promise<MessageResponseDto> {
+    return this.messageService.markAsReadForUser(id, currentUserId);
+  }
+
+  @Patch('messages/:id/delivered')
+  async markAsDelivered(
+    @Param('id') id: string,
+    @CurrentUser() currentUserId: string,
+  ): Promise<MessageResponseDto> {
+    return this.messageService.markAsDeliveredForUser(id, currentUserId);
+  }
+
+  @Delete('messages/:id')
+  async deleteMessage(
+    @Param('id') id: string,
+    @CurrentUser() currentUserId: string,
+  ): Promise<void> {
+    return this.messageService.deleteMessageForUser(id, currentUserId);
+  }
+
+  // Conversations endpoints
+  @Get('services/:serviceId/conversations')
+  async getServiceConversations(
+    @Param('serviceId') serviceId: string,
+  ): Promise<ConversationResponseDto[]> {
+    return this.conversationService.getServiceConversations(serviceId);
+  }
+
+  @Get('conversations/:id')
+  async getConversation(
+    @Param('id') id: string,
+  ): Promise<ConversationResponseDto> {
+    return this.conversationService.getConversationById(id);
+  }
+}
