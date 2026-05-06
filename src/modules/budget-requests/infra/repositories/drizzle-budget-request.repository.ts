@@ -32,6 +32,7 @@ export class DrizzleBudgetRequestRepository implements BudgetRequestRepository {
         requestDate: budgetRequest.requestDate,
         status: budgetRequest.status,
         photos: budgetRequest.photos,
+        cancellationReason: budgetRequest.cancellationReason,
         updatedAt: new Date(),
       })
       .where(eq(budgetRequestsSchema.id, budgetRequest.id!));

@@ -16,6 +16,7 @@ export const budgetRequestsSchema = pgTable('budget_requests', {
   requestDate: timestamp('request_date', { withTimezone: true }).notNull(),
   status: statusEnum('status').notNull().default('pending'),
   photos: jsonb('photos'),
+  cancellationReason: text('cancellation_reason'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
 });
