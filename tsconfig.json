@@ -26,6 +26,7 @@
       "@usuarios/*": ["src/modules/usuarios/*"],
       "@servicos/*": ["src/modules/servicos/*"],
       "@pedidos/*": ["src/modules/pedidos/*"],
+      "@contestacao/*": ["src/modules/contestacao/*"],
       "@shared/*": ["src/shared/*"]
     }
   }

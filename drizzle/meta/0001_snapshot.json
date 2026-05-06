@@ -1,6 +1,6 @@
 {
-  "id": "b14e3661-422e-4d1f-a005-48f08099435a",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "1ee20a1b-efb7-40b3-bb4f-ead732489ddb",
+  "prevId": "b14e3661-422e-4d1f-a005-48f08099435a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -106,11 +106,10 @@
         },
         "can_resubmit": {
           "name": "can_resubmit",
-          "type": "can_resubmit",
-          "typeSchema": "public",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
-          "default": "'true'"
+          "default": true
         },
         "created_at": {
           "name": "created_at",
