@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type {
   BudgetRequestRepository,
 } from '../../domain/repositories/budget-request-repository.interface';
@@ -40,6 +40,17 @@ export class BudgetRequestService {
   async findByUserId(userId: string): Promise<BudgetRequestDto[]> {
     const result = await this.repository.findByUserId(userId);
     return result.map((s) => this.toDto(s));
+  }
+
+  async accept(id: string): Promise<void> {
+    const budgetRequest = await this.repository.findById(id);
+    if (!budgetRequest) throw new NotFoundException('Proposta não encontrada');
+    if (budgetRequest.status !== 'answered') {
+      throw new BadRequestException('Aceite permitido apenas para propostas com status respondido');
+    }
+    budgetRequest.status = 'accepted';
+    budgetRequest.updatedAt = new Date();
+    await this.repository.update(budgetRequest);
   }
 
   async cancel(id: string): Promise<void> {

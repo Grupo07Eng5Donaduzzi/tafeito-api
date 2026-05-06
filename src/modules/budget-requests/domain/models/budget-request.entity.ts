@@ -1,4 +1,4 @@
-export type BudgetRequestStatus = 'pending' | 'answered' | 'cancelled';
+export type BudgetRequestStatus = 'pending' | 'answered' | 'accepted' | 'cancelled';
 
 export class BudgetRequest {
   public id?: string;

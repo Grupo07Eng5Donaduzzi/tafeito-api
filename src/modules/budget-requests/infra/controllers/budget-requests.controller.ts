@@ -26,6 +26,11 @@ export class BudgetRequestsController {
     return this.service.findByUserId(userId);
   }
 
+  @Patch(':id/accept')
+  accept(@Param('id') id: string) {
+    return this.service.accept(id);
+  }
+
   @Patch(':id/cancel')
   cancel(@Param('id') id: string) {
     return this.service.cancel(id);

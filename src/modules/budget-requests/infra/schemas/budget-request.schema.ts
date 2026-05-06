@@ -2,7 +2,7 @@ import { pgTable, uuid, text, timestamp, pgEnum, jsonb } from 'drizzle-orm/pg-co
 import { usersSchema } from '@users/infra/schemas/user.schema';
 import { servicesSchema } from '../../../services/infra/schemas/service.schema';
 
-export const statusEnum = pgEnum('status', ['pending', 'answered', 'cancelled']);
+export const statusEnum = pgEnum('status', ['pending', 'answered', 'accepted', 'cancelled']);
 
 export const budgetRequestsSchema = pgTable('budget_requests', {
   id: uuid('id').primaryKey().defaultRandom(),
