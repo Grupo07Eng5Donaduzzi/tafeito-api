@@ -33,7 +33,6 @@ export class AuthMiddleware implements NestMiddleware {
         throw new UnauthorizedException('Usuário não encontrado');
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       (req as any).user = user;
       next();
     } catch {
