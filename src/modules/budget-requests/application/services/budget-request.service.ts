@@ -1,10 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type {
   BudgetRequestRepository,
 } from '../../domain/repositories/budget-request-repository.interface';
 import { BUDGET_REQUEST_REPOSITORY } from '../../domain/repositories/budget-request-repository.interface';
 import { BudgetRequest } from '../../domain/models/budget-request.entity';
 import { CreateBudgetRequestDto } from '../dto/create-budget-request.dto';
+import { CancelBudgetRequestDto } from '../dto/cancel-budget-request.dto';
 import { BudgetRequestDto } from '../dto/budget-request.dto';
 
 @Injectable()
@@ -42,10 +43,14 @@ export class BudgetRequestService {
     return result.map((s) => this.toDto(s));
   }
 
-  async cancel(id: string): Promise<void> {
+  async cancel(id: string, dto: CancelBudgetRequestDto): Promise<void> {
     const budgetRequest = await this.repository.findById(id);
-    if (!budgetRequest) return;
+    if (!budgetRequest) throw new NotFoundException('Proposta não encontrada');
+    if (budgetRequest.status !== 'pending') {
+      throw new BadRequestException('Cancelamento permitido apenas para propostas com status pendente');
+    }
     budgetRequest.status = 'cancelled';
+    budgetRequest.cancellationReason = dto.reason;
     budgetRequest.updatedAt = new Date();
     await this.repository.update(budgetRequest);
   }
@@ -63,6 +68,7 @@ export class BudgetRequestService {
       requestDate: s.requestDate,
       status: s.status,
       photos: s.photos,
+      cancellationReason: s.cancellationReason,
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,
     };
