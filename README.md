@@ -87,4 +87,4 @@ npm run build
 npm run start:prod
 ```
 
-A API estará disponível em `http://localhost:3000`.
+A API estará disponível em `http://localhost:3000`
