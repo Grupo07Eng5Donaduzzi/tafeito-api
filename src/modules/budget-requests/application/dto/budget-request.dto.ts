@@ -8,6 +8,7 @@ export class BudgetRequestDto {
   requestDate!: Date;
   status!: BudgetRequestStatus;
   photos?: string[];
+  cancellationReason?: string;
   createdAt!: Date;
   updatedAt!: Date;
 }

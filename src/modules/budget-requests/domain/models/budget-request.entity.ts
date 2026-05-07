@@ -8,6 +8,7 @@ export class BudgetRequest {
   public requestDate: Date;
   public status: BudgetRequestStatus;
   public photos?: string[];
+  public cancellationReason?: string;
   public createdAt: Date;
   public updatedAt: Date;
 
@@ -19,6 +20,7 @@ export class BudgetRequest {
     this.requestDate = props.requestDate;
     this.status = props.status;
     this.photos = props.photos;
+    this.cancellationReason = props.cancellationReason;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? new Date();
   }
@@ -33,6 +35,7 @@ export class BudgetRequest {
       requestDate: row.requestDate ?? row.request_date,
       status: row.status,
       photos: row.photos,
+      cancellationReason: row.cancellationReason ?? row.cancellation_reason,
       createdAt: row.createdAt ?? row.created_at,
       updatedAt: row.updatedAt ?? row.updated_at,
     });
