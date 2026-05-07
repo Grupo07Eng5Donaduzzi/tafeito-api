@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DrizzleServiceRepository } from '../../infra/repositories/drizzle-service.repository';
-import { CreateServiceDto } from '../dto/create-service.dto';
 import { UpdateServiceDto } from '../dto/update-service.dto';
 
 @Injectable()
@@ -38,26 +37,6 @@ export class ServiceService {
 
   async listByCategory(category: string): Promise<any[]> {
     return await this.repository.findByCategory(category);
-  }
-
-  async create(dto: CreateServiceDto): Promise<any> {
-    const userId = this.validateNonEmptyString(dto.userId, 'userId');
-    if (!this.isValidUuid(userId)) {
-      throw new BadRequestException('userId deve ser um UUID válido');
-    }
-
-    const service = {
-      userId,
-      name: this.validateNonEmptyString(dto.name, 'name'),
-      description: this.validateNonEmptyString(dto.description, 'description'),
-      category: this.validateNonEmptyString(dto.category, 'category'),
-      price: this.validatePositiveNumberString(dto.price, 'price'),
-      duration: this.validatePositiveNumberString(dto.duration, 'duration'),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    return await this.repository.create(service);
   }
 
   async remove(id: string): Promise<void> {

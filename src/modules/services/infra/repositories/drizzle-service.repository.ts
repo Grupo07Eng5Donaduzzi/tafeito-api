@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
 import { servicesSchema } from '../schemas/service.schema';
 import { eq } from 'drizzle-orm';
-import { CreateServiceDto } from '../../application/dto/create-service.dto';
 import { UpdateServiceDto } from '../../application/dto/update-service.dto';
 
 @Injectable()
@@ -35,15 +34,6 @@ export class DrizzleServiceRepository {
     await this.drizzleService.db
       .delete(servicesSchema)
       .where(eq(servicesSchema.id, id));
-  }
-
-  async create(service: CreateServiceDto & { createdAt: Date; updatedAt: Date }): Promise<any> {
-    const result = await this.drizzleService.db
-      .insert(servicesSchema)
-      .values(service)
-      .returning();
-
-    return result[0];
   }
 
   async updateById(id: string, dto: UpdateServiceDto): Promise<void> {
