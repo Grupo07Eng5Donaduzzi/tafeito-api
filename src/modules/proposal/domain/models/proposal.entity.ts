@@ -4,6 +4,7 @@ export enum ProposalStatus {
   PENDING = 'PENDING',
   NEGOTIATING = 'NEGOTIATING',
   ACCEPTED = 'ACCEPTED',
+  REJECTED = 'REJECTED',
   CANCELLED = 'CANCELLED',
 }
 
@@ -16,10 +17,14 @@ export class Proposal {
   private readonly _id?: string;
   private _proposalId?: string;
   private _requestId: string;
+  private _clientId: string;
   private _providerId: string;
+  private _estimatedHours: number;
+  private _hourlyRate: number;
   private _amount: number;
   private _status: ProposalStatus;
   private _rejectionReason?: string;
+  private _linkedChatId?: string;
   private _canResubmit: boolean;
   private readonly _createdAt?: Date;
   private readonly _updatedAt?: Date;
@@ -42,8 +47,20 @@ export class Proposal {
     return this._requestId;
   }
 
+  get clientId(): string {
+    return this._clientId;
+  }
+
   get providerId(): string {
     return this._providerId;
+  }
+
+  get estimatedHours(): number {
+    return this._estimatedHours;
+  }
+
+  get hourlyRate(): number {
+    return this._hourlyRate;
   }
 
   get amount(): number {
@@ -56,6 +73,10 @@ export class Proposal {
 
   get rejectionReason(): string | undefined {
     return this._rejectionReason;
+  }
+
+  get linkedChatId(): string | undefined {
+    return this._linkedChatId;
   }
 
   get canResubmit(): boolean {
@@ -72,13 +93,18 @@ export class Proposal {
 
   static create(props: {
     requestId: string;
+    clientId: string;
     providerId: string;
-    amount: number;
+    estimatedHours: number;
+    hourlyRate: number;
   }): Proposal {
     const proposal = new Proposal();
     proposal._requestId = props.requestId;
+    proposal._clientId = props.clientId;
     proposal._providerId = props.providerId;
-    proposal._amount = props.amount;
+    proposal._estimatedHours = props.estimatedHours;
+    proposal._hourlyRate = props.hourlyRate;
+    proposal._amount = props.estimatedHours * props.hourlyRate;
     proposal._status = ProposalStatus.PENDING;
     proposal._canResubmit = true;
     return proposal;
@@ -87,34 +113,57 @@ export class Proposal {
   static restore(props: {
     id: string;
     requestId: string;
+    clientId: string;
     providerId: string;
+    estimatedHours: number;
+    hourlyRate: number;
     amount: number;
     status: ProposalStatus;
     rejectionReason?: string;
+    linkedChatId?: string;
     canResubmit: boolean;
     createdAt: Date;
     updatedAt: Date;
   }): Proposal {
     const proposal = new Proposal(props.id, props.createdAt, props.updatedAt);
     proposal._requestId = props.requestId;
+    proposal._clientId = props.clientId;
     proposal._providerId = props.providerId;
+    proposal._estimatedHours = props.estimatedHours;
+    proposal._hourlyRate = props.hourlyRate;
     proposal._amount = props.amount;
     proposal._status = props.status;
     proposal._rejectionReason = props.rejectionReason;
+    proposal._linkedChatId = props.linkedChatId;
     proposal._canResubmit = props.canResubmit;
     return proposal;
   }
 
-  reject(reason: string): void {
+  contest(reason: string): void {
     if (this._status !== ProposalStatus.PENDING) {
-      throw new Error('Cannot reject proposal that is not PENDING');
+      throw new Error('Cannot contest proposal that is not PENDING');
     }
     this._status = ProposalStatus.NEGOTIATING;
     this._rejectionReason = reason;
   }
 
+  definitivelyReject(reason?: string): void {
+    if (
+      this._status !== ProposalStatus.PENDING &&
+      this._status !== ProposalStatus.NEGOTIATING
+    ) {
+      throw new Error('Cannot reject proposal in current status');
+    }
+    this._status = ProposalStatus.REJECTED;
+    this._rejectionReason = reason;
+    this._canResubmit = false;
+  }
+
   accept(): void {
-    if (this._status !== ProposalStatus.NEGOTIATING && this._status !== ProposalStatus.PENDING) {
+    if (
+      this._status !== ProposalStatus.NEGOTIATING &&
+      this._status !== ProposalStatus.PENDING
+    ) {
       throw new Error('Cannot accept proposal in current status');
     }
     this._status = ProposalStatus.ACCEPTED;
@@ -122,17 +171,26 @@ export class Proposal {
 
   closeNegotiation(): void {
     if (this._status !== ProposalStatus.NEGOTIATING) {
-      throw new Error('Cannot close negotiation for proposal that is not NEGOTIATING');
+      throw new Error(
+        'Cannot close negotiation for proposal that is not NEGOTIATING',
+      );
     }
     this._status = ProposalStatus.CANCELLED;
     this._canResubmit = false;
   }
 
-  updateAmount(newAmount: number): void {
+  updateEstimate(estimatedHours: number): void {
     if (this._status !== ProposalStatus.NEGOTIATING) {
-      throw new Error('Cannot update amount for proposal that is not NEGOTIATING');
+      throw new Error(
+        'Cannot update estimate for proposal that is not NEGOTIATING',
+      );
     }
-    this._amount = newAmount;
+    this._estimatedHours = estimatedHours;
+    this._amount = estimatedHours * this._hourlyRate;
+  }
+
+  linkChat(conversationId: string): void {
+    this._linkedChatId = conversationId;
   }
 }
 

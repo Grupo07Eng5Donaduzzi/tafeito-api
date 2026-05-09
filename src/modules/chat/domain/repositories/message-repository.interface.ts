@@ -16,6 +16,11 @@ export interface MessageRepository {
     limit: number,
     offset: number,
   ): Promise<Message[]>;
+  findByConversationId(
+    conversationId: string,
+    limit: number,
+    offset: number,
+  ): Promise<Message[]>;
   findBySenderId(senderId: string, limit: number): Promise<Message[]>;
   update(message: Message): Promise<void>;
   delete(id: string): Promise<void>;
@@ -24,4 +29,5 @@ export interface MessageRepository {
     serviceId: string,
     participantId: string,
   ): Promise<number>;
+  countByConversationId(conversationId: string): Promise<number>;
 }

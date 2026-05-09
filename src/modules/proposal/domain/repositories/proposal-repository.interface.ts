@@ -1,7 +1,9 @@
 import type { Proposal, NegotiationMessage } from '../models/proposal.entity';
 
 export const PROPOSAL_REPOSITORY = Symbol('PROPOSAL_REPOSITORY');
-export const NEGOTIATION_MESSAGE_REPOSITORY = Symbol('NEGOTIATION_MESSAGE_REPOSITORY');
+export const NEGOTIATION_MESSAGE_REPOSITORY = Symbol(
+  'NEGOTIATION_MESSAGE_REPOSITORY',
+);
 
 export interface ProposalRepository {
   create(proposal: Proposal): Promise<void>;
@@ -10,8 +12,12 @@ export interface ProposalRepository {
   findAll(): Promise<Proposal[]>;
   findById(id: string): Promise<Proposal | null>;
   findByRequestId(requestId: string): Promise<Proposal[]>;
+  findByClientId(clientId: string): Promise<Proposal[]>;
   findByProviderId(providerId: string): Promise<Proposal[]>;
-  findByRequestAndProvider(requestId: string, providerId: string): Promise<Proposal | null>;
+  findByRequestAndProvider(
+    requestId: string,
+    providerId: string,
+  ): Promise<Proposal | null>;
 }
 
 export interface NegotiationMessageRepository {
