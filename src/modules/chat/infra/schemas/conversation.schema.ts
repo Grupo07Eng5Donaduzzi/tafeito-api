@@ -16,6 +16,7 @@ export const conversationSchema = pgTable(
     serviceId: uuid('service_id')
       .references(() => servicesSchema.id)
       .notNull(),
+    proposalId: uuid('proposal_id'),
     initiatorId: uuid('initiator_id')
       .references(() => usersSchema.id)
       .notNull(),
@@ -27,5 +28,6 @@ export const conversationSchema = pgTable(
   },
   (table) => ({
     serviceIdIdx: index('conversations_service_id_idx').on(table.serviceId),
+    proposalIdIdx: index('conversations_proposal_id_idx').on(table.proposalId),
   }),
 );

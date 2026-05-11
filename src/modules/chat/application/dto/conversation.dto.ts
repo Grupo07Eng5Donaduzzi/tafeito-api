@@ -1,6 +1,7 @@
 export class ConversationResponseDto {
   id?: string;
   serviceId!: string;
+  proposalId?: string;
   initiatorId!: string;
   participantIds!: string[];
   lastMessageAt?: Date;

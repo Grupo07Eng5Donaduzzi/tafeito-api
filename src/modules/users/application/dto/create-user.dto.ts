@@ -3,6 +3,7 @@ export class CreateUserDto {
   email!: string;
   password!: string;
   identification!: string; // CPF or CNPJ
+  hourlyRate?: number;
 }
 
 export class UpdateUserDto {
@@ -10,4 +11,5 @@ export class UpdateUserDto {
   email?: string;
   password?: string;
   identification?: string; // CPF or CNPJ
+  hourlyRate?: number;
 }

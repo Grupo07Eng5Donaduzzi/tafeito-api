@@ -7,6 +7,7 @@ export class UserDto {
     public name: string,
     public email: string,
     public identification: string,
+    public hourlyRate: number | undefined,
     public createdAt: Date | undefined,
     public updatedAt: Date | undefined,
   ) {}
@@ -19,6 +20,7 @@ export class UserDto {
       user.name,
       user.email,
       user.identification,
+      user.hourlyRate,
       user.createdAt,
       user.updatedAt,
     );

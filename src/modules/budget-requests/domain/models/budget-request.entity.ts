@@ -4,7 +4,10 @@ export class BudgetRequest {
   public id?: string;
   public userId: string;
   public serviceId: string;
+  public title: string;
   public description: string;
+  public category: string;
+  public location: string;
   public requestDate: Date;
   public status: BudgetRequestStatus;
   public photos?: string[];
@@ -12,11 +15,20 @@ export class BudgetRequest {
   public createdAt: Date;
   public updatedAt: Date;
 
-  constructor(props: Omit<BudgetRequest, 'id' | 'createdAt' | 'updatedAt'> & { id?: string; createdAt?: Date; updatedAt?: Date }) {
+  constructor(
+    props: Omit<BudgetRequest, 'id' | 'createdAt' | 'updatedAt'> & {
+      id?: string;
+      createdAt?: Date;
+      updatedAt?: Date;
+    },
+  ) {
     this.id = props.id;
     this.userId = props.userId;
     this.serviceId = props.serviceId;
+    this.title = props.title;
     this.description = props.description;
+    this.category = props.category;
+    this.location = props.location;
     this.requestDate = props.requestDate;
     this.status = props.status;
     this.photos = props.photos;
@@ -31,7 +43,10 @@ export class BudgetRequest {
       id: row.id,
       userId: row.userId ?? row.user_id,
       serviceId: row.serviceId ?? row.service_id,
+      title: row.title,
       description: row.description,
+      category: row.category,
+      location: row.location,
       requestDate: row.requestDate ?? row.request_date,
       status: row.status,
       photos: row.photos,
@@ -41,4 +56,3 @@ export class BudgetRequest {
     });
   }
 }
-

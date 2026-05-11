@@ -1,6 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+  ForbiddenException,
+} from '@nestjs/common';
 // import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { NegotiationMessage, SenderRole, ProposalStatus } from '../../domain/models/proposal.entity';
+import {
+  NegotiationMessage,
+  SenderRole,
+  ProposalStatus,
+} from '../../domain/models/proposal.entity';
 import type {
   ProposalRepository,
   NegotiationMessageRepository,
@@ -9,17 +19,28 @@ import {
   PROPOSAL_REPOSITORY,
   NEGOTIATION_MESSAGE_REPOSITORY,
 } from '../../domain/repositories/proposal-repository.interface';
-import { CreateNegotiationMessageDto, NegotiationMessageDto, SendRevisedProposalDto } from '../dto/proposal.dto';
+import {
+  CreateNegotiationMessageDto,
+  NegotiationMessageDto,
+  SendRevisedProposalDto,
+} from '../dto/proposal.dto';
 
 @Injectable()
 export class NegotiationService {
   constructor(
-    @Inject(PROPOSAL_REPOSITORY) private readonly proposalRepository: ProposalRepository,
-    @Inject(NEGOTIATION_MESSAGE_REPOSITORY) private readonly messageRepository: NegotiationMessageRepository,
+    @Inject(PROPOSAL_REPOSITORY)
+    private readonly proposalRepository: ProposalRepository,
+    @Inject(NEGOTIATION_MESSAGE_REPOSITORY)
+    private readonly messageRepository: NegotiationMessageRepository,
     // private readonly amqpConnection: AmqpConnection
   ) {}
 
-  async sendMessage(proposalId: string, userId: string, senderRole: SenderRole, dto: CreateNegotiationMessageDto): Promise<NegotiationMessageDto> {
+  async sendMessage(
+    proposalId: string,
+    userId: string,
+    senderRole: SenderRole,
+    dto: CreateNegotiationMessageDto,
+  ): Promise<NegotiationMessageDto> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
       throw new NotFoundException('Proposal not found');
@@ -43,22 +64,27 @@ export class NegotiationService {
     return NegotiationMessageDto.from(created)!;
   }
 
-  async sendRevisedProposal(proposalId: string, providerId: string, dto: SendRevisedProposalDto): Promise<NegotiationMessageDto> {
+  async sendRevisedProposal(
+    proposalId: string,
+    providerId: string,
+    dto: SendRevisedProposalDto,
+  ): Promise<NegotiationMessageDto> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
       throw new NotFoundException('Proposal not found');
     }
 
     if (proposal.providerId !== providerId) {
-      throw new ForbiddenException('Only the provider can send revised proposal');
+      throw new ForbiddenException(
+        'Only the provider can send revised proposal',
+      );
     }
 
     if (proposal.status !== ProposalStatus.NEGOTIATING) {
       throw new BadRequestException('Proposal is not in negotiation status');
     }
 
-    // Update proposal amount
-    proposal.updateAmount(dto.amount);
+    proposal.updateEstimate(dto.estimatedHours);
     await this.proposalRepository.update(proposal);
 
     // Create message with revised amount
@@ -67,7 +93,7 @@ export class NegotiationService {
       senderRole: SenderRole.PROVIDER,
       senderUserId: providerId,
       message: dto.message,
-      revisedAmount: dto.amount,
+      revisedAmount: proposal.amount,
     });
 
     await this.messageRepository.create(message);

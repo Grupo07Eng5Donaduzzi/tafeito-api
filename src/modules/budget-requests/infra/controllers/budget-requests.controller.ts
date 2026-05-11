@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+} from '@nestjs/common';
+import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { BudgetRequestService } from '../../application/services/budget-request.service';
 import { CreateBudgetRequestDto } from '../../application/dto/create-budget-request.dto';
 import { CancelBudgetRequestDto } from '../../application/dto/cancel-budget-request.dto';
@@ -8,8 +17,8 @@ export class BudgetRequestsController {
   constructor(private readonly service: BudgetRequestService) {}
 
   @Post()
-  create(@Body() dto: CreateBudgetRequestDto) {
-    return this.service.create(dto);
+  create(@CurrentUser() userId: string, @Body() dto: CreateBudgetRequestDto) {
+    return this.service.create(userId, dto);
   }
 
   @Get()
