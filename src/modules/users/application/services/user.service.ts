@@ -33,16 +33,19 @@ export class UserService {
   }
 
   private validatePassword(password: string): void {
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(password)) {
-      throw new BadRequestException('Senha deve ter pelo menos 8 caracteres, com letras maiúsculas, minúsculas, números e caracteres especiais (@$!%*?&)');
+      throw new BadRequestException(
+        'Senha deve ter pelo menos 8 caracteres, com letras maiúsculas, minúsculas, números e caracteres especiais (@$!%*?&)',
+      );
     }
   }
 
   private validateIdentification(identification: string): void {
     // Remove non-digits
     const clean = identification.replace(/\D/g, '');
-    
+
     if (clean.length === 11) {
       // CPF validation
       if (!this.isValidCPF(clean)) {
@@ -54,7 +57,9 @@ export class UserService {
         throw new BadRequestException('Invalid CNPJ');
       }
     } else {
-      throw new BadRequestException('Identification must be a valid CPF or CNPJ');
+      throw new BadRequestException(
+        'Identification must be a valid CPF or CNPJ',
+      );
     }
   }
 
@@ -134,6 +139,7 @@ export class UserService {
       name: dto.name,
       email: dto.email,
       identification: dto.identification,
+      hourlyRate: dto.hourlyRate,
     });
 
     await this.userRepository.create(user!);
@@ -175,6 +181,12 @@ export class UserService {
       }
       this.validateIdentification(identificationTrimmed);
     }
+    if (dto.hourlyRate !== undefined && dto.hourlyRate != null) {
+      const hourlyRate = Number(dto.hourlyRate);
+      if (Number.isNaN(hourlyRate) || hourlyRate <= 0) {
+        throw new BadRequestException('hourlyRate deve ser um número positivo');
+      }
+    }
     // Use trimmedDto for updates below
 
     let emailTrimmed = '';
@@ -190,7 +202,9 @@ export class UserService {
     if (emailTrimmed) {
       const existingEmail = await this.userRepository.findByEmail(emailTrimmed);
       if (existingEmail && existingEmail.id !== id) {
-        throw new ConflictException('Email já está sendo usado por outro usuário');
+        throw new ConflictException(
+          'Email já está sendo usado por outro usuário',
+        );
       }
       await this.firebaseAuthService.updateUser(user.firebaseUid, emailTrimmed);
       user.withEmail(emailTrimmed);
@@ -198,9 +212,13 @@ export class UserService {
 
     if (identificationTrimmed) {
       const allUsers = await this.userRepository.findAll();
-      const existingIdentification = allUsers.find(u => u.identification === identificationTrimmed && u.id !== id);
+      const existingIdentification = allUsers.find(
+        (u) => u.identification === identificationTrimmed && u.id !== id,
+      );
       if (existingIdentification) {
-        throw new ConflictException('Identification já está sendo usado por outro usuário');
+        throw new ConflictException(
+          'Identification já está sendo usado por outro usuário',
+        );
       }
       user.withIdentification(identificationTrimmed);
     }
@@ -208,6 +226,12 @@ export class UserService {
     if (dto.name !== undefined && dto.name != null) {
       const nameTrimmed = (dto.name as string).trim();
       user.withName(nameTrimmed);
+    }
+
+    if (dto.hourlyRate !== undefined) {
+      user.withHourlyRate(
+        dto.hourlyRate === null ? undefined : Number(dto.hourlyRate),
+      );
     }
 
     await this.userRepository.update(user);

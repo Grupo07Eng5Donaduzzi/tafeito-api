@@ -16,8 +16,8 @@ export class SchedulesController {
     return this.service.findById(id);
   }
 
-  @Get('budget-request/:budgetRequestId')
-  findByBudgetRequestId(@Param('budgetRequestId') budgetRequestId: string) {
-    return this.service.findByBudgetRequestId(budgetRequestId);
+  @Get('proposal/:proposalId')
+  findByProposalId(@Param('proposalId') proposalId: string) {
+    return this.service.findByProposalId(proposalId);
   }
 }

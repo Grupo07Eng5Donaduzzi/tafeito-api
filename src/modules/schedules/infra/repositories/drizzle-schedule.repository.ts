@@ -11,7 +11,7 @@ export class DrizzleScheduleRepository implements ScheduleRepository {
 
   async create(schedule: Schedule): Promise<void> {
     await this.drizzleService.db.insert(schedulesSchema).values({
-      budgetRequestId: schedule.budgetRequestId,
+      proposalId: schedule.proposalId,
       scheduledDate: schedule.scheduledDate,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -27,11 +27,11 @@ export class DrizzleScheduleRepository implements ScheduleRepository {
     return Schedule.restore(result[0]);
   }
 
-  async findByBudgetRequestId(budgetRequestId: string): Promise<Schedule | null> {
+  async findByProposalId(proposalId: string): Promise<Schedule | null> {
     const result = await this.drizzleService.db
       .select()
       .from(schedulesSchema)
-      .where(eq(schedulesSchema.budgetRequestId, budgetRequestId))
+      .where(eq(schedulesSchema.proposalId, proposalId))
       .limit(1);
     return Schedule.restore(result[0]);
   }

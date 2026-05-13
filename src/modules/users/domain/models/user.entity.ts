@@ -4,6 +4,7 @@ export class User {
   private _name: string;
   private _email: string;
   private _identification: string; // CPF or CNPJ
+  private _hourlyRate?: number;
   private readonly _createdAt?: Date;
   private readonly _updatedAt?: Date;
 
@@ -31,6 +32,10 @@ export class User {
 
   get identification(): string {
     return this._identification;
+  }
+
+  get hourlyRate(): number | undefined {
+    return this._hourlyRate;
   }
 
   get createdAt(): Date | undefined {
@@ -61,12 +66,18 @@ export class User {
     return this;
   }
 
+  withHourlyRate(hourlyRate?: number): this {
+    this._hourlyRate = hourlyRate;
+    return this;
+  }
+
   static restore(props?: {
     id?: string;
     firebaseUid: string;
     name: string;
     email: string;
     identification: string;
+    hourlyRate?: number | string | null;
     createdAt?: Date;
     updatedAt?: Date;
   }): User | null {
@@ -76,6 +87,10 @@ export class User {
     user._name = props.name;
     user._email = props.email;
     user._identification = props.identification;
+    user._hourlyRate =
+      props.hourlyRate !== undefined && props.hourlyRate !== null
+        ? Number(props.hourlyRate)
+        : undefined;
     return user;
   }
 }

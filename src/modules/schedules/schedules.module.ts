@@ -4,10 +4,10 @@ import { ScheduleService } from './application/services/schedule.service';
 import { DrizzleScheduleRepository } from './infra/repositories/drizzle-schedule.repository';
 import { SCHEDULE_REPOSITORY } from './domain/repositories/schedule-repository.interface';
 import { SharedModule } from '@shared/shared.module';
-import { BudgetRequestsModule } from '../budget-requests/budget-requests.module';
+import { ContestacaoModule } from '../proposal/contestacao.module';
 
 @Module({
-  imports: [SharedModule, BudgetRequestsModule],
+  imports: [SharedModule, ContestacaoModule],
   controllers: [SchedulesController],
   providers: [
     ScheduleService,

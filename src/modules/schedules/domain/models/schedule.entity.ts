@@ -1,6 +1,6 @@
 export class Schedule {
   public id?: string;
-  public budgetRequestId: string;
+  public proposalId: string;
   public scheduledDate: Date;
   public createdAt: Date;
   public updatedAt: Date;
@@ -13,7 +13,7 @@ export class Schedule {
     },
   ) {
     this.id = props.id;
-    this.budgetRequestId = props.budgetRequestId;
+    this.proposalId = props.proposalId;
     this.scheduledDate = props.scheduledDate;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? new Date();
@@ -23,7 +23,7 @@ export class Schedule {
     if (!row) return null;
     return new Schedule({
       id: row.id,
-      budgetRequestId: row.budgetRequestId ?? row.budget_request_id,
+      proposalId: row.proposalId ?? row.proposal_id,
       scheduledDate: row.scheduledDate ?? row.scheduled_date,
       createdAt: row.createdAt ?? row.created_at,
       updatedAt: row.updatedAt ?? row.updated_at,

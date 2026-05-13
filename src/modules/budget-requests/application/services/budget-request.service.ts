@@ -1,10 +1,14 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type {
-  BudgetRequestRepository,
-} from '../../domain/repositories/budget-request-repository.interface';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import type { BudgetRequestRepository } from '../../domain/repositories/budget-request-repository.interface';
 import { BUDGET_REQUEST_REPOSITORY } from '../../domain/repositories/budget-request-repository.interface';
 import { BudgetRequest } from '../../domain/models/budget-request.entity';
 import { CreateBudgetRequestDto } from '../dto/create-budget-request.dto';
+import { CancelBudgetRequestDto } from '../dto/cancel-budget-request.dto';
 import { BudgetRequestDto } from '../dto/budget-request.dto';
 
 @Injectable()
@@ -14,11 +18,17 @@ export class BudgetRequestService {
     private readonly repository: BudgetRequestRepository,
   ) {}
 
-  async create(dto: CreateBudgetRequestDto): Promise<BudgetRequestDto> {
+  async create(
+    userId: string,
+    dto: CreateBudgetRequestDto,
+  ): Promise<BudgetRequestDto> {
     const budgetRequest = new BudgetRequest({
-      userId: dto.userId,
+      userId,
       serviceId: dto.serviceId,
+      title: dto.title,
       description: dto.description,
+      category: dto.category,
+      location: dto.location,
       requestDate: dto.requestDate,
       status: 'pending',
       photos: dto.photos,
@@ -42,21 +52,16 @@ export class BudgetRequestService {
     return result.map((s) => this.toDto(s));
   }
 
-  async accept(id: string): Promise<void> {
+  async cancel(id: string, dto: CancelBudgetRequestDto): Promise<void> {
     const budgetRequest = await this.repository.findById(id);
     if (!budgetRequest) throw new NotFoundException('Proposta não encontrada');
-    if (budgetRequest.status !== 'answered') {
-      throw new BadRequestException('Aceite permitido apenas para propostas com status respondido');
+    if (budgetRequest.status !== 'pending') {
+      throw new BadRequestException(
+        'Cancelamento permitido apenas para propostas com status pendente',
+      );
     }
-    budgetRequest.status = 'accepted';
-    budgetRequest.updatedAt = new Date();
-    await this.repository.update(budgetRequest);
-  }
-
-  async cancel(id: string): Promise<void> {
-    const budgetRequest = await this.repository.findById(id);
-    if (!budgetRequest) return;
     budgetRequest.status = 'cancelled';
+    budgetRequest.cancellationReason = dto.reason;
     budgetRequest.updatedAt = new Date();
     await this.repository.update(budgetRequest);
   }
@@ -70,10 +75,14 @@ export class BudgetRequestService {
       id: s.id!,
       userId: s.userId,
       serviceId: s.serviceId,
+      title: s.title,
       description: s.description,
+      category: s.category,
+      location: s.location,
       requestDate: s.requestDate,
       status: s.status,
       photos: s.photos,
+      cancellationReason: s.cancellationReason,
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,
     };

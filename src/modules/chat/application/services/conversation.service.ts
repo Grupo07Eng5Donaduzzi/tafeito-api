@@ -15,9 +15,19 @@ export class ConversationService {
     serviceId: string,
     initiatorId: string,
     participantIds: string[],
+    proposalId?: string,
   ): Promise<ConversationResponseDto> {
+    if (proposalId) {
+      const existing =
+        await this.conversationRepository.findByProposalId(proposalId);
+      if (existing) {
+        return this.toDto(existing);
+      }
+    }
+
     const conversation = new Conversation({
       serviceId,
+      proposalId,
       initiatorId,
       participantIds,
       isActive: true,
@@ -25,16 +35,17 @@ export class ConversationService {
 
     await this.conversationRepository.create(conversation);
 
-    const created = await this.conversationRepository.findById(conversation.id!);
+    const created = await this.conversationRepository.findById(
+      conversation.id!,
+    );
     return this.toDto(created!);
   }
 
   async getServiceConversations(
     serviceId: string,
   ): Promise<ConversationResponseDto[]> {
-    const conversations = await this.conversationRepository.findByServiceId(
-      serviceId,
-    );
+    const conversations =
+      await this.conversationRepository.findByServiceId(serviceId);
     return conversations.map((conv) => this.toDto(conv));
   }
 
@@ -46,10 +57,17 @@ export class ConversationService {
     return this.toDto(conversation);
   }
 
+  async getConversationByProposalId(
+    proposalId: string,
+  ): Promise<ConversationResponseDto | null> {
+    const conversation =
+      await this.conversationRepository.findByProposalId(proposalId);
+    return conversation ? this.toDto(conversation) : null;
+  }
+
   async updateLastMessage(conversationId: string): Promise<void> {
-    const conversation = await this.conversationRepository.findById(
-      conversationId,
-    );
+    const conversation =
+      await this.conversationRepository.findById(conversationId);
     if (!conversation) {
       throw new NotFoundException('Conversation not found');
     }
@@ -62,6 +80,7 @@ export class ConversationService {
     return {
       id: conversation.id,
       serviceId: conversation.serviceId,
+      proposalId: conversation.proposalId,
       initiatorId: conversation.initiatorId,
       participantIds: conversation.participantIds,
       lastMessageAt: conversation.lastMessageAt,

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const usersSchema = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -6,6 +6,7 @@ export const usersSchema = pgTable('users', {
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   identification: text('identification').notNull().unique(), // CPF or CNPJ
+  hourlyRate: numeric('hourly_rate', { precision: 10, scale: 2 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
 });

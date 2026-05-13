@@ -1,4 +1,4 @@
 export class CreateScheduleDto {
-  budgetRequestId!: string;
+  proposalId!: string;
   scheduledDate!: Date;
 }

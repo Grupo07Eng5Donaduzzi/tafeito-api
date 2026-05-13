@@ -3,30 +3,31 @@ import { SCHEDULE_REPOSITORY, ScheduleRepository } from '../../domain/repositori
 import { Schedule } from '../../domain/models/schedule.entity';
 import { CreateScheduleDto } from '../dto/create-schedule.dto';
 import { ScheduleDto } from '../dto/schedule.dto';
-import { BudgetRequestService } from '../../../budget-requests/application/services/budget-request.service';
+import { ProposalService } from '../../../proposal/application/services/proposal.service';
+import { ProposalStatus } from '../../../proposal/domain/models/proposal.entity';
 
 @Injectable()
 export class ScheduleService {
   constructor(
     @Inject(SCHEDULE_REPOSITORY)
     private readonly repository: ScheduleRepository,
-    private readonly budgetRequestService: BudgetRequestService,
+    private readonly proposalService: ProposalService,
   ) {}
 
   async create(dto: CreateScheduleDto): Promise<ScheduleDto> {
-    const budgetRequest = await this.budgetRequestService.findById(dto.budgetRequestId);
-    if (!budgetRequest) throw new NotFoundException('Proposta não encontrada');
-    if (budgetRequest.status !== 'accepted') {
+    const proposal = await this.proposalService.getProposal(dto.proposalId);
+    if (!proposal) throw new NotFoundException('Proposta não encontrada');
+    if (proposal.status !== ProposalStatus.ACCEPTED) {
       throw new BadRequestException('Agendamento permitido apenas para propostas aceitas');
     }
 
-    const existing = await this.repository.findByBudgetRequestId(dto.budgetRequestId);
+    const existing = await this.repository.findByProposalId(dto.proposalId);
     if (existing) {
       throw new BadRequestException('Já existe um agendamento para esta proposta');
     }
 
     const schedule = new Schedule({
-      budgetRequestId: dto.budgetRequestId,
+      proposalId: dto.proposalId,
       scheduledDate: new Date(dto.scheduledDate),
     });
     await this.repository.create(schedule);
@@ -38,15 +39,15 @@ export class ScheduleService {
     return result ? this.toDto(result) : null;
   }
 
-  async findByBudgetRequestId(budgetRequestId: string): Promise<ScheduleDto | null> {
-    const result = await this.repository.findByBudgetRequestId(budgetRequestId);
+  async findByProposalId(proposalId: string): Promise<ScheduleDto | null> {
+    const result = await this.repository.findByProposalId(proposalId);
     return result ? this.toDto(result) : null;
   }
 
   private toDto(s: Schedule): ScheduleDto {
     return {
       id: s.id!,
-      budgetRequestId: s.budgetRequestId,
+      proposalId: s.proposalId,
       scheduledDate: s.scheduledDate,
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,

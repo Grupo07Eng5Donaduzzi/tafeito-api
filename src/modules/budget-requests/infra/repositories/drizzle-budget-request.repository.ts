@@ -13,7 +13,10 @@ export class DrizzleBudgetRequestRepository implements BudgetRequestRepository {
     await this.drizzleService.db.insert(budgetRequestsSchema).values({
       userId: budgetRequest.userId,
       serviceId: budgetRequest.serviceId,
+      title: budgetRequest.title,
       description: budgetRequest.description,
+      category: budgetRequest.category,
+      location: budgetRequest.location,
       requestDate: budgetRequest.requestDate,
       status: budgetRequest.status,
       photos: budgetRequest.photos,
@@ -28,10 +31,14 @@ export class DrizzleBudgetRequestRepository implements BudgetRequestRepository {
       .set({
         userId: budgetRequest.userId,
         serviceId: budgetRequest.serviceId,
+        title: budgetRequest.title,
         description: budgetRequest.description,
+        category: budgetRequest.category,
+        location: budgetRequest.location,
         requestDate: budgetRequest.requestDate,
         status: budgetRequest.status,
         photos: budgetRequest.photos,
+        cancellationReason: budgetRequest.cancellationReason,
         updatedAt: new Date(),
       })
       .where(eq(budgetRequestsSchema.id, budgetRequest.id!));

@@ -8,6 +8,7 @@ import {
 import { Message } from '../../domain/models/message.entity';
 import { MESSAGE_REPOSITORY } from '../../domain/repositories/message-repository.interface';
 import type { MessageRepository } from '../../domain/repositories/message-repository.interface';
+import { ConversationService } from './conversation.service';
 import {
   SendMessageDto,
   MessageResponseDto,
@@ -19,6 +20,7 @@ export class MessageService {
   constructor(
     @Inject(MESSAGE_REPOSITORY)
     private readonly messageRepository: MessageRepository,
+    private readonly conversationService: ConversationService,
   ) {}
 
   async sendMessage(dto: SendMessageDto): Promise<MessageResponseDto> {
@@ -28,6 +30,7 @@ export class MessageService {
 
     const message = new Message({
       serviceId: dto.serviceId,
+      conversationId: dto.conversationId,
       senderId: dto.senderId,
       recipientId: dto.recipientId,
       content: dto.content.trim(),
@@ -105,6 +108,63 @@ export class MessageService {
       throw new NotFoundException('Message not found');
     }
     return this.toDto(message);
+  }
+
+  async sendConversationMessage(
+    conversationId: string,
+    senderId: string,
+    recipientId: string,
+    content: string,
+  ): Promise<MessageResponseDto> {
+    const conversation =
+      await this.conversationService.getConversationById(conversationId);
+
+    if (!conversation.participantIds.includes(senderId)) {
+      throw new ForbiddenException('You cannot send messages in this chat');
+    }
+    if (!conversation.participantIds.includes(recipientId)) {
+      throw new BadRequestException('Recipient is not part of this chat');
+    }
+
+    const message = await this.sendMessage({
+      serviceId: conversation.serviceId,
+      conversationId,
+      senderId,
+      recipientId,
+      content,
+    });
+    await this.conversationService.updateLastMessage(conversationId);
+    return message;
+  }
+
+  async getConversationMessagesForUser(
+    conversationId: string,
+    userId: string,
+    page: number = 1,
+    pageSize: number = 50,
+  ): Promise<MessageListDto> {
+    const conversation =
+      await this.conversationService.getConversationById(conversationId);
+    if (!conversation.participantIds.includes(userId)) {
+      throw new ForbiddenException('You cannot access this chat');
+    }
+
+    const offset = (page - 1) * pageSize;
+    const messages = await this.messageRepository.findByConversationId(
+      conversationId,
+      pageSize,
+      offset,
+    );
+    const total =
+      await this.messageRepository.countByConversationId(conversationId);
+
+    return {
+      data: messages.map((msg) => this.toDto(msg)),
+      total,
+      page,
+      pageSize,
+      hasMore: page * pageSize < total,
+    };
   }
 
   async getMessageByIdForUser(
@@ -197,6 +257,7 @@ export class MessageService {
     return {
       id: message.id,
       serviceId: message.serviceId,
+      conversationId: message.conversationId,
       senderId: message.senderId,
       recipientId: message.recipientId,
       content: message.content,
