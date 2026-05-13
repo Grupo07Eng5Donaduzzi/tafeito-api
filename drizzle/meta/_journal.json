@@ -50,6 +50,13 @@
       "when": 1778100000000,
       "tag": "0006_link_proposals_to_clients_and_chats",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778200000000,
+      "tag": "0007_add_completion_statuses",
+      "breakpoints": true
     }
   ]
 }

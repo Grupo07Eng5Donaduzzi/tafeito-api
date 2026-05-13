@@ -92,6 +92,22 @@ export class ProposalsController {
     return this.proposalService.acceptProposal(proposalId, clientId);
   }
 
+  @Patch(':id/provider-confirm')
+  async providerConfirm(
+    @Param('id') proposalId: string,
+    @CurrentUser() providerId: string,
+  ): Promise<ProposalDto> {
+    return this.proposalService.providerConfirmCompletion(proposalId, providerId);
+  }
+
+  @Patch(':id/client-confirm')
+  async clientConfirm(
+    @Param('id') proposalId: string,
+    @CurrentUser() clientId: string,
+  ): Promise<ProposalDto> {
+    return this.proposalService.clientConfirmCompletion(proposalId, clientId);
+  }
+
   @Get(':id/chat')
   async getChat(
     @Param('id') proposalId: string,

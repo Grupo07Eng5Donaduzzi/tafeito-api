@@ -15,6 +15,8 @@ export const proposalStatusEnum = pgEnum('proposal_status', [
   'PENDING',
   'NEGOTIATING',
   'ACCEPTED',
+  'PROVIDER_CONFIRMED',
+  'COMPLETED',
   'REJECTED',
   'CANCELLED',
 ]);
