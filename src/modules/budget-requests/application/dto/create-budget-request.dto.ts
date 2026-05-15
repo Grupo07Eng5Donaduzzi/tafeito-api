@@ -1,8 +1,9 @@
 export class CreateBudgetRequestDto {
-  userId!: string;
   serviceId!: string;
+  title!: string;
   description!: string;
+  category!: string;
+  location!: string;
   requestDate!: Date;
   photos?: string[];
 }
-

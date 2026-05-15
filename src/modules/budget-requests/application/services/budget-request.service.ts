@@ -1,7 +1,10 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type {
-  BudgetRequestRepository,
-} from '../../domain/repositories/budget-request-repository.interface';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import type { BudgetRequestRepository } from '../../domain/repositories/budget-request-repository.interface';
 import { BUDGET_REQUEST_REPOSITORY } from '../../domain/repositories/budget-request-repository.interface';
 import { BudgetRequest } from '../../domain/models/budget-request.entity';
 import { CreateBudgetRequestDto } from '../dto/create-budget-request.dto';
@@ -15,11 +18,17 @@ export class BudgetRequestService {
     private readonly repository: BudgetRequestRepository,
   ) {}
 
-  async create(dto: CreateBudgetRequestDto): Promise<BudgetRequestDto> {
+  async create(
+    userId: string,
+    dto: CreateBudgetRequestDto,
+  ): Promise<BudgetRequestDto> {
     const budgetRequest = new BudgetRequest({
-      userId: dto.userId,
+      userId,
       serviceId: dto.serviceId,
+      title: dto.title,
       description: dto.description,
+      category: dto.category,
+      location: dto.location,
       requestDate: dto.requestDate,
       status: 'pending',
       photos: dto.photos,
@@ -53,7 +62,9 @@ export class BudgetRequestService {
     const budgetRequest = await this.repository.findById(id);
     if (!budgetRequest) throw new NotFoundException('Proposta não encontrada');
     if (budgetRequest.status !== 'pending') {
-      throw new BadRequestException('Cancelamento permitido apenas para propostas com status pendente');
+      throw new BadRequestException(
+        'Cancelamento permitido apenas para propostas com status pendente',
+      );
     }
     budgetRequest.status = 'cancelled';
     budgetRequest.cancellationReason = dto.reason;
@@ -70,7 +81,10 @@ export class BudgetRequestService {
       id: s.id!,
       userId: s.userId,
       serviceId: s.serviceId,
+      title: s.title,
       description: s.description,
+      category: s.category,
+      location: s.location,
       requestDate: s.requestDate,
       status: s.status,
       photos: s.photos,

@@ -13,6 +13,7 @@ export class DrizzleMessageRepository implements MessageRepository {
   async create(message: Message): Promise<void> {
     await this.drizzleService.db.insert(messageSchema).values({
       serviceId: message.serviceId,
+      conversationId: message.conversationId,
       senderId: message.senderId,
       recipientId: message.recipientId,
       content: message.content,
@@ -83,11 +84,28 @@ export class DrizzleMessageRepository implements MessageRepository {
     return results.map((row) => Message.restore(row)!);
   }
 
+  async findByConversationId(
+    conversationId: string,
+    limit: number,
+    offset: number,
+  ): Promise<Message[]> {
+    const results = await this.drizzleService.db
+      .select()
+      .from(messageSchema)
+      .where(eq(messageSchema.conversationId, conversationId))
+      .orderBy(desc(messageSchema.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return results.map((row) => Message.restore(row)!);
+  }
+
   async update(message: Message): Promise<void> {
     await this.drizzleService.db
       .update(messageSchema)
       .set({
         status: message.status,
+        conversationId: message.conversationId,
         updatedAt: message.updatedAt,
       })
       .where(eq(messageSchema.id, message.id!));
@@ -124,6 +142,15 @@ export class DrizzleMessageRepository implements MessageRepository {
           ),
         ),
       );
+
+    return result[0]?.value ?? 0;
+  }
+
+  async countByConversationId(conversationId: string): Promise<number> {
+    const result = await this.drizzleService.db
+      .select({ value: count() })
+      .from(messageSchema)
+      .where(eq(messageSchema.conversationId, conversationId));
 
     return result[0]?.value ?? 0;
   }

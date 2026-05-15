@@ -2,7 +2,13 @@ import type { MessageStatus } from '../../domain/models/message.entity';
 
 export class SendMessageDto {
   serviceId!: string;
+  conversationId?: string;
   senderId!: string;
+  recipientId!: string;
+  content!: string;
+}
+
+export class SendConversationMessageDto {
   recipientId!: string;
   content!: string;
 }
@@ -10,6 +16,7 @@ export class SendMessageDto {
 export class MessageResponseDto {
   id?: string;
   serviceId!: string;
+  conversationId?: string;
   senderId!: string;
   recipientId!: string;
   content!: string;

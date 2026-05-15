@@ -7,9 +7,12 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
+import { CurrentUser } from '@shared/infra/current-user.decorator';
+import { ConversationResponseDto } from '@chat/application/dto/conversation.dto';
 import { ProposalService } from '../../application/services/proposal.service';
 import { NegotiationService } from '../../application/services/negotiation.service';
 import {
+  ContestProposalDto,
   CreateProposalDto,
   RejectProposalDto,
   CreateNegotiationMessageDto,
@@ -20,23 +23,20 @@ import {
 
 @Controller('proposals')
 export class ProposalsController {
-  constructor(
-    private readonly proposalService: ProposalService,
-    private readonly negotiationService: NegotiationService
-  ) {}
+  constructor(private readonly proposalService: ProposalService) {}
 
   @Post()
   async create(
-    @Body() body: CreateProposalDto & { providerId?: string }
+    @CurrentUser() providerId: string,
+    @Body() body: CreateProposalDto,
   ): Promise<ProposalDto> {
-    const providerId = body.providerId || 'default-provider-id';
     return this.proposalService.createProposal(providerId, body);
   }
 
   @Get()
   async findAll(
     @Query('requestId') requestId?: string,
-    @Query('providerId') providerId?: string
+    @Query('providerId') providerId?: string,
   ): Promise<ProposalDto[]> {
     if (requestId) {
       return this.proposalService.getProposalsByRequest(requestId);
@@ -47,27 +47,57 @@ export class ProposalsController {
     return [];
   }
 
+  @Get('provider/created')
+  async findProviderCreated(
+    @CurrentUser() providerId: string,
+  ): Promise<ProposalDto[]> {
+    return this.proposalService.getProposalsByProvider(providerId);
+  }
+
+  @Get('client/requested')
+  async findClientRequested(
+    @CurrentUser() clientId: string,
+  ): Promise<ProposalDto[]> {
+    return this.proposalService.getProposalsByClient(clientId);
+  }
+
   @Get(':id')
   async findById(@Param('id') id: string): Promise<ProposalDto> {
     return this.proposalService.getProposal(id);
   }
 
+  @Post(':id/contest')
+  async contest(
+    @Param('id') proposalId: string,
+    @CurrentUser() clientId: string,
+    @Body() body: ContestProposalDto,
+  ): Promise<ProposalDto> {
+    return this.proposalService.contestProposal(proposalId, clientId, body);
+  }
+
   @Patch(':id/reject')
   async reject(
     @Param('id') proposalId: string,
-    @Body() body: RejectProposalDto & { clientId?: string }
+    @CurrentUser() clientId: string,
+    @Body() body: RejectProposalDto,
   ): Promise<ProposalDto> {
-    const clientId = body.clientId || 'default-client-id';
     return this.proposalService.rejectProposal(proposalId, clientId, body);
   }
 
   @Patch(':id/accept')
   async accept(
     @Param('id') proposalId: string,
-    @Body() body: { clientId?: string }
+    @CurrentUser() clientId: string,
   ): Promise<ProposalDto> {
-    const clientId = body.clientId || 'default-client-id';
     return this.proposalService.acceptProposal(proposalId, clientId);
+  }
+
+  @Get(':id/chat')
+  async getChat(
+    @Param('id') proposalId: string,
+    @CurrentUser() userId: string,
+  ): Promise<ConversationResponseDto> {
+    return this.proposalService.getProposalChat(proposalId, userId);
   }
 }
 
@@ -78,33 +108,48 @@ export class NegotiationsController {
   @Post(':proposalId/messages')
   async sendMessage(
     @Param('proposalId') proposalId: string,
-    @Body() body: CreateNegotiationMessageDto & { userId?: string; senderRole?: string }
+    @Body()
+    body: CreateNegotiationMessageDto & {
+      userId?: string;
+      senderRole?: string;
+    },
   ): Promise<NegotiationMessageDto> {
     const userId = body.userId || 'default-user-id';
     const senderRole = (body.senderRole as any) || 'CLIENT';
-    return this.negotiationService.sendMessage(proposalId, userId, senderRole, body);
+    return this.negotiationService.sendMessage(
+      proposalId,
+      userId,
+      senderRole,
+      body,
+    );
   }
 
   @Post(':proposalId/revised-proposal')
   async sendRevisedProposal(
     @Param('proposalId') proposalId: string,
-    @Body() body: SendRevisedProposalDto & { providerId?: string }
+    @Body() body: SendRevisedProposalDto & { providerId?: string },
   ): Promise<NegotiationMessageDto> {
     const providerId = body.providerId || 'default-provider-id';
-    return this.negotiationService.sendRevisedProposal(proposalId, providerId, body);
+    return this.negotiationService.sendRevisedProposal(
+      proposalId,
+      providerId,
+      body,
+    );
   }
 
   @Patch(':proposalId/close')
   async closeNegotiation(
     @Param('proposalId') proposalId: string,
-    @Body() body: { clientId?: string }
+    @Body() body: { clientId?: string },
   ): Promise<void> {
     const clientId = body.clientId || 'default-client-id';
     return this.negotiationService.closeNegotiation(proposalId, clientId);
   }
 
   @Get(':proposalId/messages')
-  async getMessages(@Param('proposalId') proposalId: string): Promise<NegotiationMessageDto[]> {
+  async getMessages(
+    @Param('proposalId') proposalId: string,
+  ): Promise<NegotiationMessageDto[]> {
     return this.negotiationService.getMessages(proposalId);
   }
 }

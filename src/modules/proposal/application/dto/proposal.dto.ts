@@ -1,5 +1,18 @@
-import { IsString, IsNumber, IsEnum, IsOptional, Min, Max, IsUUID } from 'class-validator';
-import { Proposal, ProposalStatus, NegotiationMessage, SenderRole } from '../../domain/models/proposal.entity';
+import {
+  IsString,
+  IsNumber,
+  IsEnum,
+  IsOptional,
+  Min,
+  Max,
+  IsUUID,
+} from 'class-validator';
+import {
+  Proposal,
+  ProposalStatus,
+  NegotiationMessage,
+  SenderRole,
+} from '../../domain/models/proposal.entity';
 
 export class CreateProposalDto {
   @IsUUID()
@@ -7,10 +20,16 @@ export class CreateProposalDto {
 
   @IsNumber()
   @Min(0.01)
-  amount: number;
+  estimatedHours: number;
 }
 
 export class RejectProposalDto {
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
+
+export class ContestProposalDto {
   @IsString()
   reason: string;
 }
@@ -28,7 +47,7 @@ export class CreateNegotiationMessageDto {
 export class SendRevisedProposalDto {
   @IsNumber()
   @Min(0.01)
-  amount: number;
+  estimatedHours: number;
 
   @IsString()
   message: string;
@@ -37,10 +56,14 @@ export class SendRevisedProposalDto {
 export class ProposalDto {
   id: string;
   requestId: string;
+  clientId: string;
   providerId: string;
+  estimatedHours: number;
+  hourlyRate: number;
   amount: number;
   status: ProposalStatus;
   rejectionReason?: string;
+  linkedChatId?: string;
   canResubmit: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -50,10 +73,14 @@ export class ProposalDto {
     const dto = new ProposalDto();
     dto.id = proposal.id!;
     dto.requestId = proposal.requestId;
+    dto.clientId = proposal.clientId;
     dto.providerId = proposal.providerId;
+    dto.estimatedHours = proposal.estimatedHours;
+    dto.hourlyRate = proposal.hourlyRate;
     dto.amount = proposal.amount;
     dto.status = proposal.status;
     dto.rejectionReason = proposal.rejectionReason;
+    dto.linkedChatId = proposal.linkedChatId;
     dto.canResubmit = proposal.canResubmit;
     dto.createdAt = proposal.createdAt!;
     dto.updatedAt = proposal.updatedAt!;

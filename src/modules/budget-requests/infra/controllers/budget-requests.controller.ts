@@ -1,5 +1,13 @@
-import { BadRequestException, Controller, Get, Post, Patch, Delete, Body, Param, Query } from '@nestjs/common';
-
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+} from '@nestjs/common';
+import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { BudgetRequestService } from '../../application/services/budget-request.service';
 import { CreateBudgetRequestDto } from '../../application/dto/create-budget-request.dto';
 import { CancelBudgetRequestDto } from '../../application/dto/cancel-budget-request.dto';
@@ -9,8 +17,8 @@ export class BudgetRequestsController {
   constructor(private readonly service: BudgetRequestService) {}
 
   @Post()
-  create(@Body() dto: CreateBudgetRequestDto) {
-    return this.service.create(dto);
+  create(@CurrentUser() userId: string, @Body() dto: CreateBudgetRequestDto) {
+    return this.service.create(userId, dto);
   }
 
   @Get()
@@ -27,16 +35,6 @@ export class BudgetRequestsController {
   findByUserId(@Param('userId') userId: string) {
     return this.service.findByUserId(userId);
   }
-
-  @Get('available')
-  findAvailableByServiceId(@Query('serviceId') serviceId?: string) {
-    if (!serviceId || serviceId.trim().length === 0) {
-      throw new BadRequestException('serviceId is required');
-    }
-
-    return this.service.findAvailableByServiceId(serviceId);
-  }
-
 
   @Patch(':id/cancel')
   cancel(@Param('id') id: string, @Body() dto: CancelBudgetRequestDto) {

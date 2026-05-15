@@ -3,6 +3,7 @@ export type MessageStatus = 'sent' | 'delivered' | 'read';
 export class Message {
   public id?: string;
   public serviceId: string;
+  public conversationId?: string;
   public senderId: string;
   public recipientId: string;
   public content: string;
@@ -12,6 +13,7 @@ export class Message {
 
   constructor(data: {
     serviceId: string;
+    conversationId?: string;
     senderId: string;
     recipientId: string;
     content: string;
@@ -22,6 +24,7 @@ export class Message {
   }) {
     this.id = data.id;
     this.serviceId = data.serviceId;
+    this.conversationId = data.conversationId;
     this.senderId = data.senderId;
     this.recipientId = data.recipientId;
     this.content = data.content;
@@ -35,6 +38,7 @@ export class Message {
     return new Message({
       id: row.id,
       serviceId: row.serviceId ?? row.service_id,
+      conversationId: row.conversationId ?? row.conversation_id,
       senderId: row.senderId ?? row.sender_id,
       recipientId: row.recipientId ?? row.recipient_id,
       content: row.content,

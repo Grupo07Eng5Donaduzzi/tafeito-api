@@ -4,7 +4,10 @@ export class BudgetRequestDto {
   id!: string;
   userId!: string;
   serviceId!: string;
+  title!: string;
   description!: string;
+  category!: string;
+  location!: string;
   requestDate!: Date;
   status!: BudgetRequestStatus;
   photos?: string[];
@@ -12,4 +15,3 @@ export class BudgetRequestDto {
   createdAt!: Date;
   updatedAt!: Date;
 }
-

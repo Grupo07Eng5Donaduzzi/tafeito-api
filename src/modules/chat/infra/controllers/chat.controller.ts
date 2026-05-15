@@ -16,6 +16,7 @@ import { MessageService } from '../../application/services/message.service';
 import { ConversationService } from '../../application/services/conversation.service';
 import {
   SendMessageDto,
+  SendConversationMessageDto,
   MessageResponseDto,
   MessageListDto,
 } from '../../application/dto/message.dto';
@@ -50,6 +51,35 @@ export class ChatController {
     @CurrentUser() currentUserId: string,
   ): Promise<MessageResponseDto> {
     return this.messageService.getMessageByIdForUser(id, currentUserId);
+  }
+
+  @Post('conversations/:conversationId/messages')
+  async sendConversationMessage(
+    @Param('conversationId') conversationId: string,
+    @Body() dto: SendConversationMessageDto,
+    @CurrentUser() currentUserId: string,
+  ): Promise<MessageResponseDto> {
+    return this.messageService.sendConversationMessage(
+      conversationId,
+      currentUserId,
+      dto.recipientId,
+      dto.content,
+    );
+  }
+
+  @Get('conversations/:conversationId/messages')
+  async getConversationMessages(
+    @Param('conversationId') conversationId: string,
+    @CurrentUser() currentUserId: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(50), ParseIntPipe) pageSize: number,
+  ): Promise<MessageListDto> {
+    return this.messageService.getConversationMessagesForUser(
+      conversationId,
+      currentUserId,
+      page,
+      pageSize,
+    );
   }
 
   @Get('services/:serviceId/messages')
