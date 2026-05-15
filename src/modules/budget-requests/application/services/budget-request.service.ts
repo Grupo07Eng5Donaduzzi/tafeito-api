@@ -53,10 +53,13 @@ export class BudgetRequestService {
   }
 
   async findAvailableByServiceId(serviceId: string): Promise<BudgetRequestDto[]> {
+    if (!serviceId || serviceId.trim().length === 0) {
+      throw new BadRequestException('serviceId é obrigatório');
+    }
+
     const result = await this.repository.findAvailableByServiceId(serviceId);
     return result.map((s) => this.toDto(s));
   }
-
 
   async cancel(id: string, dto: CancelBudgetRequestDto): Promise<void> {
     const budgetRequest = await this.repository.findById(id);
@@ -71,6 +74,7 @@ export class BudgetRequestService {
     budgetRequest.updatedAt = new Date();
     await this.repository.update(budgetRequest);
   }
+
 
   async delete(id: string): Promise<void> {
     await this.repository.delete(id);
