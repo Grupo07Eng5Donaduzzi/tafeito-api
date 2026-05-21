@@ -102,4 +102,50 @@ describe('ReviewService', () => {
       await expect(service.updateReview('rev-1', 'other-user', { rating: 4 })).rejects.toThrow(ForbiddenException);
     });
   });
+
+  describe('getReviewByProposal', () => {
+    it('returns review when userId is the client', async () => {
+      proposalService.getProposal.mockResolvedValue(makeProposal());
+      reviewRepo.findByProposalId.mockResolvedValue(makeReview(4));
+
+      const result = await service.getReviewByProposal('prop-1', 'client-1');
+      expect(result.proposalId).toBe('prop-1');
+      expect(result.rating).toBe(4);
+    });
+
+    it('returns review when userId is the provider', async () => {
+      proposalService.getProposal.mockResolvedValue(makeProposal());
+      reviewRepo.findByProposalId.mockResolvedValue(makeReview(4));
+
+      const result = await service.getReviewByProposal('prop-1', 'provider-1');
+      expect(result.proposalId).toBe('prop-1');
+    });
+
+    it('throws 403 when userId is neither client nor provider', async () => {
+      proposalService.getProposal.mockResolvedValue(makeProposal());
+      await expect(service.getReviewByProposal('prop-1', 'stranger')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws 404 when review does not exist', async () => {
+      proposalService.getProposal.mockResolvedValue(makeProposal());
+      reviewRepo.findByProposalId.mockResolvedValue(null);
+      await expect(service.getReviewByProposal('prop-1', 'client-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getReviewsByProvider', () => {
+    it('returns empty array when provider has no reviews', async () => {
+      reviewRepo.findByReviewedId.mockResolvedValue([]);
+      const result = await service.getReviewsByProvider('provider-1');
+      expect(result).toEqual([]);
+    });
+
+    it('returns mapped ReviewDto array', async () => {
+      reviewRepo.findByReviewedId.mockResolvedValue([makeReview(5), makeReview(3)]);
+      const result = await service.getReviewsByProvider('provider-1');
+      expect(result).toHaveLength(2);
+      expect(result[0].rating).toBe(5);
+      expect(result[1].rating).toBe(3);
+    });
+  });
 });
