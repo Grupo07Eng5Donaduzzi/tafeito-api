@@ -19,6 +19,7 @@ import {
   ProposalDto,
   RejectProposalDto,
 } from '../dto/proposal.dto';
+import { AuditService } from '../../audit/application/services/audit.service';
 
 @Injectable()
 export class ProposalService {
@@ -28,6 +29,7 @@ export class ProposalService {
     private readonly budgetRequestService: BudgetRequestService,
     private readonly conversationService: ConversationService,
     private readonly userService: UserService,
+    private readonly auditService: AuditService,
     // private readonly amqpConnection: AmqpConnection
   ) {}
 
@@ -127,6 +129,13 @@ export class ProposalService {
     proposal.linkChat(conversation.id!);
     await this.proposalRepository.update(proposal);
 
+    await this.auditService.log(
+      'PROPOSAL_CONTESTED',
+      proposalId,
+      clientId,
+      { reason: dto.reason }
+    );
+
     // await this.amqpConnection.publish(
     //   'tafeito.events',
     //   'proposal.rejected',
@@ -214,6 +223,13 @@ export class ProposalService {
     }
     proposal.providerConfirm();
     await this.proposalRepository.update(proposal);
+
+    await this.auditService.log(
+      'PROPOSAL_PROVIDER_CONFIRMED',
+      proposalId,
+      providerId,
+    );
+
     const updated = await this.proposalRepository.findById(proposalId);
     return ProposalDto.from(updated)!;
   }
@@ -229,6 +245,13 @@ export class ProposalService {
     this.ensureClient(proposal, clientId);
     proposal.clientConfirm();
     await this.proposalRepository.update(proposal);
+
+    await this.auditService.log(
+      'PROPOSAL_COMPLETED',
+      proposalId,
+      clientId,
+    );
+
     const updated = await this.proposalRepository.findById(proposalId);
     return ProposalDto.from(updated)!;
   }

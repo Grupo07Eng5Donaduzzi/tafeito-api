@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { CreatePixPaymentDto } from '../dto/create-pix-payment.dto';
 import { PixPaymentDto } from '../dto/pix-payment.dto';
 import { PaymentStatusDto } from '../dto/payment-status.dto';
+import { AuditService } from '../../audit/application/services/audit.service';
 
 interface MercadoPagoPaymentResponse {
     id: number;
@@ -25,7 +26,9 @@ interface MercadoPagoPaymentResponse {
 export class PaymentsService {
     private readonly baseUrl = 'https://api.mercadopago.com';
 
-    async createPix(dto: CreatePixPaymentDto): Promise<PixPaymentDto> {
+    constructor(private readonly auditService: AuditService) {}
+
+    async createPix(userId: string, dto: CreatePixPaymentDto): Promise<PixPaymentDto> {
         const amount = this.parsePositiveNumber(dto.amount, 'amount');
         const payerEmail = this.validateEmail(dto.payerEmail, 'payerEmail');
         const payerFirstName = dto.payerFirstName
@@ -67,6 +70,13 @@ export class PaymentsService {
             throw new BadRequestException('Falha ao gerar QR Code PIX');
         }
 
+        await this.auditService.log(
+            'PAYMENT_INITIATED',
+            response.id.toString(),
+            userId,
+            { amount: response.transaction_amount, payerEmail: response.payer?.email ?? payerEmail }
+        );
+
         return {
             id: response.id,
             status: response.status,
@@ -78,12 +88,24 @@ export class PaymentsService {
         };
     }
 
-    async getStatus(paymentId: string): Promise<PaymentStatusDto> {
+    async getStatus(userId: string, paymentId: string): Promise<PaymentStatusDto> {
         const id = this.parsePaymentId(paymentId);
         const response = await this.callMercadoPago<MercadoPagoPaymentResponse>(
             'GET',
             `/v1/payments/${id}`,
         );
+
+        if (response.status === 'approved') {
+            const alreadyLogged = await this.auditService.hasAlreadyLogged('PAYMENT_APPROVED', response.id.toString());
+            if (!alreadyLogged) {
+                await this.auditService.log(
+                    'PAYMENT_APPROVED',
+                    response.id.toString(),
+                    userId,
+                    { amount: response.transaction_amount }
+                );
+            }
+        }
 
         return {
             id: response.id,

@@ -7,6 +7,7 @@ import { BudgetRequestsModule } from './modules/budget-requests/budget-requests.
 import { ChatModule } from './modules/chat/chat.module';
 import { ContestacaoModule } from './modules/proposal/contestacao.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { AuditModule } from './modules/audit/audit.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
     ChatModule,
     ContestacaoModule,
     PaymentsModule,
+    AuditModule,
   ],
 })
 export class AppModule {}

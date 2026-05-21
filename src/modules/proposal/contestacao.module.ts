@@ -4,6 +4,7 @@ import { SharedModule } from '../../shared/shared.module';
 import { BudgetRequestsModule } from '../budget-requests/budget-requests.module';
 import { ChatModule } from '../chat/chat.module';
 import { UsersModule } from '../users/users.module';
+import { AuditModule } from '../audit/audit.module';
 import { ProposalService } from './application/services/proposal.service';
 import { NegotiationService } from './application/services/negotiation.service';
 import {
@@ -25,6 +26,7 @@ import {
     BudgetRequestsModule,
     ChatModule,
     UsersModule,
+    AuditModule,
     // RabbitMQModule.forRoot({
     //   exchanges: [
     //     {
