@@ -58,6 +58,12 @@ describe('Review', () => {
       review.updateRating(5);
       expect(review.comment).toBe('Great service');
     });
+
+    it('clears existing comment when null is passed', () => {
+      const review = Review.create(baseProps); // has comment 'Great service'
+      review.updateRating(4, null);
+      expect(review.comment).toBeUndefined();
+    });
   });
 
   describe('restore', () => {
@@ -76,6 +82,20 @@ describe('Review', () => {
       expect(review.id).toBe('rev-1');
       expect(review.rating).toBe(3);
       expect(review.createdAt).toBe(now);
+    });
+
+    it('restores review without comment', () => {
+      const now = new Date();
+      const review = Review.restore({
+        id: 'rev-2',
+        proposalId: 'prop-1',
+        reviewerId: 'client-1',
+        reviewedId: 'provider-1',
+        rating: 3,
+        createdAt: now,
+        updatedAt: now,
+      });
+      expect(review.comment).toBeUndefined();
     });
   });
 });
