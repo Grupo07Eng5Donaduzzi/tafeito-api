@@ -12,16 +12,7 @@ export class CreateReviewDto {
   comment?: string;
 }
 
-export class UpdateReviewDto {
-  @IsInt()
-  @Min(1)
-  @Max(5)
-  rating: number;
-
-  @IsOptional()
-  @IsString()
-  comment?: string;
-}
+export class UpdateReviewDto extends CreateReviewDto {}
 
 export class ReviewDto {
   id: string;
