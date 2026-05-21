@@ -1,5 +1,5 @@
 export class PaymentStatusDto {
-    id!: number;
+    id!: string;
     status!: string;
     statusDetail?: string;
     paid!: boolean;

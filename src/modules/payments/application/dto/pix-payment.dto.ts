@@ -1,5 +1,5 @@
 export class PixPaymentDto {
-    id!: number;
+    id!: string;
     status!: string;
     amount!: number;
     payerEmail!: string;
