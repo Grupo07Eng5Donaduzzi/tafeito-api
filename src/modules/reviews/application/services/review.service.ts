@@ -11,8 +11,8 @@ import { ProposalStatus } from '../../../proposal/domain/models/proposal.entity'
 import { Review } from '../../domain/models/review.entity';
 import {
   REVIEW_REPOSITORY,
-  ReviewRepository,
 } from '../../domain/repositories/review-repository.interface';
+import type { ReviewRepository } from '../../domain/repositories/review-repository.interface';
 import { CreateReviewDto, ReviewDto, UpdateReviewDto } from '../dto/review.dto';
 
 @Injectable()
