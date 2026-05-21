@@ -1,4 +1,3 @@
-// src/modules/reviews/infra/repositories/drizzle-review.repository.ts
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DrizzleService } from '../../../../shared/infra/database/drizzle.service';

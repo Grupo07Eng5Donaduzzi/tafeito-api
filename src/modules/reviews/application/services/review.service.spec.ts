@@ -1,12 +1,13 @@
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { Review } from '../../domain/models/review.entity';
+import { ProposalStatus } from '../../../proposal/domain/models/proposal.entity';
 
 const makeProposal = (overrides = {}) => ({
   id: 'prop-1',
   clientId: 'client-1',
   providerId: 'provider-1',
-  status: 'COMPLETED',
+  status: ProposalStatus.COMPLETED,
   requestId: 'req-1',
   estimatedHours: 2,
   hourlyRate: 50,
@@ -66,7 +67,7 @@ describe('ReviewService', () => {
     });
 
     it('throws 400 when proposal not COMPLETED', async () => {
-      proposalService.getProposal.mockResolvedValue(makeProposal({ status: 'ACCEPTED' }));
+      proposalService.getProposal.mockResolvedValue(makeProposal({ status: ProposalStatus.ACCEPTED }));
       await expect(service.createReview('prop-1', 'client-1', { rating: 5 })).rejects.toThrow(BadRequestException);
     });
 

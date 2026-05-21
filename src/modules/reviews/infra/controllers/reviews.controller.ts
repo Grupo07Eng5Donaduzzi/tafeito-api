@@ -1,4 +1,3 @@
-// src/modules/reviews/infra/controllers/reviews.controller.ts
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { ReviewService } from '../../application/services/review.service';

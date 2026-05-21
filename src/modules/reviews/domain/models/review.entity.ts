@@ -56,6 +56,7 @@ export class Review {
     createdAt: Date;
     updatedAt: Date;
   }): Review {
+    Review.validateRating(props.rating);
     const review = new Review(props.id, props.createdAt, props.updatedAt);
     review._proposalId = props.proposalId;
     review._reviewerId = props.reviewerId;
@@ -65,11 +66,11 @@ export class Review {
     return review;
   }
 
-  updateRating(rating: number, comment?: string): void {
+  updateRating(rating: number, comment?: string | null): void {
     Review.validateRating(rating);
     this._rating = rating;
     if (comment !== undefined) {
-      this._comment = comment;
+      this._comment = comment ?? undefined;
     }
   }
 }
