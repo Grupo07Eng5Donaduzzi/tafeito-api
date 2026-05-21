@@ -52,6 +52,12 @@ describe('Review', () => {
         'Rating must be between 1 and 5',
       );
     });
+
+    it('preserves existing comment when comment argument is omitted', () => {
+      const review = Review.create(baseProps); // has comment 'Great service'
+      review.updateRating(5);
+      expect(review.comment).toBe('Great service');
+    });
   });
 
   describe('restore', () => {

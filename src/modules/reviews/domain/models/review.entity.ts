@@ -1,23 +1,27 @@
 export class Review {
-  private _id?: string;
+  private readonly _id?: string;
   private _proposalId: string;
   private _reviewerId: string;
   private _reviewedId: string;
   private _rating: number;
   private _comment?: string;
-  private _createdAt?: Date;
-  private _updatedAt?: Date;
+  private readonly _createdAt?: Date;
+  private readonly _updatedAt?: Date;
 
-  private constructor() {}
+  private constructor(id?: string, createdAt?: Date, updatedAt?: Date) {
+    this._id = id;
+    this._createdAt = createdAt;
+    this._updatedAt = updatedAt;
+  }
 
-  get id() { return this._id; }
-  get proposalId() { return this._proposalId; }
-  get reviewerId() { return this._reviewerId; }
-  get reviewedId() { return this._reviewedId; }
-  get rating() { return this._rating; }
-  get comment() { return this._comment; }
-  get createdAt() { return this._createdAt; }
-  get updatedAt() { return this._updatedAt; }
+  get id(): string | undefined { return this._id; }
+  get proposalId(): string { return this._proposalId; }
+  get reviewerId(): string { return this._reviewerId; }
+  get reviewedId(): string { return this._reviewedId; }
+  get rating(): number { return this._rating; }
+  get comment(): string | undefined { return this._comment; }
+  get createdAt(): Date | undefined { return this._createdAt; }
+  get updatedAt(): Date | undefined { return this._updatedAt; }
 
   private static validateRating(rating: number): void {
     if (rating < 1 || rating > 5) {
@@ -52,21 +56,20 @@ export class Review {
     createdAt: Date;
     updatedAt: Date;
   }): Review {
-    const review = new Review();
-    review._id = props.id;
+    const review = new Review(props.id, props.createdAt, props.updatedAt);
     review._proposalId = props.proposalId;
     review._reviewerId = props.reviewerId;
     review._reviewedId = props.reviewedId;
     review._rating = props.rating;
     review._comment = props.comment;
-    review._createdAt = props.createdAt;
-    review._updatedAt = props.updatedAt;
     return review;
   }
 
   updateRating(rating: number, comment?: string): void {
     Review.validateRating(rating);
     this._rating = rating;
-    this._comment = comment;
+    if (comment !== undefined) {
+      this._comment = comment;
+    }
   }
 }
