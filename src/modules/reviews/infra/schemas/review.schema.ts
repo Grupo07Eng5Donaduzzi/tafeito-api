@@ -1,5 +1,5 @@
 import { pgTable, uuid, integer, text, timestamp } from 'drizzle-orm/pg-core';
-import { usersSchema } from '../../../users/infra/schemas/user.schema';
+import { usersSchema } from '@users/infra/schemas/user.schema';
 import { proposalsSchema } from '../../../proposal/infra/schemas/proposal.schema';
 
 export const reviewsSchema = pgTable('reviews', {
