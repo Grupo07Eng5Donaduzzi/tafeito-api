@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ProposalService } from '../../../proposal/application/services/proposal.service';
+import { ProposalStatus } from '../../../proposal/domain/models/proposal.entity';
 import { Review } from '../../domain/models/review.entity';
 import {
   REVIEW_REPOSITORY,
@@ -29,7 +30,7 @@ export class ReviewService {
   ): Promise<ReviewDto> {
     const proposal = await this.proposalService.getProposal(proposalId);
 
-    if (proposal.status !== 'COMPLETED') {
+    if (proposal.status !== ProposalStatus.COMPLETED) {
       throw new BadRequestException(
         'Review can only be created after service is completed',
       );
