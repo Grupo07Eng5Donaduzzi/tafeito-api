@@ -86,7 +86,8 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^@users/(.*)$": "<rootDir>/../src/modules/users/$1",
-      "^@shared/(.*)$": "<rootDir>/../src/shared/$1"
+      "^@shared/(.*)$": "<rootDir>/../src/shared/$1",
+      "^@chat/(.*)$": "<rootDir>/../src/modules/chat/$1"
     }
   }
 }
