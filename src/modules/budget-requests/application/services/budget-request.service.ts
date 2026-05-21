@@ -20,7 +20,7 @@ export class BudgetRequestService {
       userId: dto.userId,
       serviceId: dto.serviceId,
       description: dto.description,
-      requestDate: dto.requestDate,
+      requestDate: new Date(dto.requestDate),
       status: 'pending',
       photos: dto.photos,
     });
