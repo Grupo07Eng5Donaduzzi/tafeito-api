@@ -201,6 +201,38 @@ export class ProposalService {
     return ProposalDto.from(updated)!;
   }
 
+  async providerConfirmCompletion(
+    proposalId: string,
+    providerId: string,
+  ): Promise<ProposalDto> {
+    const proposal = await this.proposalRepository.findById(proposalId);
+    if (!proposal) {
+      throw new NotFoundException('Proposal not found');
+    }
+    if (proposal.providerId !== providerId) {
+      throw new ForbiddenException('Only the provider can confirm completion');
+    }
+    proposal.providerConfirm();
+    await this.proposalRepository.update(proposal);
+    const updated = await this.proposalRepository.findById(proposalId);
+    return ProposalDto.from(updated)!;
+  }
+
+  async clientConfirmCompletion(
+    proposalId: string,
+    clientId: string,
+  ): Promise<ProposalDto> {
+    const proposal = await this.proposalRepository.findById(proposalId);
+    if (!proposal) {
+      throw new NotFoundException('Proposal not found');
+    }
+    this.ensureClient(proposal, clientId);
+    proposal.clientConfirm();
+    await this.proposalRepository.update(proposal);
+    const updated = await this.proposalRepository.findById(proposalId);
+    return ProposalDto.from(updated)!;
+  }
+
   async getProposalsByRequest(requestId: string): Promise<ProposalDto[]> {
     const proposals = await this.proposalRepository.findByRequestId(requestId);
     return proposals.map((p) => ProposalDto.from(p)!);
