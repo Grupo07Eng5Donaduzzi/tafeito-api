@@ -5,15 +5,24 @@ import {
   Delete,
   Param,
   ParseUUIDPipe,
+  Post,
   Put,
   Body,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ServiceService } from '../../application/services/service.service';
-import { UpdateServiceDto } from '../../application/dto/update-service.dto';
+import { CreateServiceDto, UpdateServiceDto } from '../../application/dto/update-service.dto';
 
 @Controller('services')
 export class ServicesController {
   constructor(private readonly serviceService: ServiceService) {}
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() body: CreateServiceDto): Promise<any> {
+    return this.serviceService.create(body);
+  }
 
   @Get()
   async findAll(@Query('category') category?: string): Promise<any[]> {

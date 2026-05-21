@@ -29,7 +29,7 @@ export class BudgetRequestService {
       description: dto.description,
       category: dto.category,
       location: dto.location,
-      requestDate: dto.requestDate,
+      requestDate: new Date(dto.requestDate),
       status: 'pending',
       photos: dto.photos,
     });

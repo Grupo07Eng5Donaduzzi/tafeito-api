@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
 import { servicesSchema } from '../schemas/service.schema';
-import { eq } from 'drizzle-orm';
-import { UpdateServiceDto } from '../../application/dto/update-service.dto';
+import { eq, sql } from 'drizzle-orm';
+import { CreateServiceDto, UpdateServiceDto } from '../../application/dto/update-service.dto';
 
 @Injectable()
 export class DrizzleServiceRepository {
@@ -34,6 +35,15 @@ export class DrizzleServiceRepository {
     await this.drizzleService.db
       .delete(servicesSchema)
       .where(eq(servicesSchema.id, id));
+  }
+
+  async create(dto: CreateServiceDto): Promise<any> {
+    const id = randomUUID();
+    await this.drizzleService.db.execute(
+      sql`INSERT INTO services (id, user_id, name, description, category, price, duration, created_at, updated_at)
+          VALUES (${id}::uuid, ${dto.userId}::uuid, ${dto.name}, ${dto.description}, ${dto.category}, ${dto.price}::numeric, ${dto.duration}::numeric, NOW(), NOW())`,
+    );
+    return this.findById(id);
   }
 
   async updateById(id: string, dto: UpdateServiceDto): Promise<void> {
