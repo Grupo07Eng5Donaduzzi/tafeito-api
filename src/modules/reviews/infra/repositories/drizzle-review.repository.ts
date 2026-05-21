@@ -23,6 +23,7 @@ export class DrizzleReviewRepository implements ReviewRepository {
   }
 
   async update(review: Review): Promise<void> {
+    if (!review.id) throw new Error('Cannot update a Review without an id');
     await this.drizzleService.db
       .update(reviewsSchema)
       .set({
@@ -30,7 +31,7 @@ export class DrizzleReviewRepository implements ReviewRepository {
         comment: review.comment ?? null,
         updatedAt: new Date(),
       })
-      .where(eq(reviewsSchema.id, review.id!));
+      .where(eq(reviewsSchema.id, review.id));
   }
 
   async findById(id: string): Promise<Review | null> {
@@ -63,7 +64,7 @@ export class DrizzleReviewRepository implements ReviewRepository {
     return result.map((row) => this.mapToEntity(row));
   }
 
-  private mapToEntity(row: any): Review {
+  private mapToEntity(row: typeof reviewsSchema.$inferSelect): Review {
     return Review.restore({
       id: row.id,
       proposalId: row.proposalId,
