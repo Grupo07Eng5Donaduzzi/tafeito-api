@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, Min, ValidateIf } from 'class-validator';
 import type { Review } from '../../domain/models/review.entity';
 
 export class CreateReviewDto {
@@ -19,6 +19,7 @@ export class UpdateReviewDto {
   rating: number;
 
   @IsOptional()
+  @ValidateIf((o) => o.comment !== null)
   @IsString()
   comment?: string | null;
 }
