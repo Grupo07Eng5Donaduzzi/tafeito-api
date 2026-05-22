@@ -1,3 +1,5 @@
+import { BadRequestException } from '@nestjs/common';
+
 export class Review {
   private readonly _id?: string;
   private _proposalId: string;
@@ -24,8 +26,8 @@ export class Review {
   get updatedAt(): Date | undefined { return this._updatedAt; }
 
   private static validateRating(rating: number): void {
-    if (rating < 1 || rating > 5) {
-      throw new Error('Rating must be between 1 and 5');
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      throw new BadRequestException('Rating must be an integer between 1 and 5');
     }
   }
 
