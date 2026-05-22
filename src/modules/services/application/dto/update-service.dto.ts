@@ -1,4 +1,9 @@
-import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsNumberString,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class UpdateServiceDto {
   @IsOptional()
@@ -17,16 +22,12 @@ export class UpdateServiceDto {
   category?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
+  @IsNumberString({ no_symbols: false })
+  @MaxLength(20)
   price?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
+  @IsNumberString()
+  @MaxLength(20)
   duration?: string;
-
-  @IsOptional()
-  @IsUUID()
-  userId?: string;
 }

@@ -6,12 +6,6 @@ import { UpdateServiceDto } from '../dto/update-service.dto';
 export class ServiceService {
   constructor(private readonly repository: DrizzleServiceRepository) {}
 
-  private isValidUuid(value: string): boolean {
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(value);
-  }
-
   private validateNonEmptyString(value: string, fieldName: string): string {
     const trimmed = value.trim();
     if (!trimmed) {
@@ -73,14 +67,6 @@ export class ServiceService {
 
     if (dto.duration !== undefined) {
       payload.duration = this.validatePositiveNumberString(dto.duration, 'duration');
-    }
-
-    if (dto.userId !== undefined) {
-      const userId = this.validateNonEmptyString(dto.userId, 'userId');
-      if (!this.isValidUuid(userId)) {
-        throw new BadRequestException('userId deve ser um UUID válido');
-      }
-      payload.userId = userId;
     }
 
     if (Object.keys(payload).length === 0) {
