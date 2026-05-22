@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { Review } from './review.entity';
 
 describe('Review', () => {
@@ -27,13 +28,13 @@ describe('Review', () => {
 
     it('throws when rating below 1', () => {
       expect(() => Review.create({ ...baseProps, rating: 0 })).toThrow(
-        'Rating must be between 1 and 5',
+        'Rating must be an integer between 1 and 5',
       );
     });
 
     it('throws when rating above 5', () => {
       expect(() => Review.create({ ...baseProps, rating: 6 })).toThrow(
-        'Rating must be between 1 and 5',
+        'Rating must be an integer between 1 and 5',
       );
     });
   });
@@ -49,7 +50,7 @@ describe('Review', () => {
     it('throws when new rating is invalid', () => {
       const review = Review.create(baseProps);
       expect(() => review.updateRating(0)).toThrow(
-        'Rating must be between 1 and 5',
+        'Rating must be an integer between 1 and 5',
       );
     });
 
@@ -63,6 +64,11 @@ describe('Review', () => {
       const review = Review.create(baseProps); // has comment 'Great service'
       review.updateRating(4, null);
       expect(review.comment).toBeUndefined();
+    });
+
+    it('throws BadRequestException for non-integer ratings', () => {
+      const review = Review.create(baseProps);
+      expect(() => review.updateRating(3.5)).toThrow(BadRequestException);
     });
   });
 
