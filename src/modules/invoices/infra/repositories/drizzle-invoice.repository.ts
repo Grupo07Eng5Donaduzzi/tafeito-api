@@ -9,17 +9,21 @@ import { invoicesSchema } from '../schemas/invoice.schema';
 export class DrizzleInvoiceRepository implements InvoiceRepository {
   constructor(private readonly drizzleService: DrizzleService) {}
 
-  async create(invoice: Invoice): Promise<void> {
-    await this.drizzleService.db.insert(invoicesSchema).values({
-      id: invoice.id,
-      paymentId: invoice.paymentId,
-      filePath: invoice.filePath,
-      fileName: invoice.fileName,
-      fileType: invoice.fileType,
-      fileSize: invoice.fileSize,
-      uploadedBy: invoice.uploadedBy,
-      createdAt: new Date(),
-    });
+  async create(invoice: Invoice): Promise<Date> {
+    const [row] = await this.drizzleService.db
+      .insert(invoicesSchema)
+      .values({
+        id: invoice.id,
+        paymentId: invoice.paymentId,
+        filePath: invoice.filePath,
+        fileName: invoice.fileName,
+        fileType: invoice.fileType,
+        fileSize: invoice.fileSize,
+        uploadedBy: invoice.uploadedBy,
+        createdAt: new Date(),
+      })
+      .returning({ createdAt: invoicesSchema.createdAt });
+    return row.createdAt;
   }
 
   async findById(id: string): Promise<Invoice | null> {
@@ -39,7 +43,7 @@ export class DrizzleInvoiceRepository implements InvoiceRepository {
       .where(eq(invoicesSchema.paymentId, paymentId))
       .orderBy(invoicesSchema.createdAt);
 
-    return result.map(this.mapToEntity);
+    return result.map((row) => this.mapToEntity(row));
   }
 
   async delete(id: string): Promise<void> {
