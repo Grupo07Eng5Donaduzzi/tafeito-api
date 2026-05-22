@@ -12,6 +12,7 @@ export class DrizzleMessageRepository implements MessageRepository {
 
   async create(message: Message): Promise<void> {
     await this.drizzleService.db.insert(messageSchema).values({
+      ...(message.id ? { id: message.id } : {}),
       serviceId: message.serviceId,
       conversationId: message.conversationId,
       senderId: message.senderId,

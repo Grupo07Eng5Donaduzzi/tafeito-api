@@ -5,6 +5,7 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { Message } from '../../domain/models/message.entity';
 import { MESSAGE_REPOSITORY } from '../../domain/repositories/message-repository.interface';
 import type { MessageRepository } from '../../domain/repositories/message-repository.interface';
@@ -29,6 +30,7 @@ export class MessageService {
     }
 
     const message = new Message({
+      id: randomUUID(),
       serviceId: dto.serviceId,
       conversationId: dto.conversationId,
       senderId: dto.senderId,
