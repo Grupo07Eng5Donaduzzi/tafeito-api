@@ -15,6 +15,7 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('users')
 export class UsersController {
@@ -37,6 +38,7 @@ export class UsersController {
     return this.userService.findById(id);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('/add')
   async create(@Body() body: CreateUserDto) {
     return this.userService.create(body);

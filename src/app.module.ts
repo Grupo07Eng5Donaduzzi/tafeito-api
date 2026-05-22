@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { SharedModule } from '@shared/shared.module';
 import { UsersModule } from '@users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -10,6 +12,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     SharedModule,
     UsersModule,
     AuthModule,
@@ -18,6 +21,12 @@ import { PaymentsModule } from './modules/payments/payments.module';
     ChatModule,
     ContestacaoModule,
     PaymentsModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}
