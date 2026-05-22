@@ -15,6 +15,20 @@ import { SendMessageDto } from '../../application/dto/message.dto';
 interface AuthenticatedSocket extends Socket {
   userId?: string;
   serviceId?: string;
+  rateBucket?: { count: number; resetAt: number };
+}
+
+const WS_RATE_LIMIT = 30;
+const WS_RATE_WINDOW_MS = 10_000;
+
+function withinRate(socket: AuthenticatedSocket): boolean {
+  const now = Date.now();
+  if (!socket.rateBucket || socket.rateBucket.resetAt < now) {
+    socket.rateBucket = { count: 1, resetAt: now + WS_RATE_WINDOW_MS };
+    return true;
+  }
+  socket.rateBucket.count += 1;
+  return socket.rateBucket.count <= WS_RATE_LIMIT;
 }
 
 @WebSocketGateway({
@@ -96,6 +110,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     payload: SendMessageDto,
   ): Promise<void> {
     if (!socket.userId) {
+      return;
+    }
+
+    if (!withinRate(socket)) {
+      socket.emit('error', { message: 'Rate limit exceeded' });
+      return;
+    }
+
+    if (
+      typeof payload?.content !== 'string' ||
+      payload.content.length === 0 ||
+      payload.content.length > 2000
+    ) {
+      socket.emit('error', { message: 'Invalid message content' });
       return;
     }
 
