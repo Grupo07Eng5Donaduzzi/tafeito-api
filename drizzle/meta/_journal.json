@@ -78,6 +78,13 @@
       "when": 1779332654232,
       "tag": "0010_create_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1779400000000,
+      "tag": "0009_review_rating_check_and_indexes",
+      "breakpoints": true
     }
   ]
 }
