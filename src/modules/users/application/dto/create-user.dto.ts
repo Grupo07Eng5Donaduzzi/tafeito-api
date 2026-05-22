@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   MaxLength,
   Min,
   MinLength,
@@ -33,6 +34,7 @@ export class CreateUserDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(99999999.99)
   hourlyRate?: number;
 }
 
@@ -61,5 +63,6 @@ export class UpdateUserDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(99999999.99)
   hourlyRate?: number;
 }
