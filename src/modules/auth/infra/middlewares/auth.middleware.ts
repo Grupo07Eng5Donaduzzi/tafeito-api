@@ -1,5 +1,6 @@
 import {
   Injectable,
+  InternalServerErrorException,
   NestMiddleware,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -21,22 +22,33 @@ export class AuthMiddleware implements NestMiddleware {
 
     const token = authHeader.substring(7);
 
-    try {
-      const payload = jwt.verify(
-        token,
-        process.env.JWT_SECRET ?? '',
-      ) as AuthJwtPayload;
-
-      const user = await this.userService.findById(payload.sub);
-
-      if (!user) {
-        throw new UnauthorizedException('Usuário não encontrado');
-      }
-
-      (req as any).user = user;
-      next();
-    } catch {
-      throw new UnauthorizedException('Token inválido');
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new InternalServerErrorException('JWT_SECRET não configurado');
     }
+
+    let payload: AuthJwtPayload;
+    try {
+      payload = jwt.verify(token, secret, {
+        issuer: process.env.JWT_ISSUER,
+        audience: process.env.JWT_AUDIENCE,
+      }) as AuthJwtPayload;
+    } catch (err) {
+      if (err instanceof jwt.TokenExpiredError) {
+        throw new UnauthorizedException('Token expirado');
+      }
+      if (err instanceof jwt.JsonWebTokenError) {
+        throw new UnauthorizedException('Token inválido');
+      }
+      throw err;
+    }
+
+    const user = await this.userService.findById(payload.sub);
+    if (!user) {
+      throw new UnauthorizedException('Usuário não encontrado');
+    }
+
+    req.user = user;
+    next();
   }
 }

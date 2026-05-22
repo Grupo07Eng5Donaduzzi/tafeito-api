@@ -16,23 +16,36 @@ interface JwtModule {
 
 const jwtModule: JwtModule = jwt;
 
+const EXPIRES_IN_RE = /^\d+(ms|s|m|h|d|w|y)?$/i;
+
 @Injectable()
 export class AuthService {
   private readonly jwtSecret: string;
   private readonly jwtExpiresIn: StringValue | number;
+  private readonly jwtIssuer?: string;
+  private readonly jwtAudience?: string;
 
   constructor(
     private readonly firebaseAuthService: FirebaseAuthService,
     private readonly userService: UserService,
   ) {
     this.jwtSecret = process.env.JWT_SECRET ?? '';
-    this.jwtExpiresIn = (process.env.JWT_EXPIRES_IN as StringValue) ?? '1h';
+    const rawExpiresIn = process.env.JWT_EXPIRES_IN ?? '1h';
+    this.jwtIssuer = process.env.JWT_ISSUER;
+    this.jwtAudience = process.env.JWT_AUDIENCE;
 
     if (!this.jwtSecret) {
       throw new InternalServerErrorException(
         'JWT secret não está configurado. Defina a variável de ambiente JWT_SECRET.',
       );
     }
+
+    if (!EXPIRES_IN_RE.test(rawExpiresIn)) {
+      throw new InternalServerErrorException(
+        `JWT_EXPIRES_IN inválido: "${rawExpiresIn}". Use formato "1h", "30m", "7d" etc.`,
+      );
+    }
+    this.jwtExpiresIn = rawExpiresIn as StringValue;
   }
 
   async login(
@@ -58,9 +71,11 @@ export class AuthService {
       email: user.email,
     };
 
-    const signOptions = {
+    const signOptions: any = {
       expiresIn: this.jwtExpiresIn,
     };
+    if (this.jwtIssuer) signOptions.issuer = this.jwtIssuer;
+    if (this.jwtAudience) signOptions.audience = this.jwtAudience;
 
     const accessToken = jwtModule.sign(payload, this.jwtSecret, signOptions);
 
