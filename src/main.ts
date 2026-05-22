@@ -8,19 +8,31 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const isProduction = process.env.NODE_ENV === 'production';
 
-  const httpsOptions = isProduction
-    ? {
-        key: fs.readFileSync(process.env.TLS_KEY_PATH!),
-        cert: fs.readFileSync(process.env.TLS_CERT_PATH!),
-      }
-    : undefined;
+  let httpsOptions: { key: Buffer; cert: Buffer } | undefined;
+  if (isProduction) {
+    const keyPath = process.env.TLS_KEY_PATH;
+    const certPath = process.env.TLS_CERT_PATH;
+    if (!keyPath || !certPath) {
+      throw new Error(
+        'TLS_KEY_PATH and TLS_CERT_PATH must be set when NODE_ENV=production',
+      );
+    }
+    httpsOptions = {
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath),
+    };
+  }
 
   const app = await NestFactory.create(AppModule, { httpsOptions });
 
   app.use(helmet());
 
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (!frontendUrl) {
+    throw new Error('FRONTEND_URL must be set');
+  }
   app.enableCors({
-    origin: process.env.FRONTEND_URL,
+    origin: frontendUrl,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   });
