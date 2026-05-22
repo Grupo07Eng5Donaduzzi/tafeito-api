@@ -3,6 +3,8 @@ import {
   IsNumber,
   IsEnum,
   IsOptional,
+  IsNotEmpty,
+  MaxLength,
   Min,
   Max,
   IsUUID,
@@ -20,36 +22,46 @@ export class CreateProposalDto {
 
   @IsNumber()
   @Min(0.01)
+  @Max(10000)
   estimatedHours: number;
 }
 
 export class RejectProposalDto {
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   reason?: string;
 }
 
 export class ContestProposalDto {
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(1000)
   reason: string;
 }
 
 export class CreateNegotiationMessageDto {
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(2000)
   message: string;
 
   @IsOptional()
   @IsNumber()
   @Min(0.01)
+  @Max(9999999.99)
   revisedAmount?: number;
 }
 
 export class SendRevisedProposalDto {
   @IsNumber()
   @Min(0.01)
+  @Max(10000)
   estimatedHours: number;
 
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(2000)
   message: string;
 }
 
