@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { Invoice } from './invoice.entity';
 
 describe('Invoice', () => {
@@ -22,7 +23,32 @@ describe('Invoice', () => {
       expect(invoice.createdAt).toBeUndefined();
     });
 
-    it('lança erro se fileType inválido', () => {
+    it('sanitizes path traversal attempts in fileName', () => {
+      const invoice = Invoice.create({
+        paymentId: '123',
+        filePath: 'invoices/123/abc.pdf',
+        fileName: '../../etc/passwd',
+        fileType: 'application/pdf',
+        fileSize: 100,
+        uploadedBy: 'u',
+      });
+      expect(invoice.fileName).not.toContain('/');
+      expect(invoice.fileName).not.toContain('..');
+    });
+
+    it('replaces unsafe characters in fileName', () => {
+      const invoice = Invoice.create({
+        paymentId: '123',
+        filePath: 'invoices/123/abc.pdf',
+        fileName: 'nota fiscal $$$.pdf',
+        fileType: 'application/pdf',
+        fileSize: 100,
+        uploadedBy: 'u',
+      });
+      expect(invoice.fileName).toBe('nota_fiscal____.pdf');
+    });
+
+    it('lança BadRequestException se fileType inválido', () => {
       expect(() =>
         Invoice.create({
           paymentId: '123456',
@@ -32,10 +58,10 @@ describe('Invoice', () => {
           fileSize: 1024,
           uploadedBy: 'user-uuid-1',
         }),
-      ).toThrow('Tipo de arquivo não permitido');
+      ).toThrow(BadRequestException);
     });
 
-    it('lança erro se fileSize > 10MB', () => {
+    it('lança BadRequestException se fileSize > 10MB', () => {
       expect(() =>
         Invoice.create({
           paymentId: '123456',
@@ -45,7 +71,33 @@ describe('Invoice', () => {
           fileSize: 11 * 1024 * 1024,
           uploadedBy: 'user-uuid-1',
         }),
-      ).toThrow('Arquivo excede o tamanho máximo de 10MB');
+      ).toThrow(BadRequestException);
+    });
+
+    it('lança BadRequestException se fileSize <= 0', () => {
+      expect(() =>
+        Invoice.create({
+          paymentId: '123456',
+          filePath: 'invoices/123456/empty.pdf',
+          fileName: 'empty.pdf',
+          fileType: 'application/pdf',
+          fileSize: 0,
+          uploadedBy: 'user-uuid-1',
+        }),
+      ).toThrow(BadRequestException);
+    });
+
+    it('lança BadRequestException se paymentId vazio', () => {
+      expect(() =>
+        Invoice.create({
+          paymentId: '   ',
+          filePath: 'invoices/x/a.pdf',
+          fileName: 'a.pdf',
+          fileType: 'application/pdf',
+          fileSize: 100,
+          uploadedBy: 'u',
+        }),
+      ).toThrow(BadRequestException);
     });
   });
 

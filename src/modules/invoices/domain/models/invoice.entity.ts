@@ -1,6 +1,8 @@
+import { BadRequestException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import path from 'path';
 
-const ALLOWED_MIME_TYPES = new Set([
+export const ALLOWED_MIME_TYPES = new Set([
   'application/pdf',
   'image/jpeg',
   'image/png',
@@ -8,7 +10,24 @@ const ALLOWED_MIME_TYPES = new Set([
   'text/xml',
 ]);
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+export const MIME_TO_EXT: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'application/xml': 'xml',
+  'text/xml': 'xml',
+};
+
+export const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+const SAFE_FILENAME_RE = /[^a-zA-Z0-9._-]/g;
+const MAX_FILENAME_LENGTH = 200;
+
+function sanitizeFileName(name: string): string {
+  const base = path.basename(name).replace(SAFE_FILENAME_RE, '_');
+  if (!base || base === '.' || base === '..') return 'arquivo';
+  return base.slice(0, MAX_FILENAME_LENGTH);
+}
 
 export class Invoice {
   private readonly _id: string;
@@ -43,16 +62,22 @@ export class Invoice {
     uploadedBy: string;
   }): Invoice {
     if (!ALLOWED_MIME_TYPES.has(props.fileType)) {
-      throw new Error('Tipo de arquivo não permitido');
+      throw new BadRequestException('Tipo de arquivo não permitido');
+    }
+    if (props.fileSize <= 0) {
+      throw new BadRequestException('Arquivo vazio');
     }
     if (props.fileSize > MAX_FILE_SIZE) {
-      throw new Error('Arquivo excede o tamanho máximo de 10MB');
+      throw new BadRequestException('Arquivo excede o tamanho máximo de 10MB');
+    }
+    if (!props.paymentId?.trim() || !props.uploadedBy?.trim()) {
+      throw new BadRequestException('paymentId e uploadedBy são obrigatórios');
     }
 
     const invoice = new Invoice(randomUUID());
-    invoice._paymentId = props.paymentId;
+    invoice._paymentId = props.paymentId.trim();
     invoice._filePath = props.filePath;
-    invoice._fileName = props.fileName;
+    invoice._fileName = sanitizeFileName(props.fileName);
     invoice._fileType = props.fileType;
     invoice._fileSize = props.fileSize;
     invoice._uploadedBy = props.uploadedBy;
