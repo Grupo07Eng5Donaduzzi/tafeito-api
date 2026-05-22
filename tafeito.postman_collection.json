@@ -1,0 +1,599 @@
+{
+  "info": {
+    "name": "Tafeito API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.accessToken) {",
+                  "  pm.collectionVariables.set('token', res.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"joao@email.com\",\n  \"password\": \"senha123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            }
+          }
+        },
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+            }
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Maria Oliveira\",\n  \"email\": \"maria@email.com\",\n  \"password\": \"senha456\",\n  \"identification\": \"987.654.321-00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "add"]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"João Silva Santos\",\n  \"email\": \"joao.santos@email.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/update/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "update", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/delete/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "delete", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Services",
+      "item": [
+        {
+          "name": "Create Service",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Instalação Elétrica\",\n  \"description\": \"Instalação e manutenção de circuitos elétricos residenciais\",\n  \"category\": \"eletrica\",\n  \"price\": \"150.00\",\n  \"duration\": \"120\",\n  \"userId\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/services",
+              "host": ["{{baseUrl}}"],
+              "path": ["services"]
+            }
+          }
+        },
+        {
+          "name": "List Services",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/services",
+              "host": ["{{baseUrl}}"],
+              "path": ["services"]
+            }
+          }
+        },
+        {
+          "name": "List Services by Category",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/services?category=eletrica",
+              "host": ["{{baseUrl}}"],
+              "path": ["services"],
+              "query": [
+                { "key": "category", "value": "eletrica" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Service",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Instalação Elétrica Residencial\",\n  \"price\": 180.00,\n  \"duration\": 150\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/services/update/c3d4e5f6-a7b8-9012-cdef-123456789012",
+              "host": ["{{baseUrl}}"],
+              "path": ["services", "update", "c3d4e5f6-a7b8-9012-cdef-123456789012"]
+            }
+          }
+        },
+        {
+          "name": "Delete Service",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/services/c3d4e5f6-a7b8-9012-cdef-123456789012",
+              "host": ["{{baseUrl}}"],
+              "path": ["services", "c3d4e5f6-a7b8-9012-cdef-123456789012"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Budget Requests",
+      "item": [
+        {
+          "name": "Create Budget Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"serviceId\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\n  \"description\": \"Preciso de instalação de tomadas na sala e quartos\",\n  \"requestDate\": \"2024-02-01T10:00:00.000Z\",\n  \"photos\": [\n    \"https://storage.example.com/photo1.jpg\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/budget-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["budget-requests"]
+            }
+          }
+        },
+        {
+          "name": "List Budget Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/budget-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["budget-requests"]
+            }
+          }
+        },
+        {
+          "name": "Get Budget Request by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/budget-requests/d4e5f6a7-b8c9-0123-def0-234567890123",
+              "host": ["{{baseUrl}}"],
+              "path": ["budget-requests", "d4e5f6a7-b8c9-0123-def0-234567890123"]
+            }
+          }
+        },
+        {
+          "name": "Get Budget Requests by User",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/budget-requests/user/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "host": ["{{baseUrl}}"],
+              "path": ["budget-requests", "user", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Budget Request",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/budget-requests/d4e5f6a7-b8c9-0123-def0-234567890123/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["budget-requests", "d4e5f6a7-b8c9-0123-def0-234567890123", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Delete Budget Request",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/budget-requests/d4e5f6a7-b8c9-0123-def0-234567890123",
+              "host": ["{{baseUrl}}"],
+              "path": ["budget-requests", "d4e5f6a7-b8c9-0123-def0-234567890123"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Messages",
+          "item": [
+            {
+              "name": "Send Message",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"serviceId\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\n  \"recipientId\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\",\n  \"content\": \"Olá, gostaria de saber mais sobre o serviço.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/chat/messages",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["chat", "messages"]
+                }
+              }
+            },
+            {
+              "name": "Get Message by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/chat/messages/e5f6a7b8-c9d0-1234-ef01-345678901234",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["chat", "messages", "e5f6a7b8-c9d0-1234-ef01-345678901234"]
+                }
+              }
+            },
+            {
+              "name": "Get Messages by Service",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/chat/services/c3d4e5f6-a7b8-9012-cdef-123456789012/messages?page=1&pageSize=50",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["chat", "services", "c3d4e5f6-a7b8-9012-cdef-123456789012", "messages"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "pageSize", "value": "50" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Messages by User",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/chat/users/a1b2c3d4-e5f6-7890-abcd-ef1234567890/messages?limit=50",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["chat", "users", "a1b2c3d4-e5f6-7890-abcd-ef1234567890", "messages"],
+                  "query": [
+                    { "key": "limit", "value": "50" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Mark Message as Read",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/chat/messages/e5f6a7b8-c9d0-1234-ef01-345678901234/read",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["chat", "messages", "e5f6a7b8-c9d0-1234-ef01-345678901234", "read"]
+                }
+              }
+            },
+            {
+              "name": "Mark Message as Delivered",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/chat/messages/e5f6a7b8-c9d0-1234-ef01-345678901234/delivered",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["chat", "messages", "e5f6a7b8-c9d0-1234-ef01-345678901234", "delivered"]
+                }
+              }
+            },
+            {
+              "name": "Delete Message",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/chat/messages/e5f6a7b8-c9d0-1234-ef01-345678901234",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["chat", "messages", "e5f6a7b8-c9d0-1234-ef01-345678901234"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Conversations",
+          "item": [
+            {
+              "name": "Get Conversations by Service",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/chat/services/c3d4e5f6-a7b8-9012-cdef-123456789012/conversations",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["chat", "services", "c3d4e5f6-a7b8-9012-cdef-123456789012", "conversations"]
+                }
+              }
+            },
+            {
+              "name": "Get Conversation by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/chat/conversations/f6a7b8c9-d0e1-2345-f012-456789012345",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["chat", "conversations", "f6a7b8c9-d0e1-2345-f012-456789012345"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+    ,{
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Create Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Ótimo serviço, muito pontual!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reviews/proposals/d4e5f6a7-b8c9-0123-def0-234567890123",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "proposals", "d4e5f6a7-b8c9-0123-def0-234567890123"]
+            }
+          }
+        },
+        {
+          "name": "Update Review",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Bom serviço, mas atrasou um pouco.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reviews/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+            }
+          }
+        },
+        {
+          "name": "Update Review - Clear Comment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 3,\n  \"comment\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reviews/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+            }
+          }
+        },
+        {
+          "name": "Get Review by Proposal",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/proposals/d4e5f6a7-b8c9-0123-def0-234567890123",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "proposals", "d4e5f6a7-b8c9-0123-def0-234567890123"]
+            }
+          }
+        },
+        {
+          "name": "Get Reviews by Provider",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/provider/b2c3d4e5-f6a7-8901-bcde-f12345678901?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "provider", "b2c3d4e5-f6a7-8901-bcde-f12345678901"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Provider Rating Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/provider/b2c3d4e5-f6a7-8901-bcde-f12345678901/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "provider", "b2c3d4e5-f6a7-8901-bcde-f12345678901", "summary"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

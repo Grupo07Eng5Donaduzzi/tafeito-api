@@ -6,6 +6,7 @@ import { budgetRequestsSchema } from '../../../modules/budget-requests/infra/sch
 import { messageSchema } from '../../../modules/chat/infra/schemas/message.schema';
 import { conversationSchema } from '../../../modules/chat/infra/schemas/conversation.schema';
 import { invoicesSchema } from '../../../modules/invoices/infra/schemas/invoice.schema';
+import { reviewsSchema } from '../../../modules/reviews/infra/schemas/review.schema';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
@@ -16,6 +17,7 @@ const schema = {
   messageSchema,
   conversationSchema,
   invoicesSchema,
+  reviewsSchema,
 };
 
 @Injectable()

@@ -10,6 +10,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { ContestacaoModule } from './modules/proposal/contestacao.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
     ContestacaoModule,
     PaymentsModule,
     InvoicesModule,
+    ReviewsModule,
   ],
   providers: [
     {
