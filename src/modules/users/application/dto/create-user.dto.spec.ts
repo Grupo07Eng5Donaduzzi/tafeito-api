@@ -17,7 +17,7 @@ describe('CreateUserDto', () => {
   it('rejects email longer than 254 chars', async () => {
     const dto = plainToInstance(CreateUserDto, {
       name: 'Valid Name',
-      email: 'a'.repeat(245) + '@test.com',
+      email: 'a'.repeat(246) + '@test.com',
       password: 'password123',
       identification: '12345678901',
     });
