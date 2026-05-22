@@ -1,4 +1,12 @@
-import { IsInt, IsOptional, IsString, Max, Min, ValidateIf } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 import type { Review } from '../../domain/models/review.entity';
 
 export class CreateReviewDto {
@@ -9,6 +17,7 @@ export class CreateReviewDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000)
   comment?: string;
 }
 
@@ -21,6 +30,7 @@ export class UpdateReviewDto {
   @IsOptional()
   @ValidateIf((o) => o.comment !== null)
   @IsString()
+  @MaxLength(2000)
   comment?: string | null;
 }
 
@@ -47,4 +57,12 @@ export class ReviewDto {
     dto.updatedAt = review.updatedAt!;
     return dto;
   }
+}
+
+export class ProviderReviewsPageDto {
+  data: ReviewDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
 }
