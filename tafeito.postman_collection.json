@@ -569,9 +569,27 @@
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/reviews/provider/b2c3d4e5-f6a7-8901-bcde-f12345678901",
+              "raw": "{{baseUrl}}/reviews/provider/b2c3d4e5-f6a7-8901-bcde-f12345678901?page=1&pageSize=20",
               "host": ["{{baseUrl}}"],
-              "path": ["reviews", "provider", "b2c3d4e5-f6a7-8901-bcde-f12345678901"]
+              "path": ["reviews", "provider", "b2c3d4e5-f6a7-8901-bcde-f12345678901"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Provider Rating Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/provider/b2c3d4e5-f6a7-8901-bcde-f12345678901/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "provider", "b2c3d4e5-f6a7-8901-bcde-f12345678901", "summary"]
             }
           }
         }
