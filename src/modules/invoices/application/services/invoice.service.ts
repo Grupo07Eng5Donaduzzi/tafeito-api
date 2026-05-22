@@ -5,21 +5,20 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Invoice } from '../../domain/models/invoice.entity';
+import { fromBuffer } from 'file-type';
+import {
+  ALLOWED_MIME_TYPES,
+  Invoice,
+  MIME_TO_EXT,
+} from '../../domain/models/invoice.entity';
 import type { InvoiceRepository } from '../../domain/repositories/invoice-repository.interface';
 import { INVOICE_REPOSITORY } from '../../domain/repositories/invoice-repository.interface';
 import { FirebaseStorageService } from '../../../../shared/infra/storage/firebase-storage.service';
 import { InvoiceDto, DownloadUrlDto } from '../dto/invoice.dto';
 
-const MIME_TO_EXT: Record<string, string> = {
-  'application/pdf': 'pdf',
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'application/xml': 'xml',
-  'text/xml': 'xml',
-};
+const SIGNED_URL_TTL_MS = 60 * 60 * 1000;
 
-const SIGNED_URL_TTL_MS = 60 * 60 * 1000; // 1 hora
+const XML_TEXT_MIMES = new Set(['application/xml', 'text/xml']);
 
 @Injectable()
 export class InvoiceService {
@@ -36,12 +35,15 @@ export class InvoiceService {
   }): Promise<InvoiceDto> {
     const { paymentId, file, uploadedByUserId } = params;
 
+    if (!file?.buffer || !file.mimetype) {
+      throw new BadRequestException('Arquivo não enviado');
+    }
+
+    await this.assertContentMatchesMime(file);
+
     const extension = MIME_TO_EXT[file.mimetype];
     if (!extension) {
       throw new BadRequestException('Tipo de arquivo não permitido');
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      throw new BadRequestException('Arquivo excede o tamanho máximo de 10MB');
     }
 
     const filePath = await this.storageService.upload({
@@ -60,19 +62,31 @@ export class InvoiceService {
       uploadedBy: uploadedByUserId,
     });
 
-    await this.repository.create(invoice);
+    const persistedCreatedAt = await this.repository.create(invoice);
 
-    return this.toDto(invoice);
+    return this.toDto(invoice, persistedCreatedAt);
   }
 
-  async listByPayment(paymentId: string): Promise<InvoiceDto[]> {
+  async listByPayment(
+    paymentId: string,
+    requestingUserId: string,
+  ): Promise<InvoiceDto[]> {
     const invoices = await this.repository.findByPaymentId(paymentId);
-    return invoices.map((inv) => this.toDto(inv));
+    return invoices
+      .filter((inv) => inv.uploadedBy === requestingUserId)
+      .map((inv) => this.toDto(inv));
   }
 
-  async getDownloadUrl(id: string): Promise<DownloadUrlDto> {
+  async getDownloadUrl(
+    id: string,
+    requestingUserId: string,
+  ): Promise<DownloadUrlDto> {
     const invoice = await this.repository.findById(id);
     if (!invoice) throw new NotFoundException('Nota fiscal não encontrada');
+
+    if (invoice.uploadedBy !== requestingUserId) {
+      throw new ForbiddenException('Sem permissão para acessar esta nota fiscal');
+    }
 
     const expiresAt = new Date(Date.now() + SIGNED_URL_TTL_MS);
     const downloadUrl = await this.storageService.getSignedUrl(
@@ -95,7 +109,33 @@ export class InvoiceService {
     await this.repository.delete(id);
   }
 
-  private toDto(invoice: Invoice): InvoiceDto {
+  private async assertContentMatchesMime(
+    file: Express.Multer.File,
+  ): Promise<void> {
+    if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
+      throw new BadRequestException('Tipo de arquivo não permitido');
+    }
+
+    if (XML_TEXT_MIMES.has(file.mimetype)) {
+      const head = file.buffer.subarray(0, 256).toString('utf8').trimStart();
+      if (!head.startsWith('<')) {
+        throw new BadRequestException('Conteúdo XML inválido');
+      }
+      return;
+    }
+
+    const detected = await fromBuffer(file.buffer);
+    if (!detected) {
+      throw new BadRequestException('Não foi possível verificar o tipo do arquivo');
+    }
+    if (detected.mime !== file.mimetype) {
+      throw new BadRequestException(
+        `Conteúdo do arquivo (${detected.mime}) não corresponde ao tipo declarado (${file.mimetype})`,
+      );
+    }
+  }
+
+  private toDto(invoice: Invoice, persistedCreatedAt?: Date): InvoiceDto {
     return {
       id: invoice.id,
       paymentId: invoice.paymentId,
@@ -103,7 +143,7 @@ export class InvoiceService {
       fileType: invoice.fileType,
       fileSize: invoice.fileSize,
       uploadedBy: invoice.uploadedBy,
-      createdAt: invoice.createdAt ?? new Date(),
+      createdAt: persistedCreatedAt ?? invoice.createdAt!,
     };
   }
 }
