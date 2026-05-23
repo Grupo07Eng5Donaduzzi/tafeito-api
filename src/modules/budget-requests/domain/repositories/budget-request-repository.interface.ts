@@ -8,5 +8,7 @@ export interface BudgetRequestRepository {
   delete(id: string): Promise<void>;
   findById(id: string): Promise<BudgetRequest | null>;
   findByUserId(userId: string): Promise<BudgetRequest[]>;
+  findAvailableByServiceId(serviceId: string): Promise<BudgetRequest[]>;
   findAll(): Promise<BudgetRequest[]>;
 }
+

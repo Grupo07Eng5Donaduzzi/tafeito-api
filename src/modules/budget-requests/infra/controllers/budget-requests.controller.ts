@@ -6,7 +6,9 @@ import {
   Delete,
   Body,
   Param,
+  Query,
 } from '@nestjs/common';
+
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { BudgetRequestService } from '../../application/services/budget-request.service';
 import { CreateBudgetRequestDto } from '../../application/dto/create-budget-request.dto';
@@ -36,10 +38,16 @@ export class BudgetRequestsController {
     return this.service.findByUserId(userId);
   }
 
+  @Get('available')
+  findAvailable(@Query('serviceId') serviceId: string) {
+    return this.service.findAvailableByServiceId(serviceId);
+  }
+
   @Patch(':id/cancel')
   cancel(@Param('id') id: string, @Body() dto: CancelBudgetRequestDto) {
     return this.service.cancel(id, dto);
   }
+
 
   @Delete(':id')
   remove(@Param('id') id: string) {
