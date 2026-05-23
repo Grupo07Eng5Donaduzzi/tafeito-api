@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { SharedModule } from '../../shared/shared.module';
 import { BudgetRequestsModule } from '../budget-requests/budget-requests.module';
 import { ChatModule } from '../chat/chat.module';
+import { PaymentsModule } from '../payments/payments.module';
 import { UsersModule } from '../users/users.module';
 import { ProposalService } from './application/services/proposal.service';
 import { NegotiationService } from './application/services/negotiation.service';
@@ -24,6 +25,7 @@ import {
     SharedModule,
     BudgetRequestsModule,
     ChatModule,
+    PaymentsModule,
     UsersModule,
     // RabbitMQModule.forRoot({
     //   exchanges: [

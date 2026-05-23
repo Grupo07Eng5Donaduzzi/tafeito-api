@@ -42,6 +42,17 @@ export class UserService {
     }
   }
 
+  private validatePixKey(pixKey: string): string {
+    if (typeof pixKey !== 'string') {
+      throw new BadRequestException('pixKey deve ser string');
+    }
+    const trimmed = pixKey.trim();
+    if (!trimmed) {
+      throw new BadRequestException('pixKey não pode estar vazio');
+    }
+    return trimmed;
+  }
+
   private validateIdentification(identification: string): void {
     // Remove non-digits
     const clean = identification.replace(/\D/g, '');
@@ -129,16 +140,29 @@ export class UserService {
       throw new ConflictException();
     }
 
+    const pixKeyTrimmed =
+      dto.pixKey !== undefined && dto.pixKey !== null
+        ? this.validatePixKey(dto.pixKey)
+        : undefined;
+
     const firebaseUid = await this.firebaseAuthService.createUser(
       dto.email,
       dto.password,
     );
+
+    if (pixKeyTrimmed) {
+      await this.firebaseAuthService.setCustomUserClaims(firebaseUid, {
+        pixKey: pixKeyTrimmed,
+        provider: true,
+      });
+    }
 
     const user = User.restore({
       firebaseUid,
       name: dto.name,
       email: dto.email,
       identification: dto.identification,
+      pixKey: pixKeyTrimmed,
       hourlyRate: dto.hourlyRate,
     });
 
@@ -180,6 +204,9 @@ export class UserService {
         throw new BadRequestException('Identification não pode estar vazio');
       }
       this.validateIdentification(identificationTrimmed);
+    }
+    if (dto.pixKey !== undefined && dto.pixKey != null) {
+      this.validatePixKey(dto.pixKey as string);
     }
     if (dto.hourlyRate !== undefined && dto.hourlyRate != null) {
       const hourlyRate = Number(dto.hourlyRate);
@@ -226,6 +253,15 @@ export class UserService {
     if (dto.name !== undefined && dto.name != null) {
       const nameTrimmed = (dto.name as string).trim();
       user.withName(nameTrimmed);
+    }
+
+    if (dto.pixKey !== undefined && dto.pixKey != null) {
+      const pixKeyTrimmed = this.validatePixKey(dto.pixKey as string);
+      await this.firebaseAuthService.setCustomUserClaims(user.firebaseUid, {
+        pixKey: pixKeyTrimmed,
+        provider: true,
+      });
+      user.withPixKey(pixKeyTrimmed);
     }
 
     if (dto.hourlyRate !== undefined) {
