@@ -71,6 +71,20 @@
       "when": 1779394907994,
       "tag": "0009_nosy_toro",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1779500000000,
+      "tag": "0010_create_reviews",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1779600000000,
+      "tag": "0011_review_rating_check_and_indexes",
+      "breakpoints": true
     }
   ]
 }
