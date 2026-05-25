@@ -6,5 +6,6 @@ export interface InvoiceRepository {
   create(invoice: Invoice): Promise<Date>;
   findById(id: string): Promise<Invoice | null>;
   findByPaymentId(paymentId: string): Promise<Invoice[]>;
+  findContentById(id: string): Promise<Buffer | null>;
   delete(id: string): Promise<void>;
 }

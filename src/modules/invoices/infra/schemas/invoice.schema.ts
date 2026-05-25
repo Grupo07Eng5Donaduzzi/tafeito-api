@@ -1,10 +1,16 @@
-import { pgTable, uuid, text, integer, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, integer, timestamp, customType } from 'drizzle-orm/pg-core';
 import { usersSchema } from '@users/infra/schemas/user.schema';
+
+const bytea = customType<{ data: Buffer; notNull: true; default: false }>({
+  dataType() {
+    return 'bytea';
+  },
+});
 
 export const invoicesSchema = pgTable('invoices', {
   id: uuid('id').primaryKey().defaultRandom(),
   paymentId: text('payment_id').notNull(),
-  filePath: text('file_path').notNull(),
+  fileContent: bytea('file_content').notNull(),
   fileName: text('file_name').notNull(),
   fileType: text('file_type').notNull(),
   fileSize: integer('file_size').notNull(),

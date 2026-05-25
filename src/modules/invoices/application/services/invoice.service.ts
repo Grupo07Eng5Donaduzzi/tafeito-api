@@ -9,14 +9,10 @@ import { fromBuffer } from 'file-type';
 import {
   ALLOWED_MIME_TYPES,
   Invoice,
-  MIME_TO_EXT,
 } from '../../domain/models/invoice.entity';
 import type { InvoiceRepository } from '../../domain/repositories/invoice-repository.interface';
 import { INVOICE_REPOSITORY } from '../../domain/repositories/invoice-repository.interface';
-import { FirebaseStorageService } from '../../../../shared/infra/storage/firebase-storage.service';
-import { InvoiceDto, DownloadUrlDto } from '../dto/invoice.dto';
-
-const SIGNED_URL_TTL_MS = 60 * 60 * 1000;
+import { InvoiceDto } from '../dto/invoice.dto';
 
 const XML_TEXT_MIMES = new Set(['application/xml', 'text/xml']);
 
@@ -25,7 +21,6 @@ export class InvoiceService {
   constructor(
     @Inject(INVOICE_REPOSITORY)
     private readonly repository: InvoiceRepository,
-    private readonly storageService: FirebaseStorageService,
   ) {}
 
   async upload(params: {
@@ -41,21 +36,9 @@ export class InvoiceService {
 
     await this.assertContentMatchesMime(file);
 
-    const extension = MIME_TO_EXT[file.mimetype];
-    if (!extension) {
-      throw new BadRequestException('Tipo de arquivo não permitido');
-    }
-
-    const filePath = await this.storageService.upload({
-      buffer: file.buffer,
-      mimeType: file.mimetype,
-      folder: `invoices/${paymentId}`,
-      extension,
-    });
-
     const invoice = Invoice.create({
       paymentId,
-      filePath,
+      fileContent: file.buffer,
       fileName: file.originalname,
       fileType: file.mimetype,
       fileSize: file.size,
@@ -77,10 +60,10 @@ export class InvoiceService {
       .map((inv) => this.toDto(inv));
   }
 
-  async getDownloadUrl(
+  async download(
     id: string,
     requestingUserId: string,
-  ): Promise<DownloadUrlDto> {
+  ): Promise<{ buffer: Buffer; fileName: string; fileType: string }> {
     const invoice = await this.repository.findById(id);
     if (!invoice) throw new NotFoundException('Nota fiscal não encontrada');
 
@@ -88,13 +71,10 @@ export class InvoiceService {
       throw new ForbiddenException('Sem permissão para acessar esta nota fiscal');
     }
 
-    const expiresAt = new Date(Date.now() + SIGNED_URL_TTL_MS);
-    const downloadUrl = await this.storageService.getSignedUrl(
-      invoice.filePath,
-      SIGNED_URL_TTL_MS,
-    );
+    const buffer = await this.repository.findContentById(id);
+    if (!buffer) throw new NotFoundException('Conteúdo não encontrado');
 
-    return { downloadUrl, expiresAt };
+    return { buffer, fileName: invoice.fileName, fileType: invoice.fileType };
   }
 
   async remove(id: string, requestingUserId: string): Promise<void> {
@@ -105,7 +85,6 @@ export class InvoiceService {
       throw new ForbiddenException('Sem permissão para remover esta nota fiscal');
     }
 
-    await this.storageService.delete(invoice.filePath);
     await this.repository.delete(id);
   }
 

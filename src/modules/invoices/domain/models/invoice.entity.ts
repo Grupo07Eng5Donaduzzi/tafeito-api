@@ -32,7 +32,7 @@ function sanitizeFileName(name: string): string {
 export class Invoice {
   private readonly _id: string;
   private _paymentId: string;
-  private _filePath: string;
+  private _fileContent: Buffer;
   private _fileName: string;
   private _fileType: string;
   private _fileSize: number;
@@ -46,7 +46,7 @@ export class Invoice {
 
   get id(): string { return this._id; }
   get paymentId(): string { return this._paymentId; }
-  get filePath(): string { return this._filePath; }
+  get fileContent(): Buffer { return this._fileContent; }
   get fileName(): string { return this._fileName; }
   get fileType(): string { return this._fileType; }
   get fileSize(): number { return this._fileSize; }
@@ -55,7 +55,7 @@ export class Invoice {
 
   static create(props: {
     paymentId: string;
-    filePath: string;
+    fileContent: Buffer;
     fileName: string;
     fileType: string;
     fileSize: number;
@@ -76,7 +76,7 @@ export class Invoice {
 
     const invoice = new Invoice(randomUUID());
     invoice._paymentId = props.paymentId.trim();
-    invoice._filePath = props.filePath;
+    invoice._fileContent = props.fileContent;
     invoice._fileName = sanitizeFileName(props.fileName);
     invoice._fileType = props.fileType;
     invoice._fileSize = props.fileSize;
@@ -87,7 +87,7 @@ export class Invoice {
   static restore(props: {
     id: string;
     paymentId: string;
-    filePath: string;
+    fileContent: Buffer;
     fileName: string;
     fileType: string;
     fileSize: number;
@@ -96,7 +96,7 @@ export class Invoice {
   }): Invoice {
     const invoice = new Invoice(props.id, props.createdAt);
     invoice._paymentId = props.paymentId;
-    invoice._filePath = props.filePath;
+    invoice._fileContent = props.fileContent;
     invoice._fileName = props.fileName;
     invoice._fileType = props.fileType;
     invoice._fileSize = props.fileSize;

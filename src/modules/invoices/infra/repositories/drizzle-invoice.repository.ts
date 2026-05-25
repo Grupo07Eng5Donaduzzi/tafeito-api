@@ -15,7 +15,7 @@ export class DrizzleInvoiceRepository implements InvoiceRepository {
       .values({
         id: invoice.id,
         paymentId: invoice.paymentId,
-        filePath: invoice.filePath,
+        fileContent: invoice.fileContent,
         fileName: invoice.fileName,
         fileType: invoice.fileType,
         fileSize: invoice.fileSize,
@@ -38,12 +38,35 @@ export class DrizzleInvoiceRepository implements InvoiceRepository {
 
   async findByPaymentId(paymentId: string): Promise<Invoice[]> {
     const result = await this.drizzleService.db
-      .select()
+      .select({
+        id: invoicesSchema.id,
+        paymentId: invoicesSchema.paymentId,
+        fileName: invoicesSchema.fileName,
+        fileType: invoicesSchema.fileType,
+        fileSize: invoicesSchema.fileSize,
+        uploadedBy: invoicesSchema.uploadedBy,
+        createdAt: invoicesSchema.createdAt,
+      })
       .from(invoicesSchema)
       .where(eq(invoicesSchema.paymentId, paymentId))
       .orderBy(invoicesSchema.createdAt);
 
-    return result.map((row) => this.mapToEntity(row));
+    return result.map((row) =>
+      Invoice.restore({
+        ...row,
+        fileContent: Buffer.alloc(0),
+      }),
+    );
+  }
+
+  async findContentById(id: string): Promise<Buffer | null> {
+    const result = await this.drizzleService.db
+      .select({ fileContent: invoicesSchema.fileContent })
+      .from(invoicesSchema)
+      .where(eq(invoicesSchema.id, id))
+      .limit(1);
+
+    return result[0]?.fileContent ?? null;
   }
 
   async delete(id: string): Promise<void> {
@@ -56,7 +79,7 @@ export class DrizzleInvoiceRepository implements InvoiceRepository {
     return Invoice.restore({
       id: row.id,
       paymentId: row.paymentId,
-      filePath: row.filePath,
+      fileContent: row.fileContent,
       fileName: row.fileName,
       fileType: row.fileType,
       fileSize: row.fileSize,
