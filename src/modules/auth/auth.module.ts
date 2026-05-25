@@ -22,7 +22,6 @@ export class AuthModule implements NestModule {
       .exclude(
         { path: 'auth/login', method: RequestMethod.POST },
         { path: 'auth/register', method: RequestMethod.POST },
-        { path: 'users/add', method: RequestMethod.POST },
       )
       .forRoutes('*');
   }
