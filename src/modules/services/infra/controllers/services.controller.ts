@@ -12,7 +12,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ServiceService } from '../../application/services/service.service';
-import { CreateServiceDto, UpdateServiceDto } from '../../application/dto/update-service.dto';
+import { CreateServiceDto } from '../../application/dto/create-service.dto';
+import { UpdateServiceDto } from '../../application/dto/update-service.dto';
 
 @Controller('services')
 export class ServicesController {

@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DrizzleServiceRepository } from '../../infra/repositories/drizzle-service.repository';
-import { CreateServiceDto, UpdateServiceDto } from '../dto/update-service.dto';
+import { CreateServiceDto } from '../dto/create-service.dto';
+import { UpdateServiceDto } from '../dto/update-service.dto';
 
 @Injectable()
 export class ServiceService {
@@ -32,10 +33,6 @@ export class ServiceService {
     const price = this.validatePositiveNumberString(dto.price, 'price');
     const duration = this.validatePositiveNumberString(dto.duration, 'duration');
     const userId = this.validateNonEmptyString(dto.userId, 'userId');
-
-    if (!this.isValidUuid(userId)) {
-      throw new BadRequestException('userId deve ser um UUID válido');
-    }
 
     return this.repository.create({ name, description, category, price, duration, userId });
   }

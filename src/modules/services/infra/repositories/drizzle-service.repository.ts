@@ -3,7 +3,8 @@ import { randomUUID } from 'crypto';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
 import { servicesSchema } from '../schemas/service.schema';
 import { eq, sql } from 'drizzle-orm';
-import { CreateServiceDto, UpdateServiceDto } from '../../application/dto/update-service.dto';
+import { CreateServiceDto } from '../../application/dto/create-service.dto';
+import { UpdateServiceDto } from '../../application/dto/update-service.dto';
 
 @Injectable()
 export class DrizzleServiceRepository {
