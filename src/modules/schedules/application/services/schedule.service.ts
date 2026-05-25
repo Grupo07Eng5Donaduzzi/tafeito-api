@@ -20,6 +20,9 @@ export class ScheduleService {
     if (proposal.status !== ProposalStatus.ACCEPTED) {
       throw new BadRequestException('Agendamento permitido apenas para propostas aceitas');
     }
+    if (proposal.requestId !== dto.budgetRequestId) {
+      throw new BadRequestException('O budgetRequestId não corresponde à proposta informada');
+    }
 
     const existing = await this.repository.findByProposalId(dto.proposalId);
     if (existing) {
@@ -28,7 +31,7 @@ export class ScheduleService {
 
     const schedule = new Schedule({
       proposalId: dto.proposalId,
-      scheduledDate: new Date(dto.scheduledDate),
+      budgetRequestId: dto.budgetRequestId,
     });
     await this.repository.create(schedule);
     return this.toDto(schedule);
@@ -48,7 +51,7 @@ export class ScheduleService {
     return {
       id: s.id!,
       proposalId: s.proposalId,
-      scheduledDate: s.scheduledDate,
+      budgetRequestId: s.budgetRequestId,
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,
     };

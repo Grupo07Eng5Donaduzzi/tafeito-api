@@ -1,7 +1,7 @@
 export class ScheduleDto {
   id!: string;
   proposalId!: string;
-  scheduledDate!: Date;
+  budgetRequestId!: string;
   createdAt!: Date;
   updatedAt!: Date;
 }

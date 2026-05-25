@@ -1,7 +1,7 @@
 export class Schedule {
   public id?: string;
   public proposalId: string;
-  public scheduledDate: Date;
+  public budgetRequestId: string;
   public createdAt: Date;
   public updatedAt: Date;
 
@@ -14,7 +14,7 @@ export class Schedule {
   ) {
     this.id = props.id;
     this.proposalId = props.proposalId;
-    this.scheduledDate = props.scheduledDate;
+    this.budgetRequestId = props.budgetRequestId;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? new Date();
   }
@@ -24,7 +24,7 @@ export class Schedule {
     return new Schedule({
       id: row.id,
       proposalId: row.proposalId ?? row.proposal_id,
-      scheduledDate: row.scheduledDate ?? row.scheduled_date,
+      budgetRequestId: row.budgetRequestId ?? row.budget_request_id,
       createdAt: row.createdAt ?? row.created_at,
       updatedAt: row.updatedAt ?? row.updated_at,
     });

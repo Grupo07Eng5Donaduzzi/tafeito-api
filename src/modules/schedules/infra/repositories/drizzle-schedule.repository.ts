@@ -12,7 +12,7 @@ export class DrizzleScheduleRepository implements ScheduleRepository {
   async create(schedule: Schedule): Promise<void> {
     await this.drizzleService.db.insert(schedulesSchema).values({
       proposalId: schedule.proposalId,
-      scheduledDate: schedule.scheduledDate,
+      budgetRequestId: schedule.budgetRequestId,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
