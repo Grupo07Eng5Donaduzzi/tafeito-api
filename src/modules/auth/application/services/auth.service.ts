@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { FirebaseAuthService } from '@users/infra/firebase/firebase-auth.service';
 import { UserService } from '@users/application/services/user.service';
+import { CreateUserDto } from '@users/application/dto/create-user.dto';
 import { UserDto } from '@users/application/dto/user.dto';
 import type { StringValue } from 'ms';
 import jwt from 'jsonwebtoken';
@@ -52,8 +53,26 @@ export class AuthService {
       );
     }
 
+    return this.buildAuthResponse(user);
+  }
+
+  async register(
+    dto: CreateUserDto,
+  ): Promise<{ accessToken: string; user: UserDto }> {
+    const user = await this.userService.create(dto);
+    return this.buildAuthResponse(user);
+  }
+
+  async becomeProvider(userId: string, pixKey: string): Promise<UserDto> {
+    return this.userService.edit(userId, { pixKey });
+  }
+
+  private buildAuthResponse(user: UserDto): {
+    accessToken: string;
+    user: UserDto;
+  } {
     const payload: AuthJwtPayload = {
-      sub: user.id,
+      sub: user.id!,
       uid: user.firebaseUid,
       email: user.email,
     };

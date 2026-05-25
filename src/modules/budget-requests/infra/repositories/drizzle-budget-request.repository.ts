@@ -3,7 +3,8 @@ import { DrizzleService } from '@shared/infra/database/drizzle.service';
 import { BudgetRequestRepository } from '../../domain/repositories/budget-request-repository.interface';
 import { BudgetRequest } from '../../domain/models/budget-request.entity';
 import { budgetRequestsSchema } from '../schemas/budget-request.schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
+
 
 @Injectable()
 export class DrizzleBudgetRequestRepository implements BudgetRequestRepository {
@@ -73,4 +74,21 @@ export class DrizzleBudgetRequestRepository implements BudgetRequestRepository {
       .from(budgetRequestsSchema);
     return rows.map((row) => BudgetRequest.restore(row)!);
   }
+
+  async findAvailableByServiceId(
+    serviceId: string,
+  ): Promise<BudgetRequest[]> {
+    const rows = await this.drizzleService.db
+      .select()
+      .from(budgetRequestsSchema)
+      .where(
+        and(
+          eq(budgetRequestsSchema.serviceId, serviceId),
+          eq(budgetRequestsSchema.status, 'pending'),
+        ),
+      );
+
+    return rows.map((row) => BudgetRequest.restore(row)!);
+  }
 }
+

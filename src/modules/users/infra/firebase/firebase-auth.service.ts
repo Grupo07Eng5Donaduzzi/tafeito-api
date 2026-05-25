@@ -33,6 +33,18 @@ export class FirebaseAuthService implements OnModuleInit {
     await this.auth.updateUser(uid, { email });
   }
 
+  async setCustomUserClaims(
+    uid: string,
+    claims: Record<string, unknown>,
+  ): Promise<void> {
+    const record = await this.auth.getUser(uid);
+    const existingClaims = record.customClaims ?? {};
+    await this.auth.setCustomUserClaims(uid, {
+      ...existingClaims,
+      ...claims,
+    });
+  }
+
   async deleteUser(uid: string): Promise<void> {
     await this.auth.deleteUser(uid);
   }

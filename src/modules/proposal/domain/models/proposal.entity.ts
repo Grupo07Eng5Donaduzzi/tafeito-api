@@ -4,6 +4,8 @@ export enum ProposalStatus {
   PENDING = 'PENDING',
   NEGOTIATING = 'NEGOTIATING',
   ACCEPTED = 'ACCEPTED',
+  PROVIDER_CONFIRMED = 'PROVIDER_CONFIRMED',
+  COMPLETED = 'COMPLETED',
   REJECTED = 'REJECTED',
   CANCELLED = 'CANCELLED',
 }
@@ -187,6 +189,20 @@ export class Proposal {
     }
     this._estimatedHours = estimatedHours;
     this._amount = estimatedHours * this._hourlyRate;
+  }
+
+  providerConfirm(): void {
+    if (this._status !== ProposalStatus.ACCEPTED) {
+      throw new Error('Cannot confirm completion for proposal that is not ACCEPTED');
+    }
+    this._status = ProposalStatus.PROVIDER_CONFIRMED;
+  }
+
+  clientConfirm(): void {
+    if (this._status !== ProposalStatus.PROVIDER_CONFIRMED) {
+      throw new Error('Cannot confirm completion before provider confirms');
+    }
+    this._status = ProposalStatus.COMPLETED;
   }
 
   linkChat(conversationId: string): void {

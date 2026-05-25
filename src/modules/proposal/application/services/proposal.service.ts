@@ -9,6 +9,7 @@ import {
 import { ConversationResponseDto } from '@chat/application/dto/conversation.dto';
 import { ConversationService } from '@chat/application/services/conversation.service';
 import { UserService } from '@users/application/services/user.service';
+import { PaymentsService } from '../../../payments/application/services/payments.service';
 import { BudgetRequestService } from '../../../budget-requests/application/services/budget-request.service';
 import { Proposal, ProposalStatus } from '../../domain/models/proposal.entity';
 import type { ProposalRepository } from '../../domain/repositories/proposal-repository.interface';
@@ -28,6 +29,7 @@ export class ProposalService {
     private readonly budgetRequestService: BudgetRequestService,
     private readonly conversationService: ConversationService,
     private readonly userService: UserService,
+    private readonly paymentsService: PaymentsService,
     // private readonly amqpConnection: AmqpConnection
   ) {}
 
@@ -197,6 +199,54 @@ export class ProposalService {
     //   }
     // );
 
+    const updated = await this.proposalRepository.findById(proposalId);
+    return ProposalDto.from(updated)!;
+  }
+
+  async providerConfirmCompletion(
+    proposalId: string,
+    providerId: string,
+  ): Promise<ProposalDto> {
+    const proposal = await this.proposalRepository.findById(proposalId);
+    if (!proposal) {
+      throw new NotFoundException('Proposal not found');
+    }
+    if (proposal.providerId !== providerId) {
+      throw new ForbiddenException('Only the provider can confirm completion');
+    }
+    proposal.providerConfirm();
+    await this.proposalRepository.update(proposal);
+    const updated = await this.proposalRepository.findById(proposalId);
+    return ProposalDto.from(updated)!;
+  }
+
+  async clientConfirmCompletion(
+    proposalId: string,
+    clientId: string,
+  ): Promise<ProposalDto> {
+    const proposal = await this.proposalRepository.findById(proposalId);
+    if (!proposal) {
+      throw new NotFoundException('Proposal not found');
+    }
+    this.ensureClient(proposal, clientId);
+
+    const provider = await this.userService.findById(proposal.providerId);
+    if (!provider) {
+      throw new NotFoundException('Provider not found');
+    }
+    if (!provider.pixKey) {
+      throw new BadRequestException(
+        'Provider precisa cadastrar uma pixKey para receber o pagamento',
+      );
+    }
+
+    proposal.clientConfirm();
+    await this.paymentsService.transferToPix(
+      proposal.amount,
+      provider.pixKey,
+      proposal.id,
+    );
+    await this.proposalRepository.update(proposal);
     const updated = await this.proposalRepository.findById(proposalId);
     return ProposalDto.from(updated)!;
   }

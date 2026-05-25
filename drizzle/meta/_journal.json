@@ -55,7 +55,28 @@
       "idx": 7,
       "version": "7",
       "when": 1778200000000,
-      "tag": "0007_create_schedules",
+      "tag": "0007_add_completion_statuses",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1779393889891,
+      "tag": "0008_milky_christian_walker",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1779394907994,
+      "tag": "0009_nosy_toro",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778200000001,
+      "tag": "0010_create_schedules",
       "breakpoints": true
     }
   ]

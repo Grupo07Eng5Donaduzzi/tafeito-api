@@ -1,29 +1,57 @@
-import { BadRequestException, HttpException, Injectable, InternalServerErrorException,} from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import {
+    BadRequestException,
+    HttpException,
+    Injectable,
+    InternalServerErrorException,
+    Logger,
+} from '@nestjs/common';
 import { CreatePixPaymentDto } from '../dto/create-pix-payment.dto';
 import { PixPaymentDto } from '../dto/pix-payment.dto';
 import { PaymentStatusDto } from '../dto/payment-status.dto';
+import { TransferPixDto } from '../dto/transfer-pix.dto';
 
-interface MercadoPagoPaymentResponse {
-    id: number;
+type PixKeyType = 'CPF' | 'CNPJ' | 'EMAIL' | 'PHONE' | 'EVP';
+
+interface AsaasListResponse<T> {
+    data: T[];
+}
+
+interface AsaasCustomer {
+    id: string;
+}
+
+interface AsaasPaymentResponse {
+    id: string;
     status: string;
-    status_detail?: string;
-    transaction_amount: number;
-    payer?: {
-        email?: string;
-    };
-    point_of_interaction?: {
-        transaction_data?: {
-            qr_code?: string;
-            qr_code_base64?: string;
-            ticket_url?: string;
-        };
-    };
+    value: number;
+    invoiceUrl?: string;
+}
+
+interface AsaasPixQrCodeResponse {
+    encodedImage?: string;
+    payload?: string;
+    qrCode?: string;
+    qrCodeBase64?: string;
+}
+
+interface AsaasPaymentStatusResponse {
+    status: string;
+}
+
+interface AsaasTransferResponse {
+    id: string;
+    status: string;
 }
 
 @Injectable()
 export class PaymentsService {
-    private readonly baseUrl = 'https://api.mercadopago.com';
+    private readonly logger = new Logger(PaymentsService.name);
+
+    private readonly baseUrl = process.env.ASAAS_BASE_URL ?? 'https://api-sandbox.asaas.com/v3';
+    private readonly userAgent = process.env.ASAAS_USER_AGENT ?? 'tafeito-api/1.0';
+
+    private readonly maxRetries = 3;
+    private readonly retryDelayMs = 300;
 
     async createPix(dto: CreatePixPaymentDto): Promise<PixPaymentDto> {
         const amount = this.parsePositiveNumber(dto.amount, 'amount');
@@ -40,57 +68,184 @@ export class PaymentsService {
             payerDocumentType,
         );
 
-        const payload = {
-            transaction_amount: amount,
-            payment_method_id: 'pix',
-            payer: {
-                email: payerEmail,
-                first_name: payerFirstName,
-                last_name: payerLastName,
-                identification: {
-                    type: payerDocumentType,
-                    number: payerDocumentNumber,
-                },
-            },
-        };
-
-        const response = await this.callMercadoPago<MercadoPagoPaymentResponse>(
-            'POST',
-            '/v1/payments',
-            payload,
+        const customerName = this.buildCustomerName(
+            payerFirstName,
+            payerLastName,
+            payerEmail,
         );
 
-        const qrCode = response.point_of_interaction?.transaction_data?.qr_code ?? '';
-        const qrCodeBase64 = response.point_of_interaction?.transaction_data?.qr_code_base64 ?? '';
+        const customer = await this.getOrCreateCustomerSafe({
+            name: customerName,
+            cpfCnpj: payerDocumentNumber,
+            email: payerEmail,
+        });
 
-        if (!qrCode || !qrCodeBase64) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const payment = await this.callAsaas<AsaasPaymentResponse>(
+            'POST',
+            '/payments',
+            {
+                customer: customer.id,
+                billingType: 'PIX',
+                value: amount,
+                dueDate: this.formatLocalDate(tomorrow),
+            },
+        );
+
+        const qrCode = await this.callAsaas<AsaasPixQrCodeResponse>(
+            'GET',
+            `/payments/${payment.id}/pixQrCode`,
+        );
+
+        const qrCodePayload = qrCode.payload ?? qrCode.qrCode ?? '';
+        const qrCodeBase64 = qrCode.encodedImage ?? qrCode.qrCodeBase64 ?? '';
+
+        if (!qrCodePayload || !qrCodeBase64) {
             throw new BadRequestException('Falha ao gerar QR Code PIX');
         }
 
         return {
-            id: response.id,
-            status: response.status,
-            amount: response.transaction_amount,
-            payerEmail: response.payer?.email ?? payerEmail,
-            qrCode,
+            id: payment.id,
+            status: payment.status,
+            amount: payment.value ?? amount,
+            payerEmail,
+            qrCode: qrCodePayload,
             qrCodeBase64,
-            ticketUrl: response.point_of_interaction?.transaction_data?.ticket_url,
+            ticketUrl: payment.invoiceUrl,
         };
     }
 
     async getStatus(paymentId: string): Promise<PaymentStatusDto> {
-        const id = this.parsePaymentId(paymentId);
-        const response = await this.callMercadoPago<MercadoPagoPaymentResponse>(
+        const id = this.validateNonEmptyString(paymentId, 'paymentId');
+
+        const response = await this.callAsaas<AsaasPaymentStatusResponse>(
             'GET',
-            `/v1/payments/${id}`,
+            `/payments/${id}/status`,
+        );
+
+        return {
+            id,
+            status: response.status,
+            paid: this.isPaidStatus(response.status),
+        };
+    }
+
+    async transferToPix(
+        amount: number,
+        pixKey: string,
+        externalReference?: string,
+    ): Promise<TransferPixDto> {
+        const value = this.parsePositiveNumber(amount, 'amount');
+        const trimmedPixKey = this.validateNonEmptyString(pixKey, 'pixKey');
+        const pixKeyType = this.inferPixKeyType(trimmedPixKey);
+        const normalizedPixKey = this.normalizePixKey(trimmedPixKey, pixKeyType);
+
+        const response = await this.callAsaas<AsaasTransferResponse>(
+            'POST',
+            '/transfers',
+            {
+                value,
+                pixAddressKey: normalizedPixKey,
+                pixAddressKeyType: pixKeyType,
+                operationType: 'PIX',
+                description: 'Transferencia Tafeito',
+                externalReference,
+            },
         );
 
         return {
             id: response.id,
             status: response.status,
-            statusDetail: response.status_detail,
-            paid: response.status === 'approved',
         };
+    }
+
+    private buildCustomerName(
+        firstName?: string,
+        lastName?: string,
+        fallbackEmail?: string,
+    ): string {
+        const combined = [firstName, lastName].filter(Boolean).join(' ').trim();
+        if (combined) return combined;
+        if (fallbackEmail) return fallbackEmail;
+        return 'Cliente Tafeito';
+    }
+
+    private async getOrCreateCustomerSafe(params: {
+        name: string;
+        email: string;
+        cpfCnpj: string;
+    }): Promise<AsaasCustomer> {
+        const existing = await this.findCustomerByCpfCnpj(params.cpfCnpj);
+        if (existing) return existing;
+
+        try {
+            return await this.callAsaas<AsaasCustomer>('POST', '/customers', {
+                name: params.name,
+                email: params.email,
+                cpfCnpj: params.cpfCnpj,
+            });
+        } catch (err: any) {
+            if (err?.status === 409 || err?.getStatus?.() === 409) {
+                const retry = await this.findCustomerByCpfCnpj(params.cpfCnpj);
+                if (retry) return retry;
+            }
+            throw err;
+        }
+    }
+
+    private async findCustomerByCpfCnpj(
+        cpfCnpj: string,
+    ): Promise<AsaasCustomer | null> {
+        const query = new URLSearchParams({ cpfCnpj, limit: '1' });
+        const response = await this.callAsaas<AsaasListResponse<AsaasCustomer>>(
+            'GET',
+            `/customers?${query.toString()}`,
+        );
+        return response.data?.[0] ?? null;
+    }
+
+    private isPaidStatus(status: string): boolean {
+        const paidStatuses = new Set(['RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH']);
+        return paidStatuses.has(status);
+    }
+
+    private formatLocalDate(date: Date): string {
+        const offset = date.getTimezoneOffset();
+        const local = new Date(date.getTime() - offset * 60_000);
+        return local.toISOString().slice(0, 10);
+    }
+
+    private normalizePixKey(pixKey: string, type: PixKeyType): string {
+        const trimmed = pixKey.trim();
+        if (type === 'CPF' || type === 'CNPJ') {
+            return trimmed.replace(/\D/g, '');
+        }
+        if (type === 'PHONE') {
+            return trimmed.replace(/[^\d+]/g, '');
+        }
+        return trimmed;
+    }
+
+    private inferPixKeyType(pixKey: string): PixKeyType {
+        const trimmed = pixKey.trim();
+
+        if (trimmed.includes('@')) return 'EMAIL';
+
+        if (trimmed.startsWith('+')) {
+            const digits = trimmed.replace(/\D/g, '');
+            if (digits.length >= 10 && digits.length <= 13) return 'PHONE';
+        }
+
+        const digitsOnly = trimmed.replace(/\D/g, '');
+
+        if (digitsOnly.length === 11) return 'CPF';
+        if (digitsOnly.length === 14) return 'CNPJ';
+
+        if (/^[0-9a-fA-F-]{36}$/.test(trimmed)) return 'EVP';
+
+        return 'EVP';
     }
 
     private validateNonEmptyString(value: string, fieldName: string): string {
@@ -133,44 +288,113 @@ export class PaymentsService {
             );
         }
 
+        if (type === 'CPF' && !this.isValidCpf(digitsOnly)) {
+            throw new BadRequestException('payerDocumentNumber CPF inválido');
+        }
+        if (type === 'CNPJ' && !this.isValidCnpj(digitsOnly)) {
+            throw new BadRequestException('payerDocumentNumber CNPJ inválido');
+        }
+
         return digitsOnly;
     }
 
     private parsePositiveNumber(value: number | string, fieldName: string): number {
-        const parsed = typeof value === 'number' ? value : Number(String(value).trim());
-
+        const parsed =
+            typeof value === 'number' ? value : Number(String(value).trim());
         if (Number.isNaN(parsed) || parsed <= 0) {
             throw new BadRequestException(`${fieldName} deve ser um número positivo`);
         }
-
         return parsed;
     }
 
-    private parsePaymentId(value: string): number {
-        const parsed = Number(String(value).trim());
-        if (!Number.isInteger(parsed) || parsed <= 0) {
-            throw new BadRequestException('paymentId inválido');
-        }
-        return parsed;
+    private isValidCpf(digits: string): boolean {
+        if (/^(\d)\1{10}$/.test(digits)) return false;
+
+        const calc = (factor: number) => {
+            let sum = 0;
+            for (let i = 0; i < factor - 1; i++) {
+                sum += parseInt(digits[i]) * (factor - i);
+            }
+            const remainder = (sum * 10) % 11;
+            return remainder === 10 || remainder === 11 ? 0 : remainder;
+        };
+
+        return (
+            calc(10) === parseInt(digits[9]) &&
+            calc(11) === parseInt(digits[10])
+        );
+    }
+
+    private isValidCnpj(digits: string): boolean {
+        if (/^(\d)\1{13}$/.test(digits)) return false;
+
+        const calc = (length: number) => {
+            let sum = 0;
+            let pos = length - 7;
+            for (let i = length; i >= 1; i--) {
+                sum += parseInt(digits[length - i]) * pos--;
+                if (pos < 2) pos = 9;
+            }
+            const remainder = sum % 11;
+            return remainder < 2 ? 0 : 11 - remainder;
+        };
+
+        return (
+            calc(12) === parseInt(digits[12]) &&
+            calc(13) === parseInt(digits[13])
+        );
     }
 
     private getAccessToken(): string {
-        const token = process.env.MP_ACCESS_TOKEN;
+        const token = process.env.ASAAS_ACCESS_TOKEN;
         if (!token) {
+            this.logger.error('ASAAS_ACCESS_TOKEN não configurado');
             throw new InternalServerErrorException(
-                'MP_ACCESS_TOKEN não configurado',
+                'Erro de configuração interna do servidor de pagamentos',
             );
         }
         return token;
     }
 
-    private async callMercadoPago<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
+    private async callAsaas<T>(
+        method: 'GET' | 'POST',
+        path: string,
+        body?: unknown,
+    ): Promise<T> {
+        let lastError: unknown;
+
+        for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+            try {
+                return await this.doRequest<T>(method, path, body);
+            } catch (err: any) {
+                const status = err?.getStatus?.() ?? err?.status;
+                if (status && status >= 400 && status < 500) throw err;
+
+                lastError = err;
+                this.logger.warn(
+                    `Tentativa ${attempt}/${this.maxRetries} falhou para ${method} ${path}: ${err?.message}`,
+                );
+
+                if (attempt < this.maxRetries) {
+                    await this.sleep(this.retryDelayMs * attempt);
+                }
+            }
+        }
+
+        throw lastError;
+    }
+
+    private async doRequest<T>(
+        method: 'GET' | 'POST',
+        path: string,
+        body?: unknown,
+    ): Promise<T> {
         const response = await fetch(`${this.baseUrl}${path}`, {
             method,
             headers: {
-                Authorization: `Bearer ${this.getAccessToken()}`,
+                access_token: this.getAccessToken(),
                 'Content-Type': 'application/json',
-                'X-Idempotency-Key': randomUUID(),
+                'User-Agent': this.userAgent,
             },
             body: body ? JSON.stringify(body) : undefined,
         });
@@ -188,13 +412,17 @@ export class PaymentsService {
 
         if (!response.ok) {
             const message =
+                data?.errors?.[0]?.description ??
                 data?.message ??
                 data?.error ??
-                data?.cause?.[0]?.description ??
-                'Erro ao comunicar com Mercado Pago';
+                'Erro ao comunicar com Asaas';
             throw new HttpException(message, response.status);
         }
 
         return data as T;
+    }
+
+    private sleep(ms: number): Promise<void> {
+        return new Promise((resolve) => setTimeout(resolve, ms));
     }
 }
