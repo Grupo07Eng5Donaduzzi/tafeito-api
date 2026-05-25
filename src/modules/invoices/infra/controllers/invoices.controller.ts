@@ -7,12 +7,15 @@ import {
   ParseUUIDPipe,
   Post,
   Req,
+  Res,
+  StreamableFile,
   UnauthorizedException,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import type { Response } from 'express';
 import { InvoiceService } from '../../application/services/invoice.service';
 import { MAX_FILE_SIZE } from '../../domain/models/invoice.entity';
 
@@ -64,12 +67,19 @@ export class InvoicesController {
   }
 
   @Get(':id/download')
-  getDownloadUrl(
+  async download(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: any,
-  ) {
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
     const userId = requireUserId(req);
-    return this.service.getDownloadUrl(id, userId);
+    const { buffer, fileName, fileType } = await this.service.download(id, userId);
+    res.set({
+      'Content-Type': fileType,
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+      'Content-Length': String(buffer.length),
+    });
+    return new StreamableFile(buffer);
   }
 
   @Delete(':id')

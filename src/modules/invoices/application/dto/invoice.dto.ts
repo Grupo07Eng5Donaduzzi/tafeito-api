@@ -7,8 +7,3 @@ export class InvoiceDto {
   uploadedBy!: string;
   createdAt!: Date;
 }
-
-export class DownloadUrlDto {
-  downloadUrl!: string;
-  expiresAt!: Date;
-}
