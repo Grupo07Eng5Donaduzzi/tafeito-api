@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import {
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   OnModuleInit,
@@ -25,8 +26,15 @@ export class FirebaseAuthService implements OnModuleInit {
   }
 
   async createUser(email: string, password: string): Promise<string> {
-    const record = await this.auth.createUser({ email, password });
-    return record.uid;
+    try {
+      const record = await this.auth.createUser({ email, password });
+      return record.uid;
+    } catch (err: any) {
+      if (err?.errorInfo?.code === 'auth/email-already-exists') {
+        throw new ConflictException('Email já cadastrado.');
+      }
+      throw err;
+    }
   }
 
   async updateUser(uid: string, email?: string): Promise<void> {
