@@ -9,14 +9,10 @@ import { fromBuffer } from 'file-type';
 import {
   ALLOWED_MIME_TYPES,
   Invoice,
-  MIME_TO_EXT,
 } from '../../domain/models/invoice.entity';
 import type { InvoiceRepository } from '../../domain/repositories/invoice-repository.interface';
 import { INVOICE_REPOSITORY } from '../../domain/repositories/invoice-repository.interface';
-import { FirebaseStorageService } from '../../../../shared/infra/storage/firebase-storage.service';
 import { InvoiceDto, DownloadUrlDto } from '../dto/invoice.dto';
-
-const SIGNED_URL_TTL_MS = 60 * 60 * 1000;
 
 const XML_TEXT_MIMES = new Set(['application/xml', 'text/xml']);
 
@@ -25,7 +21,6 @@ export class InvoiceService {
   constructor(
     @Inject(INVOICE_REPOSITORY)
     private readonly repository: InvoiceRepository,
-    private readonly storageService: FirebaseStorageService,
   ) {}
 
   async upload(params: {
@@ -41,24 +36,12 @@ export class InvoiceService {
 
     await this.assertContentMatchesMime(file);
 
-    const extension = MIME_TO_EXT[file.mimetype];
-    if (!extension) {
-      throw new BadRequestException('Tipo de arquivo não permitido');
-    }
-
-    const filePath = await this.storageService.upload({
-      buffer: file.buffer,
-      mimeType: file.mimetype,
-      folder: `invoices/${paymentId}`,
-      extension,
-    });
-
     const invoice = Invoice.create({
       paymentId,
-      filePath,
       fileName: file.originalname,
       fileType: file.mimetype,
       fileSize: file.size,
+      fileData: file.buffer,
       uploadedBy: uploadedByUserId,
     });
 
@@ -88,11 +71,9 @@ export class InvoiceService {
       throw new ForbiddenException('Sem permissão para acessar esta nota fiscal');
     }
 
-    const expiresAt = new Date(Date.now() + SIGNED_URL_TTL_MS);
-    const downloadUrl = await this.storageService.getSignedUrl(
-      invoice.filePath,
-      SIGNED_URL_TTL_MS,
-    );
+    const base64 = invoice.fileData.toString('base64');
+    const downloadUrl = `data:${invoice.fileType};base64,${base64}`;
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
     return { downloadUrl, expiresAt };
   }
@@ -105,7 +86,6 @@ export class InvoiceService {
       throw new ForbiddenException('Sem permissão para remover esta nota fiscal');
     }
 
-    await this.storageService.delete(invoice.filePath);
     await this.repository.delete(id);
   }
 

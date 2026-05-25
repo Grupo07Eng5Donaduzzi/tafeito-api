@@ -1,23 +1,25 @@
 import { BadRequestException } from '@nestjs/common';
 import { Invoice } from './invoice.entity';
 
+const DUMMY_BUFFER = Buffer.from('dummy');
+
 describe('Invoice', () => {
   describe('create', () => {
     it('cria invoice com campos corretos e id gerado', () => {
       const invoice = Invoice.create({
         paymentId: '123456',
-        filePath: 'invoices/123456/abc.pdf',
         fileName: 'nota.pdf',
         fileType: 'application/pdf',
         fileSize: 204800,
+        fileData: DUMMY_BUFFER,
         uploadedBy: 'user-uuid-1',
       });
 
       expect(invoice.paymentId).toBe('123456');
-      expect(invoice.filePath).toBe('invoices/123456/abc.pdf');
       expect(invoice.fileName).toBe('nota.pdf');
       expect(invoice.fileType).toBe('application/pdf');
       expect(invoice.fileSize).toBe(204800);
+      expect(invoice.fileData).toBe(DUMMY_BUFFER);
       expect(invoice.uploadedBy).toBe('user-uuid-1');
       expect(invoice.id).toMatch(/^[0-9a-f-]{36}$/);
       expect(invoice.createdAt).toBeUndefined();
@@ -26,10 +28,10 @@ describe('Invoice', () => {
     it('sanitizes path traversal attempts in fileName', () => {
       const invoice = Invoice.create({
         paymentId: '123',
-        filePath: 'invoices/123/abc.pdf',
         fileName: '../../etc/passwd',
         fileType: 'application/pdf',
         fileSize: 100,
+        fileData: DUMMY_BUFFER,
         uploadedBy: 'u',
       });
       expect(invoice.fileName).not.toContain('/');
@@ -39,10 +41,10 @@ describe('Invoice', () => {
     it('replaces unsafe characters in fileName', () => {
       const invoice = Invoice.create({
         paymentId: '123',
-        filePath: 'invoices/123/abc.pdf',
         fileName: 'nota fiscal $$$.pdf',
         fileType: 'application/pdf',
         fileSize: 100,
+        fileData: DUMMY_BUFFER,
         uploadedBy: 'u',
       });
       expect(invoice.fileName).toBe('nota_fiscal____.pdf');
@@ -52,10 +54,10 @@ describe('Invoice', () => {
       expect(() =>
         Invoice.create({
           paymentId: '123456',
-          filePath: 'invoices/123456/abc.exe',
           fileName: 'malware.exe',
           fileType: 'application/x-msdownload',
           fileSize: 1024,
+          fileData: DUMMY_BUFFER,
           uploadedBy: 'user-uuid-1',
         }),
       ).toThrow(BadRequestException);
@@ -65,10 +67,10 @@ describe('Invoice', () => {
       expect(() =>
         Invoice.create({
           paymentId: '123456',
-          filePath: 'invoices/123456/big.pdf',
           fileName: 'big.pdf',
           fileType: 'application/pdf',
           fileSize: 11 * 1024 * 1024,
+          fileData: DUMMY_BUFFER,
           uploadedBy: 'user-uuid-1',
         }),
       ).toThrow(BadRequestException);
@@ -78,10 +80,10 @@ describe('Invoice', () => {
       expect(() =>
         Invoice.create({
           paymentId: '123456',
-          filePath: 'invoices/123456/empty.pdf',
           fileName: 'empty.pdf',
           fileType: 'application/pdf',
           fileSize: 0,
+          fileData: DUMMY_BUFFER,
           uploadedBy: 'user-uuid-1',
         }),
       ).toThrow(BadRequestException);
@@ -91,10 +93,10 @@ describe('Invoice', () => {
       expect(() =>
         Invoice.create({
           paymentId: '   ',
-          filePath: 'invoices/x/a.pdf',
           fileName: 'a.pdf',
           fileType: 'application/pdf',
           fileSize: 100,
+          fileData: DUMMY_BUFFER,
           uploadedBy: 'u',
         }),
       ).toThrow(BadRequestException);
@@ -107,16 +109,17 @@ describe('Invoice', () => {
       const invoice = Invoice.restore({
         id: 'inv-uuid',
         paymentId: '123456',
-        filePath: 'invoices/123456/abc.pdf',
         fileName: 'nota.pdf',
         fileType: 'application/pdf',
         fileSize: 204800,
+        fileData: DUMMY_BUFFER,
         uploadedBy: 'user-uuid-1',
         createdAt: now,
       });
 
       expect(invoice.id).toBe('inv-uuid');
       expect(invoice.createdAt).toBe(now);
+      expect(invoice.fileData).toBe(DUMMY_BUFFER);
     });
   });
 });

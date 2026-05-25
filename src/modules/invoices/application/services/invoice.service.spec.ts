@@ -1,6 +1,5 @@
 import { InvoiceService } from './invoice.service';
 import { InvoiceRepository } from '../../domain/repositories/invoice-repository.interface';
-import { FirebaseStorageService } from '../../../../shared/infra/storage/firebase-storage.service';
 import { Invoice } from '../../domain/models/invoice.entity';
 import {
   BadRequestException,
@@ -25,24 +24,17 @@ const mockRepository: jest.Mocked<InvoiceRepository> = {
   delete: jest.fn(),
 };
 
-const mockStorage: jest.Mocked<FirebaseStorageService> = {
-  upload: jest.fn(),
-  getSignedUrl: jest.fn(),
-  delete: jest.fn(),
-} as any;
-
 describe('InvoiceService', () => {
   let service: InvoiceService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new InvoiceService(mockRepository, mockStorage);
+    service = new InvoiceService(mockRepository);
   });
 
   describe('upload', () => {
     it('persists PDF when magic bytes match mime', async () => {
       const persisted = new Date('2026-01-01T00:00:00Z');
-      mockStorage.upload.mockResolvedValue('invoices/123/abc.pdf');
       mockRepository.create.mockResolvedValue(persisted);
 
       const result = await service.upload({
@@ -56,7 +48,6 @@ describe('InvoiceService', () => {
         uploadedByUserId: 'user-uuid-1',
       });
 
-      expect(mockStorage.upload).toHaveBeenCalled();
       expect(mockRepository.create).toHaveBeenCalledTimes(1);
       expect(result.paymentId).toBe('123');
       expect(result.fileName).toBe('nota_fiscal.pdf');
@@ -64,7 +55,6 @@ describe('InvoiceService', () => {
     });
 
     it('persists JPEG when magic bytes match mime', async () => {
-      mockStorage.upload.mockResolvedValue('invoices/123/abc.jpg');
       mockRepository.create.mockResolvedValue(new Date());
 
       const result = await service.upload({
@@ -82,7 +72,6 @@ describe('InvoiceService', () => {
     });
 
     it('accepts XML when content starts with <', async () => {
-      mockStorage.upload.mockResolvedValue('invoices/123/abc.xml');
       mockRepository.create.mockResolvedValue(new Date());
 
       const result = await service.upload({
@@ -150,20 +139,20 @@ describe('InvoiceService', () => {
       const mine = Invoice.restore({
         id: 'inv-1',
         paymentId: '123',
-        filePath: 'invoices/123/a.pdf',
         fileName: 'a.pdf',
         fileType: 'application/pdf',
         fileSize: 100,
+        fileData: PDF_BUFFER,
         uploadedBy: 'user-1',
         createdAt: new Date(),
       });
       const someoneElse = Invoice.restore({
         id: 'inv-2',
         paymentId: '123',
-        filePath: 'invoices/123/b.pdf',
         fileName: 'b.pdf',
         fileType: 'application/pdf',
         fileSize: 100,
+        fileData: PDF_BUFFER,
         uploadedBy: 'user-2',
         createdAt: new Date(),
       });
@@ -176,23 +165,22 @@ describe('InvoiceService', () => {
   });
 
   describe('getDownloadUrl', () => {
-    it('retorna URL assinada quando usuário é o uploader', async () => {
+    it('retorna data URL base64 quando usuário é o uploader', async () => {
       const invoice = Invoice.restore({
         id: 'inv-1',
         paymentId: '123',
-        filePath: 'invoices/123/abc.pdf',
         fileName: 'nota.pdf',
         fileType: 'application/pdf',
-        fileSize: 1024,
+        fileSize: PDF_BUFFER.length,
+        fileData: PDF_BUFFER,
         uploadedBy: 'user-uuid-1',
         createdAt: new Date(),
       });
       mockRepository.findById.mockResolvedValue(invoice);
-      mockStorage.getSignedUrl.mockResolvedValue('https://storage.googleapis.com/signed');
 
       const result = await service.getDownloadUrl('inv-1', 'user-uuid-1');
 
-      expect(result.downloadUrl).toBe('https://storage.googleapis.com/signed');
+      expect(result.downloadUrl).toMatch(/^data:application\/pdf;base64,/);
       expect(result.expiresAt).toBeInstanceOf(Date);
     });
 
@@ -200,10 +188,10 @@ describe('InvoiceService', () => {
       const invoice = Invoice.restore({
         id: 'inv-1',
         paymentId: '123',
-        filePath: 'invoices/123/abc.pdf',
         fileName: 'nota.pdf',
         fileType: 'application/pdf',
-        fileSize: 1024,
+        fileSize: PDF_BUFFER.length,
+        fileData: PDF_BUFFER,
         uploadedBy: 'user-uuid-1',
         createdAt: new Date(),
       });
@@ -223,24 +211,22 @@ describe('InvoiceService', () => {
   });
 
   describe('remove', () => {
-    it('deleta invoice se usuário é o uploader', async () => {
+    it('deleta invoice do banco se usuário é o uploader', async () => {
       const invoice = Invoice.restore({
         id: 'inv-1',
         paymentId: '123',
-        filePath: 'invoices/123/abc.pdf',
         fileName: 'nota.pdf',
         fileType: 'application/pdf',
-        fileSize: 1024,
+        fileSize: PDF_BUFFER.length,
+        fileData: PDF_BUFFER,
         uploadedBy: 'user-uuid-1',
         createdAt: new Date(),
       });
       mockRepository.findById.mockResolvedValue(invoice);
-      mockStorage.delete.mockResolvedValue(undefined);
       mockRepository.delete.mockResolvedValue(undefined);
 
       await service.remove('inv-1', 'user-uuid-1');
 
-      expect(mockStorage.delete).toHaveBeenCalledWith('invoices/123/abc.pdf');
       expect(mockRepository.delete).toHaveBeenCalledWith('inv-1');
     });
 
@@ -248,10 +234,10 @@ describe('InvoiceService', () => {
       const invoice = Invoice.restore({
         id: 'inv-1',
         paymentId: '123',
-        filePath: 'invoices/123/abc.pdf',
         fileName: 'nota.pdf',
         fileType: 'application/pdf',
-        fileSize: 1024,
+        fileSize: PDF_BUFFER.length,
+        fileData: PDF_BUFFER,
         uploadedBy: 'user-uuid-1',
         createdAt: new Date(),
       });

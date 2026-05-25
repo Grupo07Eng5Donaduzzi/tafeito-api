@@ -15,10 +15,11 @@ export class DrizzleInvoiceRepository implements InvoiceRepository {
       .values({
         id: invoice.id,
         paymentId: invoice.paymentId,
-        filePath: invoice.filePath,
+        filePath: invoice.fileName,
         fileName: invoice.fileName,
         fileType: invoice.fileType,
         fileSize: invoice.fileSize,
+        fileData: invoice.fileData,
         uploadedBy: invoice.uploadedBy,
         createdAt: new Date(),
       })
@@ -38,7 +39,17 @@ export class DrizzleInvoiceRepository implements InvoiceRepository {
 
   async findByPaymentId(paymentId: string): Promise<Invoice[]> {
     const result = await this.drizzleService.db
-      .select()
+      .select({
+        id: invoicesSchema.id,
+        paymentId: invoicesSchema.paymentId,
+        filePath: invoicesSchema.filePath,
+        fileName: invoicesSchema.fileName,
+        fileType: invoicesSchema.fileType,
+        fileSize: invoicesSchema.fileSize,
+        fileData: invoicesSchema.fileData,
+        uploadedBy: invoicesSchema.uploadedBy,
+        createdAt: invoicesSchema.createdAt,
+      })
       .from(invoicesSchema)
       .where(eq(invoicesSchema.paymentId, paymentId))
       .orderBy(invoicesSchema.createdAt);
@@ -56,10 +67,10 @@ export class DrizzleInvoiceRepository implements InvoiceRepository {
     return Invoice.restore({
       id: row.id,
       paymentId: row.paymentId,
-      filePath: row.filePath,
       fileName: row.fileName,
       fileType: row.fileType,
       fileSize: row.fileSize,
+      fileData: row.fileData,
       uploadedBy: row.uploadedBy,
       createdAt: row.createdAt,
     });

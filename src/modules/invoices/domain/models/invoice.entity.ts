@@ -32,10 +32,10 @@ function sanitizeFileName(name: string): string {
 export class Invoice {
   private readonly _id: string;
   private _paymentId: string;
-  private _filePath: string;
   private _fileName: string;
   private _fileType: string;
   private _fileSize: number;
+  private _fileData: Buffer;
   private _uploadedBy: string;
   private readonly _createdAt?: Date;
 
@@ -46,19 +46,19 @@ export class Invoice {
 
   get id(): string { return this._id; }
   get paymentId(): string { return this._paymentId; }
-  get filePath(): string { return this._filePath; }
   get fileName(): string { return this._fileName; }
   get fileType(): string { return this._fileType; }
   get fileSize(): number { return this._fileSize; }
+  get fileData(): Buffer { return this._fileData; }
   get uploadedBy(): string { return this._uploadedBy; }
   get createdAt(): Date | undefined { return this._createdAt; }
 
   static create(props: {
     paymentId: string;
-    filePath: string;
     fileName: string;
     fileType: string;
     fileSize: number;
+    fileData: Buffer;
     uploadedBy: string;
   }): Invoice {
     if (!ALLOWED_MIME_TYPES.has(props.fileType)) {
@@ -76,10 +76,10 @@ export class Invoice {
 
     const invoice = new Invoice(randomUUID());
     invoice._paymentId = props.paymentId.trim();
-    invoice._filePath = props.filePath;
     invoice._fileName = sanitizeFileName(props.fileName);
     invoice._fileType = props.fileType;
     invoice._fileSize = props.fileSize;
+    invoice._fileData = props.fileData;
     invoice._uploadedBy = props.uploadedBy;
     return invoice;
   }
@@ -87,19 +87,19 @@ export class Invoice {
   static restore(props: {
     id: string;
     paymentId: string;
-    filePath: string;
     fileName: string;
     fileType: string;
     fileSize: number;
+    fileData: Buffer;
     uploadedBy: string;
     createdAt: Date;
   }): Invoice {
     const invoice = new Invoice(props.id, props.createdAt);
     invoice._paymentId = props.paymentId;
-    invoice._filePath = props.filePath;
     invoice._fileName = props.fileName;
     invoice._fileType = props.fileType;
     invoice._fileSize = props.fileSize;
+    invoice._fileData = props.fileData;
     invoice._uploadedBy = props.uploadedBy;
     return invoice;
   }
