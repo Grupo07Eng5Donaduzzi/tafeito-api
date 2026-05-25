@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DrizzleServiceRepository } from '../../infra/repositories/drizzle-service.repository';
-import { CreateServiceDto } from '../dto/create-service.dto';
 import { UpdateServiceDto } from '../dto/update-service.dto';
 
 @Injectable()
@@ -24,17 +23,6 @@ export class ServiceService {
     }
 
     return trimmed;
-  }
-
-  async create(dto: CreateServiceDto): Promise<any> {
-    const name = this.validateNonEmptyString(dto.name, 'name');
-    const description = this.validateNonEmptyString(dto.description, 'description');
-    const category = this.validateNonEmptyString(dto.category, 'category');
-    const price = this.validatePositiveNumberString(dto.price, 'price');
-    const duration = this.validatePositiveNumberString(dto.duration, 'duration');
-    const userId = this.validateNonEmptyString(dto.userId, 'userId');
-
-    return this.repository.create({ name, description, category, price, duration, userId });
   }
 
   async listAll(): Promise<any[]> {
