@@ -8,6 +8,7 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
+import { PaginationQueryDto } from '@shared/application/dto/pagination-query.dto';
 
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { BudgetRequestService } from '../../application/services/budget-request.service';
@@ -34,8 +35,11 @@ export class BudgetRequestsController {
   }
 
   @Get('user/:userId')
-  findByUserId(@Param('userId') userId: string) {
-    return this.service.findByUserId(userId);
+  findByUserId(
+    @Param('userId') userId: string,
+    @Query() query: PaginationQueryDto,
+  ) {
+    return this.service.findByUserId(userId, query.page, query.pageSize);
   }
 
   @Get('available')

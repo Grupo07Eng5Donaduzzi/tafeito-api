@@ -10,6 +10,7 @@ import { BudgetRequest } from '../../domain/models/budget-request.entity';
 import { CreateBudgetRequestDto } from '../dto/create-budget-request.dto';
 import { CancelBudgetRequestDto } from '../dto/cancel-budget-request.dto';
 import { BudgetRequestDto } from '../dto/budget-request.dto';
+import { PaginatedResponseDto } from '@shared/application/dto/paginated-response.dto';
 
 @Injectable()
 export class BudgetRequestService {
@@ -47,9 +48,18 @@ export class BudgetRequestService {
     return result ? this.toDto(result) : null;
   }
 
-  async findByUserId(userId: string): Promise<BudgetRequestDto[]> {
-    const result = await this.repository.findByUserId(userId);
-    return result.map((s) => this.toDto(s));
+  async findByUserId(
+    userId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<PaginatedResponseDto<BudgetRequestDto>> {
+    const { data, total } = await this.repository.findByUserId(userId, page, pageSize);
+    return PaginatedResponseDto.of(
+      data.map((s) => this.toDto(s)),
+      total,
+      page,
+      pageSize,
+    );
   }
 
   async findAvailableByServiceId(serviceId: string): Promise<BudgetRequestDto[]> {
