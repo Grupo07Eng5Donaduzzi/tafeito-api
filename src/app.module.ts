@@ -8,6 +8,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { ContestacaoModule } from './modules/proposal/contestacao.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { SchedulesModule } from './modules/schedules/schedules.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
     ContestacaoModule,
     PaymentsModule,
     ReviewsModule,
+    SchedulesModule,
   ],
 })
 export class AppModule {}

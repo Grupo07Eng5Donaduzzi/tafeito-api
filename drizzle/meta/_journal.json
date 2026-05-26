@@ -85,6 +85,13 @@
       "when": 1779600000000,
       "tag": "0011_review_rating_check_and_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1778200000002,
+      "tag": "0012_create_schedules",
+      "breakpoints": true
     }
   ]
 }
