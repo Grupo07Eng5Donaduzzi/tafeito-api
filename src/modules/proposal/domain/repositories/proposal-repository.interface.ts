@@ -30,6 +30,10 @@ export interface ProposalRepository {
 
 export interface NegotiationMessageRepository {
   create(message: NegotiationMessage): Promise<void>;
-  findByProposalId(proposalId: string): Promise<NegotiationMessage[]>;
+  findByProposalId(
+    proposalId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: NegotiationMessage[]; total: number }>;
   findById(id: string): Promise<NegotiationMessage | null>;
 }

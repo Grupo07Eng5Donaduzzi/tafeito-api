@@ -181,7 +181,12 @@ export class NegotiationsController {
   @Get(':proposalId/messages')
   async getMessages(
     @Param('proposalId') proposalId: string,
-  ): Promise<NegotiationMessageDto[]> {
-    return this.negotiationService.getMessages(proposalId);
+    @Query() query: PaginationQueryDto,
+  ) {
+    return this.negotiationService.getMessages(
+      proposalId,
+      query.page,
+      query.pageSize,
+    );
   }
 }
