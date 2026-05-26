@@ -14,7 +14,7 @@ import {
   proposalsSchema,
   negotiationMessagesSchema,
 } from '../schemas/proposal.schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, count } from 'drizzle-orm';
 
 @Injectable()
 export class DrizzleProposalRepository implements ProposalRepository {
@@ -88,24 +88,46 @@ export class DrizzleProposalRepository implements ProposalRepository {
     return result.map(this.mapToEntity);
   }
 
-  async findByProviderId(providerId: string): Promise<Proposal[]> {
+  async findByProviderId(
+    providerId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: Proposal[]; total: number }> {
+    const [{ total }] = await this.drizzleService.db
+      .select({ total: count() })
+      .from(proposalsSchema)
+      .where(eq(proposalsSchema.providerId, providerId));
+
     const result = await this.drizzleService.db
       .select()
       .from(proposalsSchema)
       .where(eq(proposalsSchema.providerId, providerId))
-      .orderBy(proposalsSchema.createdAt);
+      .orderBy(proposalsSchema.createdAt)
+      .limit(pageSize)
+      .offset((page - 1) * pageSize);
 
-    return result.map(this.mapToEntity);
+    return { data: result.map(this.mapToEntity), total: Number(total) };
   }
 
-  async findByClientId(clientId: string): Promise<Proposal[]> {
+  async findByClientId(
+    clientId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: Proposal[]; total: number }> {
+    const [{ total }] = await this.drizzleService.db
+      .select({ total: count() })
+      .from(proposalsSchema)
+      .where(eq(proposalsSchema.clientId, clientId));
+
     const result = await this.drizzleService.db
       .select()
       .from(proposalsSchema)
       .where(eq(proposalsSchema.clientId, clientId))
-      .orderBy(proposalsSchema.createdAt);
+      .orderBy(proposalsSchema.createdAt)
+      .limit(pageSize)
+      .offset((page - 1) * pageSize);
 
-    return result.map(this.mapToEntity);
+    return { data: result.map(this.mapToEntity), total: Number(total) };
   }
 
   async findByRequestAndProvider(

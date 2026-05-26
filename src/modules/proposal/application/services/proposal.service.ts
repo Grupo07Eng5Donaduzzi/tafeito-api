@@ -20,6 +20,7 @@ import {
   ProposalDto,
   RejectProposalDto,
 } from '../dto/proposal.dto';
+import { PaginatedResponseDto } from '@shared/application/dto/paginated-response.dto';
 
 @Injectable()
 export class ProposalService {
@@ -256,15 +257,40 @@ export class ProposalService {
     return proposals.map((p) => ProposalDto.from(p)!);
   }
 
-  async getProposalsByProvider(providerId: string): Promise<ProposalDto[]> {
-    const proposals =
-      await this.proposalRepository.findByProviderId(providerId);
-    return proposals.map((p) => ProposalDto.from(p)!);
+  async getProposalsByProvider(
+    providerId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<PaginatedResponseDto<ProposalDto>> {
+    const { data, total } = await this.proposalRepository.findByProviderId(
+      providerId,
+      page,
+      pageSize,
+    );
+    return PaginatedResponseDto.of(
+      data.map((p) => ProposalDto.from(p)!),
+      total,
+      page,
+      pageSize,
+    );
   }
 
-  async getProposalsByClient(clientId: string): Promise<ProposalDto[]> {
-    const proposals = await this.proposalRepository.findByClientId(clientId);
-    return proposals.map((p) => ProposalDto.from(p)!);
+  async getProposalsByClient(
+    clientId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<PaginatedResponseDto<ProposalDto>> {
+    const { data, total } = await this.proposalRepository.findByClientId(
+      clientId,
+      page,
+      pageSize,
+    );
+    return PaginatedResponseDto.of(
+      data.map((p) => ProposalDto.from(p)!),
+      total,
+      page,
+      pageSize,
+    );
   }
 
   async getProposal(proposalId: string): Promise<ProposalDto> {

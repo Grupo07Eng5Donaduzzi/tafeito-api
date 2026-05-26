@@ -7,6 +7,7 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
+import { PaginationQueryDto } from '@shared/application/dto/pagination-query.dto';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { ConversationResponseDto } from '@chat/application/dto/conversation.dto';
 import { ProposalService } from '../../application/services/proposal.service';
@@ -37,12 +38,17 @@ export class ProposalsController {
   async findAll(
     @Query('requestId') requestId?: string,
     @Query('providerId') providerId?: string,
-  ): Promise<ProposalDto[]> {
+    @Query() query?: PaginationQueryDto,
+  ) {
     if (requestId) {
       return this.proposalService.getProposalsByRequest(requestId);
     }
     if (providerId) {
-      return this.proposalService.getProposalsByProvider(providerId);
+      return this.proposalService.getProposalsByProvider(
+        providerId,
+        query?.page ?? 1,
+        query?.pageSize ?? 20,
+      );
     }
     return [];
   }
@@ -50,15 +56,25 @@ export class ProposalsController {
   @Get('provider/created')
   async findProviderCreated(
     @CurrentUser() providerId: string,
-  ): Promise<ProposalDto[]> {
-    return this.proposalService.getProposalsByProvider(providerId);
+    @Query() query: PaginationQueryDto,
+  ) {
+    return this.proposalService.getProposalsByProvider(
+      providerId,
+      query.page,
+      query.pageSize,
+    );
   }
 
   @Get('client/requested')
   async findClientRequested(
     @CurrentUser() clientId: string,
-  ): Promise<ProposalDto[]> {
-    return this.proposalService.getProposalsByClient(clientId);
+    @Query() query: PaginationQueryDto,
+  ) {
+    return this.proposalService.getProposalsByClient(
+      clientId,
+      query.page,
+      query.pageSize,
+    );
   }
 
   @Get(':id')

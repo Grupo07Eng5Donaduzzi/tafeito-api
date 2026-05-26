@@ -12,8 +12,16 @@ export interface ProposalRepository {
   findAll(): Promise<Proposal[]>;
   findById(id: string): Promise<Proposal | null>;
   findByRequestId(requestId: string): Promise<Proposal[]>;
-  findByClientId(clientId: string): Promise<Proposal[]>;
-  findByProviderId(providerId: string): Promise<Proposal[]>;
+  findByClientId(
+    clientId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: Proposal[]; total: number }>;
+  findByProviderId(
+    providerId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: Proposal[]; total: number }>;
   findByRequestAndProvider(
     requestId: string,
     providerId: string,
