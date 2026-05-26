@@ -1,11 +1,10 @@
 import {
   IsString,
   IsNumber,
-  IsEnum,
   IsOptional,
   Min,
-  Max,
   IsUUID,
+  MaxLength,
 } from 'class-validator';
 import {
   Proposal,
@@ -26,16 +25,19 @@ export class CreateProposalDto {
 export class RejectProposalDto {
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   reason?: string;
 }
 
 export class ContestProposalDto {
   @IsString()
+  @MaxLength(500)
   reason: string;
 }
 
 export class CreateNegotiationMessageDto {
   @IsString()
+  @MaxLength(2000)
   message: string;
 
   @IsOptional()
@@ -50,6 +52,7 @@ export class SendRevisedProposalDto {
   estimatedHours: number;
 
   @IsString()
+  @MaxLength(2000)
   message: string;
 }
 

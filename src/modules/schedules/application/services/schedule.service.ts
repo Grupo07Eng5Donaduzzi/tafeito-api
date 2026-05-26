@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { SCHEDULE_REPOSITORY, ScheduleRepository } from '../../domain/repositories/schedule-repository.interface';
+import { SCHEDULE_REPOSITORY } from '../../domain/repositories/schedule-repository.interface';
+import type { ScheduleRepository } from '../../domain/repositories/schedule-repository.interface';
 import { Schedule } from '../../domain/models/schedule.entity';
 import { CreateScheduleDto } from '../dto/create-schedule.dto';
 import { ScheduleDto } from '../dto/schedule.dto';
