@@ -6,7 +6,7 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, UsePipes, ValidationPipe } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { verify } from 'jsonwebtoken';
 import { MessageService } from '../../application/services/message.service';
@@ -17,10 +17,12 @@ interface AuthenticatedSocket extends Socket {
   serviceId?: string;
 }
 
+@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
 @WebSocketGateway({
   namespace: '/chat',
   cors: {
-    origin: process.env.FRONTEND_URL || '*',
+    origin:
+      process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : '*',
     credentials: true,
   },
 })
