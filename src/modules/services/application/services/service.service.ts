@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DrizzleServiceRepository } from '../../infra/repositories/drizzle-service.repository';
 import { UpdateServiceDto } from '../dto/update-service.dto';
+import { PaginatedResponseDto } from '@shared/application/dto/paginated-response.dto';
 
 @Injectable()
 export class ServiceService {
@@ -31,12 +32,18 @@ export class ServiceService {
     return trimmed;
   }
 
-  async listAll(): Promise<any[]> {
-    return await this.repository.findAll();
+  async listAll(page: number, pageSize: number): Promise<PaginatedResponseDto<any>> {
+    const { data, total } = await this.repository.findAll(page, pageSize);
+    return PaginatedResponseDto.of(data, total, page, pageSize);
   }
 
-  async listByCategory(category: string): Promise<any[]> {
-    return await this.repository.findByCategory(category);
+  async listByCategory(
+    category: string,
+    page: number,
+    pageSize: number,
+  ): Promise<PaginatedResponseDto<any>> {
+    const { data, total } = await this.repository.findByCategory(category, page, pageSize);
+    return PaginatedResponseDto.of(data, total, page, pageSize);
   }
 
   async remove(id: string): Promise<void> {
