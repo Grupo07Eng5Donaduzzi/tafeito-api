@@ -182,14 +182,25 @@ export class DrizzleNegotiationMessageRepository implements NegotiationMessageRe
     });
   }
 
-  async findByProposalId(proposalId: string): Promise<NegotiationMessage[]> {
+  async findByProposalId(
+    proposalId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: NegotiationMessage[]; total: number }> {
+    const [{ total }] = await this.drizzleService.db
+      .select({ total: count() })
+      .from(negotiationMessagesSchema)
+      .where(eq(negotiationMessagesSchema.proposalId, proposalId));
+
     const result = await this.drizzleService.db
       .select()
       .from(negotiationMessagesSchema)
       .where(eq(negotiationMessagesSchema.proposalId, proposalId))
-      .orderBy(negotiationMessagesSchema.createdAt);
+      .orderBy(negotiationMessagesSchema.createdAt)
+      .limit(pageSize)
+      .offset((page - 1) * pageSize);
 
-    return result.map(this.mapToEntity);
+    return { data: result.map(this.mapToEntity), total: Number(total) };
   }
 
   async findById(id: string): Promise<NegotiationMessage | null> {

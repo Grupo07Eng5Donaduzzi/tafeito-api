@@ -24,6 +24,7 @@ import {
   NegotiationMessageDto,
   SendRevisedProposalDto,
 } from '../dto/proposal.dto';
+import { PaginatedResponseDto } from '@shared/application/dto/paginated-response.dto';
 
 @Injectable()
 export class NegotiationService {
@@ -129,13 +130,26 @@ export class NegotiationService {
     // );
   }
 
-  async getMessages(proposalId: string): Promise<NegotiationMessageDto[]> {
+  async getMessages(
+    proposalId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<PaginatedResponseDto<NegotiationMessageDto>> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
       throw new NotFoundException('Proposal not found');
     }
 
-    const messages = await this.messageRepository.findByProposalId(proposalId);
-    return messages.map((m) => NegotiationMessageDto.from(m)!);
+    const { data, total } = await this.messageRepository.findByProposalId(
+      proposalId,
+      page,
+      pageSize,
+    );
+    return PaginatedResponseDto.of(
+      data.map((m) => NegotiationMessageDto.from(m)!),
+      total,
+      page,
+      pageSize,
+    );
   }
 }
