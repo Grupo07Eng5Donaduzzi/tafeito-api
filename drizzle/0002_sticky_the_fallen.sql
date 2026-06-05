@@ -1,1 +1,0 @@
-ALTER TABLE "services" ADD COLUMN "user_id" uuid;
