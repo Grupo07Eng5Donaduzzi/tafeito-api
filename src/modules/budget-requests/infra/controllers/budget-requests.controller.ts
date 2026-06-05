@@ -5,16 +5,21 @@ import {
   Patch,
   Delete,
   Body,
+  HttpCode,
+  HttpStatus,
   Param,
   Query,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { BudgetRequestService } from '../../application/services/budget-request.service';
 import { CreateBudgetRequestDto } from '../../application/dto/create-budget-request.dto';
 import { CancelBudgetRequestDto } from '../../application/dto/cancel-budget-request.dto';
 
-@Controller('budget-requests')
+@ApiTags('Budget Requests')
+@ApiBearerAuth('access-token')
+@Controller('budgetRequests')
 export class BudgetRequestsController {
   constructor(private readonly service: BudgetRequestService) {}
 
@@ -23,9 +28,14 @@ export class BudgetRequestsController {
     return this.service.create(userId, dto);
   }
 
-  @Get()
-  findAll() {
-    return this.service.findAll();
+  @Get('mine')
+  findMine(@CurrentUser() userId: string) {
+    return this.service.findByUserId(userId);
+  }
+
+  @Get('available')
+  findAvailable(@Query('service_id') serviceId: string) {
+    return this.service.findAvailableByServiceId(serviceId);
   }
 
   @Get(':id')
@@ -33,24 +43,19 @@ export class BudgetRequestsController {
     return this.service.findById(id);
   }
 
-  @Get('user/:userId')
-  findByUserId(@Param('userId') userId: string) {
-    return this.service.findByUserId(userId);
-  }
-
-  @Get('available')
-  findAvailable(@Query('serviceId') serviceId: string) {
-    return this.service.findAvailableByServiceId(serviceId);
-  }
-
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id/cancel')
-  cancel(@Param('id') id: string, @Body() dto: CancelBudgetRequestDto) {
-    return this.service.cancel(id, dto);
+  async cancel(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+    @Body() dto: CancelBudgetRequestDto,
+  ): Promise<void> {
+    await this.service.cancel(id, userId, dto);
   }
 
-
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.delete(id);
+  async remove(@Param('id') id: string, @CurrentUser() userId: string): Promise<void> {
+    await this.service.delete(id, userId);
   }
 }

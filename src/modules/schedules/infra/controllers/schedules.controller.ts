@@ -1,7 +1,10 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { ScheduleService } from '../../application/services/schedule.service';
 import { CreateScheduleDto } from '../../application/dto/create-schedule.dto';
 
+@ApiTags('Schedules')
+@ApiBearerAuth('access-token')
 @Controller('schedules')
 export class SchedulesController {
   constructor(private readonly service: ScheduleService) {}

@@ -21,7 +21,7 @@ export interface ProposalRepository {
 }
 
 export interface NegotiationMessageRepository {
-  create(message: NegotiationMessage): Promise<void>;
+  create(message: NegotiationMessage): Promise<NegotiationMessage>;
   findByProposalId(proposalId: string): Promise<NegotiationMessage[]>;
   findById(id: string): Promise<NegotiationMessage | null>;
 }

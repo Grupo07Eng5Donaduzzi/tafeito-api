@@ -1,5 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DrizzleServiceRepository } from '../../infra/repositories/drizzle-service.repository';
+import { CreateServiceDto } from '../dto/create-service.dto';
 import { UpdateServiceDto } from '../dto/update-service.dto';
 
 @Injectable()
@@ -20,7 +26,10 @@ export class ServiceService {
     return trimmed;
   }
 
-  private validatePositiveNumberString(value: string, fieldName: string): string {
+  private validatePositiveNumberString(
+    value: string,
+    fieldName: string,
+  ): string {
     const trimmed = value.trim();
     const parsed = Number(trimmed);
 
@@ -31,26 +40,58 @@ export class ServiceService {
     return trimmed;
   }
 
+  async create(userId: string, dto: CreateServiceDto): Promise<any> {
+    const name = this.validateNonEmptyString(dto.name, 'name');
+    const description = this.validateNonEmptyString(
+      dto.description,
+      'description',
+    );
+    const category = this.validateNonEmptyString(dto.category, 'category');
+    const price = this.validatePositiveNumberString(dto.price, 'price');
+    const duration = dto.duration
+      ? this.validatePositiveNumberString(dto.duration, 'duration')
+      : '0';
+
+    return this.repository.create({
+      userId,
+      name,
+      description,
+      category,
+      price,
+      duration,
+    });
+  }
+
   async listAll(): Promise<any[]> {
-    return await this.repository.findAll();
+    return this.repository.findAll();
   }
 
   async listByCategory(category: string): Promise<any[]> {
-    return await this.repository.findByCategory(category);
+    return this.repository.findByCategory(category);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, userId: string): Promise<void> {
     const existing = await this.repository.findById(id);
     if (!existing) {
       throw new NotFoundException('Serviço não encontrado');
     }
+    if (existing.userId !== userId) {
+      throw new ForbiddenException(
+        'Apenas o dono do serviço pode excluí-lo',
+      );
+    }
     await this.repository.deleteById(id);
   }
 
-  async edit(id: string, dto: UpdateServiceDto): Promise<any> {
+  async edit(id: string, userId: string, dto: UpdateServiceDto): Promise<any> {
     const existing = await this.repository.findById(id);
     if (!existing) {
       throw new NotFoundException('Serviço não encontrado');
+    }
+    if (existing.userId !== userId) {
+      throw new ForbiddenException(
+        'Apenas o dono do serviço pode editá-lo',
+      );
     }
 
     const payload: UpdateServiceDto = {};
@@ -60,7 +101,10 @@ export class ServiceService {
     }
 
     if (dto.description !== undefined) {
-      payload.description = this.validateNonEmptyString(dto.description, 'description');
+      payload.description = this.validateNonEmptyString(
+        dto.description,
+        'description',
+      );
     }
 
     if (dto.category !== undefined) {
@@ -72,19 +116,24 @@ export class ServiceService {
     }
 
     if (dto.duration !== undefined) {
-      payload.duration = this.validatePositiveNumberString(dto.duration, 'duration');
+      payload.duration = this.validatePositiveNumberString(
+        dto.duration,
+        'duration',
+      );
     }
 
     if (dto.userId !== undefined) {
-      const userId = this.validateNonEmptyString(dto.userId, 'userId');
-      if (!this.isValidUuid(userId)) {
+      const newUserId = this.validateNonEmptyString(dto.userId, 'userId');
+      if (!this.isValidUuid(newUserId)) {
         throw new BadRequestException('userId deve ser um UUID válido');
       }
-      payload.userId = userId;
+      payload.userId = newUserId;
     }
 
     if (Object.keys(payload).length === 0) {
-      throw new BadRequestException('Pelo menos um campo deve ser informado para atualização');
+      throw new BadRequestException(
+        'Pelo menos um campo deve ser informado para atualização',
+      );
     }
 
     await this.repository.updateById(id, payload);

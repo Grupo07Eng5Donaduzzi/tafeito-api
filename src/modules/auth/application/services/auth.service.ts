@@ -10,6 +10,7 @@ import { UserDto } from '@users/application/dto/user.dto';
 import type { StringValue } from 'ms';
 import jwt from 'jsonwebtoken';
 import { AuthJwtPayload } from '../../domain/models/auth-jwt-payload.model';
+import { BecomeProviderDto } from '../dto/become-provider.dto';
 
 interface JwtModule {
   sign: (payload: AuthJwtPayload, secret: string, options?: any) => string;
@@ -63,8 +64,14 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
-  async becomeProvider(userId: string, pixKey: string): Promise<UserDto> {
-    return this.userService.edit(userId, { pixKey });
+  async becomeProvider(
+    userId: string,
+    dto: BecomeProviderDto,
+  ): Promise<UserDto> {
+    return this.userService.edit(userId, {
+      pixKey: dto.pixKey,
+      hourlyRate: dto.hourlyRate,
+    });
   }
 
   private buildAuthResponse(user: UserDto): {

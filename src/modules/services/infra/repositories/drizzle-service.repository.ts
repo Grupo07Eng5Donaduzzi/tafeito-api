@@ -8,14 +8,36 @@ import { UpdateServiceDto } from '../../application/dto/update-service.dto';
 export class DrizzleServiceRepository {
   constructor(private readonly drizzleService: DrizzleService) {}
 
+  async create(data: {
+    userId: string;
+    name: string;
+    description: string;
+    category: string;
+    price: string;
+    duration: string;
+  }): Promise<any> {
+    const [inserted] = await this.drizzleService.db
+      .insert(servicesSchema)
+      .values({
+        userId: data.userId,
+        name: data.name,
+        description: data.description,
+        category: data.category,
+        price: data.price,
+        duration: data.duration,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return inserted;
+  }
+
   async findAll(): Promise<any[]> {
-    return await this.drizzleService.db
-      .select()
-      .from(servicesSchema);
+    return this.drizzleService.db.select().from(servicesSchema);
   }
 
   async findByCategory(category: string): Promise<any[]> {
-    return await this.drizzleService.db
+    return this.drizzleService.db
       .select()
       .from(servicesSchema)
       .where(eq(servicesSchema.category, category));

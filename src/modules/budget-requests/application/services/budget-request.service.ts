@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -37,11 +38,6 @@ export class BudgetRequestService {
     return this.toDto(budgetRequest);
   }
 
-  async findAll(): Promise<BudgetRequestDto[]> {
-    const result = await this.repository.findAll();
-    return result.map((s) => this.toDto(s));
-  }
-
   async findById(id: string): Promise<BudgetRequestDto | null> {
     const result = await this.repository.findById(id);
     return result ? this.toDto(result) : null;
@@ -52,7 +48,9 @@ export class BudgetRequestService {
     return result.map((s) => this.toDto(s));
   }
 
-  async findAvailableByServiceId(serviceId: string): Promise<BudgetRequestDto[]> {
+  async findAvailableByServiceId(
+    serviceId: string,
+  ): Promise<BudgetRequestDto[]> {
     if (!serviceId || serviceId.trim().length === 0) {
       throw new BadRequestException('serviceId é obrigatório');
     }
@@ -61,12 +59,21 @@ export class BudgetRequestService {
     return result.map((s) => this.toDto(s));
   }
 
-  async cancel(id: string, dto: CancelBudgetRequestDto): Promise<void> {
+  async cancel(
+    id: string,
+    userId: string,
+    dto: CancelBudgetRequestDto,
+  ): Promise<void> {
     const budgetRequest = await this.repository.findById(id);
-    if (!budgetRequest) throw new NotFoundException('Proposta não encontrada');
+    if (!budgetRequest) throw new NotFoundException('Solicitação não encontrada');
+    if (budgetRequest.userId !== userId) {
+      throw new ForbiddenException(
+        'Apenas o dono da solicitação pode cancelá-la',
+      );
+    }
     if (budgetRequest.status !== 'pending') {
       throw new BadRequestException(
-        'Cancelamento permitido apenas para propostas com status pendente',
+        'Cancelamento permitido apenas para solicitações com status pendente',
       );
     }
     budgetRequest.status = 'cancelled';
@@ -75,8 +82,14 @@ export class BudgetRequestService {
     await this.repository.update(budgetRequest);
   }
 
-
-  async delete(id: string): Promise<void> {
+  async delete(id: string, userId: string): Promise<void> {
+    const budgetRequest = await this.repository.findById(id);
+    if (!budgetRequest) throw new NotFoundException('Solicitação não encontrada');
+    if (budgetRequest.userId !== userId) {
+      throw new ForbiddenException(
+        'Apenas o dono da solicitação pode excluí-la',
+      );
+    }
     await this.repository.delete(id);
   }
 

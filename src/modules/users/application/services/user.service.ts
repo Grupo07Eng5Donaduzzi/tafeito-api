@@ -20,15 +20,15 @@ import {
 @Injectable()
 export class UserService {
   private validateName(name: string): void {
-    if (name.length < 4) {
-      throw new BadRequestException('Name deve ter mais que 4 letrasy');
+    if (name.trim().length < 3) {
+      throw new BadRequestException('Nome deve ter pelo menos 3 caracteres');
     }
   }
 
   private validateEmail(email: string): void {
-    const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      throw new BadRequestException('Formato de email inválido');
+      throw new BadRequestException('Formato de e-mail inválido');
     }
   }
 
@@ -44,38 +44,35 @@ export class UserService {
 
   private validatePixKey(pixKey: string): string {
     if (typeof pixKey !== 'string') {
-      throw new BadRequestException('pixKey deve ser string');
+      throw new BadRequestException('Chave Pix deve ser uma string');
     }
     const trimmed = pixKey.trim();
     if (!trimmed) {
-      throw new BadRequestException('pixKey não pode estar vazio');
+      throw new BadRequestException('Chave Pix não pode estar vazia');
     }
     return trimmed;
   }
 
   private validateIdentification(identification: string): void {
-    // Remove non-digits
     const clean = identification.replace(/\D/g, '');
 
     if (clean.length === 11) {
-      // CPF validation
       if (!this.isValidCPF(clean)) {
-        throw new BadRequestException('Invalid CPF');
+        throw new BadRequestException('CPF inválido');
       }
     } else if (clean.length === 14) {
-      // CNPJ validation
       if (!this.isValidCNPJ(clean)) {
-        throw new BadRequestException('Invalid CNPJ');
+        throw new BadRequestException('CNPJ inválido');
       }
     } else {
       throw new BadRequestException(
-        'Identification must be a valid CPF or CNPJ',
+        'Identificação deve ser um CPF ou CNPJ válido',
       );
     }
   }
 
   private isValidCPF(cpf: string): boolean {
-    if (/^(\d)\1{10}$/.test(cpf)) return false; // All digits same
+    if (/^(\d)\1{10}$/.test(cpf)) return false;
 
     let sum = 0;
     let remainder;
@@ -128,6 +125,7 @@ export class UserService {
 
     return true;
   }
+
   constructor(
     @Inject(USER_REPOSITORY)
     private readonly userRepository: UserRepository,
@@ -135,9 +133,14 @@ export class UserService {
   ) {}
 
   async create(dto: CreateUserDto): Promise<UserDto> {
+    this.validateName(dto.name);
+    this.validateEmail(dto.email);
+    this.validatePassword(dto.password);
+    this.validateIdentification(dto.identification);
+
     const existing = await this.userRepository.findByEmail(dto.email);
     if (existing) {
-      throw new ConflictException();
+      throw new ConflictException('E-mail já cadastrado');
     }
 
     const pixKeyTrimmed =
@@ -174,9 +177,8 @@ export class UserService {
 
   async edit(id: string, dto: UpdateUserDto): Promise<UserDto> {
     const user = await this.userRepository.findById(id);
-    if (!user) throw new NotFoundException();
+    if (!user) throw new NotFoundException('Usuário não encontrado');
 
-    // Validate provided fields
     if (dto.name !== undefined && dto.name != null) {
       const nameTrimmed = (dto.name as string).trim();
       if (!nameTrimmed) {
@@ -187,7 +189,7 @@ export class UserService {
     if (dto.email !== undefined && dto.email != null) {
       const emailTrimmed = (dto.email as string).trim();
       if (!emailTrimmed) {
-        throw new BadRequestException('Email não pode estar vazio');
+        throw new BadRequestException('E-mail não pode estar vazio');
       }
       this.validateEmail(emailTrimmed);
     }
@@ -201,7 +203,7 @@ export class UserService {
     if (dto.identification !== undefined && dto.identification != null) {
       const identificationTrimmed = (dto.identification as string).trim();
       if (!identificationTrimmed) {
-        throw new BadRequestException('Identification não pode estar vazio');
+        throw new BadRequestException('Identificação não pode estar vazia');
       }
       this.validateIdentification(identificationTrimmed);
     }
@@ -211,10 +213,11 @@ export class UserService {
     if (dto.hourlyRate !== undefined && dto.hourlyRate != null) {
       const hourlyRate = Number(dto.hourlyRate);
       if (Number.isNaN(hourlyRate) || hourlyRate <= 0) {
-        throw new BadRequestException('hourlyRate deve ser um número positivo');
+        throw new BadRequestException(
+          'Taxa horária deve ser um número positivo',
+        );
       }
     }
-    // Use trimmedDto for updates below
 
     let emailTrimmed = '';
     if (dto.email !== undefined && dto.email != null) {
@@ -227,10 +230,11 @@ export class UserService {
     }
 
     if (emailTrimmed) {
-      const existingEmail = await this.userRepository.findByEmail(emailTrimmed);
+      const existingEmail =
+        await this.userRepository.findByEmail(emailTrimmed);
       if (existingEmail && existingEmail.id !== id) {
         throw new ConflictException(
-          'Email já está sendo usado por outro usuário',
+          'E-mail já está sendo usado por outro usuário',
         );
       }
       await this.firebaseAuthService.updateUser(user.firebaseUid, emailTrimmed);
@@ -244,7 +248,7 @@ export class UserService {
       );
       if (existingIdentification) {
         throw new ConflictException(
-          'Identification já está sendo usado por outro usuário',
+          'Identificação já está sendo usada por outro usuário',
         );
       }
       user.withIdentification(identificationTrimmed);
@@ -278,15 +282,10 @@ export class UserService {
 
   async remove(id: string): Promise<void> {
     const user = await this.userRepository.findById(id);
-    if (!user) throw new NotFoundException();
+    if (!user) throw new NotFoundException('Usuário não encontrado');
 
     await this.firebaseAuthService.deleteUser(user.firebaseUid);
     await this.userRepository.delete(id);
-  }
-
-  async list(): Promise<UserDto[]> {
-    const rows = await this.userRepository.findAll();
-    return rows.map((row) => UserDto.from(row)!);
   }
 
   async findById(id: string): Promise<UserDto | null> {

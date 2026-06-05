@@ -4,8 +4,8 @@ import {
   BadRequestException,
   Inject,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
-// import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ConversationResponseDto } from '@chat/application/dto/conversation.dto';
 import { ConversationService } from '@chat/application/services/conversation.service';
 import { UserService } from '@users/application/services/user.service';
@@ -23,6 +23,8 @@ import {
 
 @Injectable()
 export class ProposalService {
+  private readonly logger = new Logger(ProposalService.name);
+
   constructor(
     @Inject(PROPOSAL_REPOSITORY)
     private readonly proposalRepository: ProposalRepository,
@@ -30,14 +32,12 @@ export class ProposalService {
     private readonly conversationService: ConversationService,
     private readonly userService: UserService,
     private readonly paymentsService: PaymentsService,
-    // private readonly amqpConnection: AmqpConnection
   ) {}
 
   async createProposal(
     providerId: string,
     dto: CreateProposalDto,
   ): Promise<ProposalDto> {
-    // Check if provider can resubmit for this request
     const existingProposal =
       await this.proposalRepository.findByRequestAndProvider(
         dto.requestId,
@@ -49,7 +49,7 @@ export class ProposalService {
       !existingProposal.canResubmit
     ) {
       throw new BadRequestException(
-        'Cannot resubmit proposal for this request',
+        'Não é possível reenviar proposta para esta solicitação',
       );
     }
     if (
@@ -57,7 +57,7 @@ export class ProposalService {
       existingProposal.status !== ProposalStatus.CANCELLED
     ) {
       throw new BadRequestException(
-        'Provider already sent a proposal for this request',
+        'Prestador já enviou uma proposta para esta solicitação',
       );
     }
 
@@ -65,21 +65,21 @@ export class ProposalService {
       dto.requestId,
     );
     if (!budgetRequest) {
-      throw new NotFoundException('Budget request not found');
+      throw new NotFoundException('Solicitação não encontrada');
     }
     if (budgetRequest.userId === providerId) {
       throw new ForbiddenException(
-        'Request owner cannot create a proposal for their own request',
+        'O solicitante não pode criar uma proposta para seu próprio pedido',
       );
     }
 
     const provider = await this.userService.findById(providerId);
     if (!provider) {
-      throw new NotFoundException('Provider not found');
+      throw new NotFoundException('Prestador não encontrado');
     }
     if (!provider.hourlyRate || provider.hourlyRate <= 0) {
       throw new BadRequestException(
-        'Provider must define a positive hourlyRate before sending proposals',
+        'Prestador deve definir uma taxa horária positiva antes de enviar propostas',
       );
     }
 
@@ -97,19 +97,6 @@ export class ProposalService {
       providerId,
     );
 
-    // await this.amqpConnection.publish(
-    //   'tafeito.events',
-    //   'proposal.created',
-    //   {
-    //     proposalId: created?.id,
-    //     requestId: dto.requestId,
-    //     providerId,
-    //     amount: dto.amount,
-    //     status: ProposalStatus.PENDING,
-    //     timestamp: new Date().toISOString(),
-    //   }
-    // );
-
     return ProposalDto.from(created)!;
   }
 
@@ -120,7 +107,7 @@ export class ProposalService {
   ): Promise<ProposalDto> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
-      throw new NotFoundException('Proposal not found');
+      throw new NotFoundException('Proposta não encontrada');
     }
     this.ensureClient(proposal, clientId);
 
@@ -128,19 +115,6 @@ export class ProposalService {
     const conversation = await this.ensureProposalConversation(proposal);
     proposal.linkChat(conversation.id!);
     await this.proposalRepository.update(proposal);
-
-    // await this.amqpConnection.publish(
-    //   'tafeito.events',
-    //   'proposal.rejected',
-    //   {
-    //     proposalId,
-    //     requestId: proposal.requestId,
-    //     providerId: proposal.providerId,
-    //     reason: dto.reason,
-    //     status: ProposalStatus.NEGOTIATING,
-    //     timestamp: new Date().toISOString(),
-    //   }
-    // );
 
     const updated = await this.proposalRepository.findById(proposalId);
     return ProposalDto.from(updated)!;
@@ -153,7 +127,7 @@ export class ProposalService {
   ): Promise<ProposalDto> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
-      throw new NotFoundException('Proposal not found');
+      throw new NotFoundException('Proposta não encontrada');
     }
     this.ensureClient(proposal, clientId);
 
@@ -170,34 +144,25 @@ export class ProposalService {
   ): Promise<ProposalDto> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
-      throw new NotFoundException('Proposal not found');
+      throw new NotFoundException('Proposta não encontrada');
     }
     this.ensureClient(proposal, clientId);
 
-    if (proposal.status === ProposalStatus.PENDING) {
-      proposal.accept();
-    } else if (proposal.status === ProposalStatus.NEGOTIATING) {
-      proposal.accept();
-    } else {
+    if (
+      proposal.status !== ProposalStatus.PENDING &&
+      proposal.status !== ProposalStatus.NEGOTIATING
+    ) {
       throw new BadRequestException(
-        `Cannot accept proposal in status: ${proposal.status}`,
+        `Não é possível aceitar proposta no status: ${proposal.status}`,
       );
     }
 
-    await this.proposalRepository.update(proposal);
+    proposal.accept();
 
-    // await this.amqpConnection.publish(
-    //   'tafeito.events',
-    //   'proposal.accepted',
-    //   {
-    //     proposalId,
-    //     requestId: proposal.requestId,
-    //     providerId: proposal.providerId,
-    //     amount: proposal.amount,
-    //     status: ProposalStatus.ACCEPTED,
-    //     timestamp: new Date().toISOString(),
-    //   }
-    // );
+    const conversation = await this.ensureProposalConversation(proposal);
+    proposal.linkChat(conversation.id!);
+
+    await this.proposalRepository.update(proposal);
 
     const updated = await this.proposalRepository.findById(proposalId);
     return ProposalDto.from(updated)!;
@@ -209,10 +174,12 @@ export class ProposalService {
   ): Promise<ProposalDto> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
-      throw new NotFoundException('Proposal not found');
+      throw new NotFoundException('Proposta não encontrada');
     }
     if (proposal.providerId !== providerId) {
-      throw new ForbiddenException('Only the provider can confirm completion');
+      throw new ForbiddenException(
+        'Apenas o prestador pode confirmar a conclusão',
+      );
     }
     proposal.providerConfirm();
     await this.proposalRepository.update(proposal);
@@ -226,33 +193,44 @@ export class ProposalService {
   ): Promise<ProposalDto> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
-      throw new NotFoundException('Proposal not found');
+      throw new NotFoundException('Proposta não encontrada');
     }
     this.ensureClient(proposal, clientId);
 
     const provider = await this.userService.findById(proposal.providerId);
     if (!provider) {
-      throw new NotFoundException('Provider not found');
+      throw new NotFoundException('Prestador não encontrado');
     }
     if (!provider.pixKey) {
       throw new BadRequestException(
-        'Provider precisa cadastrar uma pixKey para receber o pagamento',
+        'Prestador precisa cadastrar uma chave Pix para receber o pagamento',
       );
     }
 
     proposal.clientConfirm();
-    await this.paymentsService.transferToPix(
-      proposal.amount,
-      provider.pixKey,
-      proposal.id,
-    );
     await this.proposalRepository.update(proposal);
+
+    try {
+      await this.paymentsService.transferToPix(
+        proposal.amount,
+        provider.pixKey,
+        proposal.id,
+      );
+    } catch (err) {
+      this.logger.error(
+        `Falha na transferência para proposta ${proposalId}. Status já marcado como COMPLETED. Intervenção manual necessária.`,
+        err,
+      );
+      throw err;
+    }
+
     const updated = await this.proposalRepository.findById(proposalId);
     return ProposalDto.from(updated)!;
   }
 
   async getProposalsByRequest(requestId: string): Promise<ProposalDto[]> {
-    const proposals = await this.proposalRepository.findByRequestId(requestId);
+    const proposals =
+      await this.proposalRepository.findByRequestId(requestId);
     return proposals.map((p) => ProposalDto.from(p)!);
   }
 
@@ -263,14 +241,21 @@ export class ProposalService {
   }
 
   async getProposalsByClient(clientId: string): Promise<ProposalDto[]> {
-    const proposals = await this.proposalRepository.findByClientId(clientId);
+    const proposals =
+      await this.proposalRepository.findByClientId(clientId);
     return proposals.map((p) => ProposalDto.from(p)!);
   }
 
-  async getProposal(proposalId: string): Promise<ProposalDto> {
+  async getProposal(
+    proposalId: string,
+    userId?: string,
+  ): Promise<ProposalDto> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
-      throw new NotFoundException('Proposal not found');
+      throw new NotFoundException('Proposta não encontrada');
+    }
+    if (userId) {
+      this.ensureParticipant(proposal, userId);
     }
     return ProposalDto.from(proposal)!;
   }
@@ -281,7 +266,7 @@ export class ProposalService {
   ): Promise<ConversationResponseDto> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
-      throw new NotFoundException('Proposal not found');
+      throw new NotFoundException('Proposta não encontrada');
     }
     this.ensureParticipant(proposal, userId);
 
@@ -292,7 +277,7 @@ export class ProposalService {
       : await this.conversationService.getConversationByProposalId(proposalId);
 
     if (!conversation) {
-      throw new NotFoundException('Proposal chat not found');
+      throw new NotFoundException('Conversa da proposta não encontrada');
     }
 
     return conversation;
@@ -311,7 +296,7 @@ export class ProposalService {
       proposal.requestId,
     );
     if (!budgetRequest) {
-      throw new NotFoundException('Budget request not found');
+      throw new NotFoundException('Solicitação não encontrada');
     }
 
     return this.conversationService.createConversation(
@@ -325,7 +310,7 @@ export class ProposalService {
   private ensureClient(proposal: Proposal, clientId: string): void {
     if (proposal.clientId !== clientId) {
       throw new ForbiddenException(
-        'Only the request client can perform this action',
+        'Apenas o cliente da solicitação pode realizar esta ação',
       );
     }
   }
@@ -333,7 +318,7 @@ export class ProposalService {
   private ensureParticipant(proposal: Proposal, userId: string): void {
     if (proposal.clientId !== userId && proposal.providerId !== userId) {
       throw new ForbiddenException(
-        'Only proposal participants can access this resource',
+        'Apenas os participantes da proposta podem acessar este recurso',
       );
     }
   }

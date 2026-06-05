@@ -146,18 +146,25 @@ export class DrizzleProposalRepository implements ProposalRepository {
 }
 
 @Injectable()
-export class DrizzleNegotiationMessageRepository implements NegotiationMessageRepository {
+export class DrizzleNegotiationMessageRepository
+  implements NegotiationMessageRepository
+{
   constructor(private readonly drizzleService: DrizzleService) {}
 
-  async create(message: NegotiationMessage): Promise<void> {
-    await this.drizzleService.db.insert(negotiationMessagesSchema).values({
-      proposalId: message.proposalId,
-      senderRole: message.senderRole,
-      senderUserId: message.senderUserId,
-      message: message.message,
-      revisedAmount: message.revisedAmount?.toString(),
-      createdAt: new Date(),
-    });
+  async create(message: NegotiationMessage): Promise<NegotiationMessage> {
+    const [inserted] = await this.drizzleService.db
+      .insert(negotiationMessagesSchema)
+      .values({
+        proposalId: message.proposalId,
+        senderRole: message.senderRole,
+        senderUserId: message.senderUserId,
+        message: message.message,
+        revisedAmount: message.revisedAmount?.toString(),
+        createdAt: new Date(),
+      })
+      .returning();
+
+    return this.mapToEntity(inserted);
   }
 
   async findByProposalId(proposalId: string): Promise<NegotiationMessage[]> {

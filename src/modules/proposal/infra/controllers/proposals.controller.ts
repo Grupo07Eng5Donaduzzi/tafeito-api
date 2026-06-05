@@ -4,10 +4,14 @@ import {
   Patch,
   Get,
   Body,
+  HttpCode,
+  HttpStatus,
   Param,
-  Query,
+  UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
+import { RequireProviderGuard } from '@shared/infra/guards/require-provider.guard';
 import { ConversationResponseDto } from '@chat/application/dto/conversation.dto';
 import { ProposalService } from '../../application/services/proposal.service';
 import { NegotiationService } from '../../application/services/negotiation.service';
@@ -21,30 +25,19 @@ import {
   NegotiationMessageDto,
 } from '../../application/dto/proposal.dto';
 
+@ApiTags('Proposals')
+@ApiBearerAuth('access-token')
 @Controller('proposals')
 export class ProposalsController {
   constructor(private readonly proposalService: ProposalService) {}
 
   @Post()
+  @UseGuards(RequireProviderGuard)
   async create(
     @CurrentUser() providerId: string,
     @Body() body: CreateProposalDto,
   ): Promise<ProposalDto> {
     return this.proposalService.createProposal(providerId, body);
-  }
-
-  @Get()
-  async findAll(
-    @Query('requestId') requestId?: string,
-    @Query('providerId') providerId?: string,
-  ): Promise<ProposalDto[]> {
-    if (requestId) {
-      return this.proposalService.getProposalsByRequest(requestId);
-    }
-    if (providerId) {
-      return this.proposalService.getProposalsByProvider(providerId);
-    }
-    return [];
   }
 
   @Get('provider/created')
@@ -62,50 +55,59 @@ export class ProposalsController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<ProposalDto> {
-    return this.proposalService.getProposal(id);
+  async findById(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+  ): Promise<ProposalDto> {
+    return this.proposalService.getProposal(id, userId);
   }
 
-  @Post(':id/contest')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Patch(':id/contest')
   async contest(
     @Param('id') proposalId: string,
     @CurrentUser() clientId: string,
     @Body() body: ContestProposalDto,
-  ): Promise<ProposalDto> {
-    return this.proposalService.contestProposal(proposalId, clientId, body);
+  ): Promise<void> {
+    await this.proposalService.contestProposal(proposalId, clientId, body);
   }
 
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id/reject')
   async reject(
     @Param('id') proposalId: string,
     @CurrentUser() clientId: string,
     @Body() body: RejectProposalDto,
-  ): Promise<ProposalDto> {
-    return this.proposalService.rejectProposal(proposalId, clientId, body);
+  ): Promise<void> {
+    await this.proposalService.rejectProposal(proposalId, clientId, body);
   }
 
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id/accept')
   async accept(
     @Param('id') proposalId: string,
     @CurrentUser() clientId: string,
-  ): Promise<ProposalDto> {
-    return this.proposalService.acceptProposal(proposalId, clientId);
+  ): Promise<void> {
+    await this.proposalService.acceptProposal(proposalId, clientId);
   }
 
-  @Patch(':id/provider-confirm')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Patch(':id/providerConfirm')
+  @UseGuards(RequireProviderGuard)
   async providerConfirm(
     @Param('id') proposalId: string,
     @CurrentUser() providerId: string,
-  ): Promise<ProposalDto> {
-    return this.proposalService.providerConfirmCompletion(proposalId, providerId);
+  ): Promise<void> {
+    await this.proposalService.providerConfirmCompletion(proposalId, providerId);
   }
 
-  @Patch(':id/client-confirm')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Patch(':id/clientConfirm')
   async clientConfirm(
     @Param('id') proposalId: string,
     @CurrentUser() clientId: string,
-  ): Promise<ProposalDto> {
-    return this.proposalService.clientConfirmCompletion(proposalId, clientId);
+  ): Promise<void> {
+    await this.proposalService.clientConfirmCompletion(proposalId, clientId);
   }
 
   @Get(':id/chat')
@@ -117,6 +119,8 @@ export class ProposalsController {
   }
 }
 
+@ApiTags('Negotiations')
+@ApiBearerAuth('access-token')
 @Controller('negotiations')
 export class NegotiationsController {
   constructor(private readonly negotiationService: NegotiationService) {}
@@ -124,28 +128,19 @@ export class NegotiationsController {
   @Post(':proposalId/messages')
   async sendMessage(
     @Param('proposalId') proposalId: string,
-    @Body()
-    body: CreateNegotiationMessageDto & {
-      userId?: string;
-      senderRole?: string;
-    },
+    @CurrentUser() userId: string,
+    @Body() body: CreateNegotiationMessageDto,
   ): Promise<NegotiationMessageDto> {
-    const userId = body.userId || 'default-user-id';
-    const senderRole = (body.senderRole as any) || 'CLIENT';
-    return this.negotiationService.sendMessage(
-      proposalId,
-      userId,
-      senderRole,
-      body,
-    );
+    return this.negotiationService.sendMessage(proposalId, userId, body);
   }
 
-  @Post(':proposalId/revised-proposal')
+  @Post(':proposalId/revisedProposal')
+  @UseGuards(RequireProviderGuard)
   async sendRevisedProposal(
     @Param('proposalId') proposalId: string,
-    @Body() body: SendRevisedProposalDto & { providerId?: string },
+    @CurrentUser() providerId: string,
+    @Body() body: SendRevisedProposalDto,
   ): Promise<NegotiationMessageDto> {
-    const providerId = body.providerId || 'default-provider-id';
     return this.negotiationService.sendRevisedProposal(
       proposalId,
       providerId,
@@ -153,18 +148,19 @@ export class NegotiationsController {
     );
   }
 
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':proposalId/close')
   async closeNegotiation(
     @Param('proposalId') proposalId: string,
-    @Body() body: { clientId?: string },
+    @CurrentUser() userId: string,
   ): Promise<void> {
-    const clientId = body.clientId || 'default-client-id';
-    return this.negotiationService.closeNegotiation(proposalId, clientId);
+    await this.negotiationService.closeNegotiation(proposalId, userId);
   }
 
   @Get(':proposalId/messages')
   async getMessages(
     @Param('proposalId') proposalId: string,
+    @CurrentUser() userId: string,
   ): Promise<NegotiationMessageDto[]> {
     return this.negotiationService.getMessages(proposalId);
   }

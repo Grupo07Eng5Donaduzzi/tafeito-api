@@ -3,6 +3,8 @@ import {
   Controller,
   DefaultValuePipe,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
@@ -10,6 +12,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { ReviewService } from '../../application/services/review.service';
 import {
@@ -20,6 +23,8 @@ import {
 } from '../../application/dto/review.dto';
 import type { RatingSummary } from '../../domain/repositories/review-repository.interface';
 
+@ApiTags('Reviews')
+@ApiBearerAuth('access-token')
 @Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewService: ReviewService) {}
@@ -33,13 +38,14 @@ export class ReviewsController {
     return this.reviewService.createReview(proposalId, clientId, body);
   }
 
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':reviewId')
   async update(
     @Param('reviewId', ParseUUIDPipe) reviewId: string,
     @CurrentUser() clientId: string,
     @Body() body: UpdateReviewDto,
-  ): Promise<ReviewDto> {
-    return this.reviewService.updateReview(reviewId, clientId, body);
+  ): Promise<void> {
+    await this.reviewService.updateReview(reviewId, clientId, body);
   }
 
   @Get('proposals/:proposalId')
@@ -53,8 +59,8 @@ export class ReviewsController {
   @Get('provider/:providerId')
   async getByProvider(
     @Param('providerId', ParseUUIDPipe) providerId: string,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
+    @Query('_page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('_size', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
   ): Promise<ProviderReviewsPageDto> {
     return this.reviewService.getReviewsByProvider(providerId, page, pageSize);
   }
