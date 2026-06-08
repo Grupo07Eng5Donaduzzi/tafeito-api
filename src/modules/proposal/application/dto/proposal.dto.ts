@@ -64,6 +64,7 @@ export class ProposalDto {
   linkedChatId?: string;
   canResubmit: boolean;
   paymentId?: string;
+  invoiceFile?: string;
   createdAt: Date;
   updatedAt: Date;
 
@@ -82,6 +83,7 @@ export class ProposalDto {
     dto.linkedChatId = proposal.linkedChatId;
     dto.canResubmit = proposal.canResubmit;
     dto.paymentId = proposal.paymentId;
+    dto.invoiceFile = proposal.invoiceFile;
     dto.createdAt = proposal.createdAt!;
     dto.updatedAt = proposal.updatedAt!;
     return dto;

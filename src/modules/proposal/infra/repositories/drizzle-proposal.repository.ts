@@ -33,6 +33,7 @@ export class DrizzleProposalRepository implements ProposalRepository {
       linkedChatId: proposal.linkedChatId,
       canResubmit: proposal.canResubmit,
       paymentId: proposal.paymentId,
+      invoiceFile: proposal.invoiceFile,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -50,6 +51,7 @@ export class DrizzleProposalRepository implements ProposalRepository {
         linkedChatId: proposal.linkedChatId,
         canResubmit: proposal.canResubmit,
         paymentId: proposal.paymentId,
+        invoiceFile: proposal.invoiceFile,
         updatedAt: new Date(),
       })
       .where(eq(proposalsSchema.id, proposal.id!));
@@ -142,6 +144,7 @@ export class DrizzleProposalRepository implements ProposalRepository {
       linkedChatId: row.linkedChatId ?? undefined,
       canResubmit: row.canResubmit,
       paymentId: row.paymentId ?? undefined,
+      invoiceFile: row.invoiceFile ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     });

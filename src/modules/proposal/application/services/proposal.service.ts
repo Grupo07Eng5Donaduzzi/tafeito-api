@@ -1,3 +1,5 @@
+import { existsSync } from 'fs';
+import { join } from 'path';
 import {
   Injectable,
   NotFoundException,
@@ -309,6 +311,68 @@ export class ProposalService {
 
     const updated = await this.proposalRepository.findById(proposalId);
     return ProposalDto.from(updated)!;
+  }
+
+  async uploadInvoice(
+    proposalId: string,
+    providerId: string,
+    filename: string,
+  ): Promise<ProposalDto> {
+    const proposal = await this.proposalRepository.findById(proposalId);
+    if (!proposal) {
+      throw new NotFoundException('Proposal not found');
+    }
+    if (proposal.providerId !== providerId) {
+      throw new ForbiddenException('Only the provider can upload the invoice');
+    }
+
+    proposal.attachInvoice(filename);
+    await this.proposalRepository.update(proposal);
+
+    const updated = await this.proposalRepository.findById(proposalId);
+    return ProposalDto.from(updated)!;
+  }
+
+  async getInvoiceFile(
+    proposalId: string,
+    userId: string,
+  ): Promise<{ filePath: string; filename: string; mimeType: string }> {
+    const proposal = await this.proposalRepository.findById(proposalId);
+    if (!proposal) {
+      throw new NotFoundException('Proposal not found');
+    }
+    this.ensureParticipant(proposal, userId);
+
+    if (!proposal.invoiceFile) {
+      throw new NotFoundException('No invoice found for this proposal');
+    }
+
+    const filePath = join(process.cwd(), 'uploads', 'invoices', proposal.invoiceFile);
+    if (!existsSync(filePath)) {
+      throw new NotFoundException('Invoice file not found on server');
+    }
+
+    const ext = proposal.invoiceFile.split('.').pop()?.toLowerCase();
+    const mimeType =
+      ext === 'pdf' ? 'application/pdf' :
+      ext === 'xml' ? 'application/xml' :
+      'application/octet-stream';
+
+    return { filePath, filename: proposal.invoiceFile, mimeType };
+  }
+
+  async getClientServiceHistory(clientId: string): Promise<ProposalDto[]> {
+    const proposals = await this.proposalRepository.findByClientId(clientId);
+    return proposals
+      .filter((p) => p.status === ProposalStatus.COMPLETED)
+      .map((p) => ProposalDto.from(p)!);
+  }
+
+  async getProviderServiceHistory(providerId: string): Promise<ProposalDto[]> {
+    const proposals = await this.proposalRepository.findByProviderId(providerId);
+    return proposals
+      .filter((p) => p.status === ProposalStatus.COMPLETED)
+      .map((p) => ProposalDto.from(p)!);
   }
 
   async getProposalsByRequest(requestId: string): Promise<ProposalDto[]> {

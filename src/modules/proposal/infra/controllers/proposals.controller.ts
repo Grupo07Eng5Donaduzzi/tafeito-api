@@ -1,3 +1,4 @@
+import { createReadStream } from 'fs';
 import {
   Controller,
   Post,
@@ -8,8 +9,17 @@ import {
   HttpStatus,
   Param,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  StreamableFile,
+  Res,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiConsumes } from '@nestjs/swagger';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { RequireProviderGuard } from '@shared/infra/guards/require-provider.guard';
 import { ConversationResponseDto } from '@chat/application/dto/conversation.dto';
@@ -57,6 +67,22 @@ export class ProposalsController {
     @CurrentUser() clientId: string,
   ): Promise<ProposalDto[]> {
     return this.proposalService.getProposalsByClient(clientId);
+  }
+
+  @ApiOperation({ summary: 'Get completed service history for the authenticated client' })
+  @Get('client/history')
+  async getClientHistory(
+    @CurrentUser() clientId: string,
+  ): Promise<ProposalDto[]> {
+    return this.proposalService.getClientServiceHistory(clientId);
+  }
+
+  @ApiOperation({ summary: 'Get completed service history for the authenticated provider' })
+  @Get('provider/history')
+  async getProviderHistory(
+    @CurrentUser() providerId: string,
+  ): Promise<ProposalDto[]> {
+    return this.proposalService.getProviderServiceHistory(providerId);
   }
 
   @ApiOperation({ summary: 'Get a proposal by ID' })
@@ -127,6 +153,57 @@ export class ProposalsController {
     @CurrentUser() clientId: string,
   ): Promise<void> {
     await this.proposalService.clientConfirmCompletion(proposalId, clientId);
+  }
+
+  @ApiOperation({ summary: 'Upload invoice (PDF or XML) when provider confirms service completion' })
+  @ApiConsumes('multipart/form-data')
+  @Post(':id/invoice')
+  @UseGuards(RequireProviderGuard)
+  @UseInterceptors(
+    FileInterceptor('invoice', {
+      storage: diskStorage({
+        destination: './uploads/invoices',
+        filename: (_req, file, cb) => {
+          cb(null, `${uuidv4()}${extname(file.originalname).toLowerCase()}`);
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        const allowedMimes = ['application/pdf', 'application/xml', 'text/xml'];
+        const allowedExts = ['.pdf', '.xml'];
+        const fileExt = extname(file.originalname).toLowerCase();
+        if (allowedMimes.includes(file.mimetype) || allowedExts.includes(fileExt)) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('Only PDF and XML files are allowed for invoices'), false);
+        }
+      },
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  async uploadInvoice(
+    @Param('id') proposalId: string,
+    @CurrentUser() providerId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<ProposalDto> {
+    if (!file) {
+      throw new BadRequestException('Invoice file is required');
+    }
+    return this.proposalService.uploadInvoice(proposalId, providerId, file.filename);
+  }
+
+  @ApiOperation({ summary: 'Download invoice for a proposal (client or provider)' })
+  @Get(':id/invoice')
+  async downloadInvoice(
+    @Param('id') proposalId: string,
+    @CurrentUser() userId: string,
+    @Res({ passthrough: true }) res: { set: (headers: Record<string, string>) => void },
+  ): Promise<StreamableFile> {
+    const { filePath, filename, mimeType } = await this.proposalService.getInvoiceFile(proposalId, userId);
+    res.set({
+      'Content-Type': mimeType,
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+    return new StreamableFile(createReadStream(filePath));
   }
 
   @ApiOperation({ summary: 'Get the linked chat conversation for a proposal' })

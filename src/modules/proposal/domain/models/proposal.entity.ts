@@ -29,6 +29,7 @@ export class Proposal {
   private _linkedChatId?: string;
   private _canResubmit: boolean;
   private _paymentId?: string;
+  private _invoiceFile?: string;
   private readonly _createdAt?: Date;
   private readonly _updatedAt?: Date;
 
@@ -86,6 +87,10 @@ export class Proposal {
     return this._paymentId;
   }
 
+  get invoiceFile(): string | undefined {
+    return this._invoiceFile;
+  }
+
   get createdAt(): Date | undefined {
     return this._createdAt;
   }
@@ -126,6 +131,7 @@ export class Proposal {
     linkedChatId?: string;
     canResubmit: boolean;
     paymentId?: string;
+    invoiceFile?: string;
     createdAt: Date;
     updatedAt: Date;
   }): Proposal {
@@ -141,6 +147,7 @@ export class Proposal {
     proposal._linkedChatId = props.linkedChatId;
     proposal._canResubmit = props.canResubmit;
     proposal._paymentId = props.paymentId;
+    proposal._invoiceFile = props.invoiceFile;
     return proposal;
   }
 
@@ -214,6 +221,17 @@ export class Proposal {
 
   linkChat(conversationId: string): void {
     this._linkedChatId = conversationId;
+  }
+
+  attachInvoice(filename: string): void {
+    if (
+      this._status !== ProposalStatus.ACCEPTED &&
+      this._status !== ProposalStatus.PROVIDER_CONFIRMED &&
+      this._status !== ProposalStatus.COMPLETED
+    ) {
+      throw new Error('Invoice can only be attached when the service is in progress or completed');
+    }
+    this._invoiceFile = filename;
   }
 }
 

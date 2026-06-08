@@ -46,6 +46,7 @@ export const proposalsSchema = pgTable('proposals', {
   linkedChatId: uuid('linked_chat_id').references(() => conversationSchema.id),
   canResubmit: boolean('can_resubmit').notNull().default(true),
   paymentId: text('payment_id'),
+  invoiceFile: text('invoice_file'),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull(),
 });
