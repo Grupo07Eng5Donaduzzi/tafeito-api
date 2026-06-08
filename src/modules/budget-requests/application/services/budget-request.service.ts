@@ -12,6 +12,8 @@ import { CreateBudgetRequestDto } from '../dto/create-budget-request.dto';
 import { CancelBudgetRequestDto } from '../dto/cancel-budget-request.dto';
 import { BudgetRequestDto } from '../dto/budget-request.dto';
 
+const MAX_PHOTOS = 5;
+
 @Injectable()
 export class BudgetRequestService {
   constructor(
@@ -48,32 +50,44 @@ export class BudgetRequestService {
     return result.map((s) => this.toDto(s));
   }
 
-  async findAvailableByServiceId(
-    serviceId: string,
-  ): Promise<BudgetRequestDto[]> {
+  async findAvailableByServiceId(serviceId: string): Promise<BudgetRequestDto[]> {
     if (!serviceId || serviceId.trim().length === 0) {
-      throw new BadRequestException('serviceId é obrigatório');
+      throw new BadRequestException('serviceId is required');
     }
 
     const result = await this.repository.findAvailableByServiceId(serviceId);
     return result.map((s) => this.toDto(s));
   }
 
-  async cancel(
-    id: string,
-    userId: string,
-    dto: CancelBudgetRequestDto,
-  ): Promise<void> {
+  async addPhotos(id: string, userId: string, filenames: string[]): Promise<BudgetRequestDto> {
     const budgetRequest = await this.repository.findById(id);
-    if (!budgetRequest) throw new NotFoundException('Solicitação não encontrada');
+    if (!budgetRequest) throw new NotFoundException('Budget request not found');
     if (budgetRequest.userId !== userId) {
-      throw new ForbiddenException(
-        'Apenas o dono da solicitação pode cancelá-la',
+      throw new ForbiddenException('Only the owner can add photos to this request');
+    }
+
+    const existingPhotos = budgetRequest.photos ?? [];
+    if (existingPhotos.length + filenames.length > MAX_PHOTOS) {
+      throw new BadRequestException(
+        `Cannot exceed ${MAX_PHOTOS} photos. Currently has ${existingPhotos.length}.`,
       );
+    }
+
+    budgetRequest.photos = [...existingPhotos, ...filenames];
+    budgetRequest.updatedAt = new Date();
+    await this.repository.update(budgetRequest);
+    return this.toDto(budgetRequest);
+  }
+
+  async cancel(id: string, userId: string, dto: CancelBudgetRequestDto): Promise<void> {
+    const budgetRequest = await this.repository.findById(id);
+    if (!budgetRequest) throw new NotFoundException('Budget request not found');
+    if (budgetRequest.userId !== userId) {
+      throw new ForbiddenException('Only the owner can cancel this request');
     }
     if (budgetRequest.status !== 'pending') {
       throw new BadRequestException(
-        'Cancelamento permitido apenas para solicitações com status pendente',
+        'Cancellation is only allowed for pending requests',
       );
     }
     budgetRequest.status = 'cancelled';
@@ -84,11 +98,9 @@ export class BudgetRequestService {
 
   async delete(id: string, userId: string): Promise<void> {
     const budgetRequest = await this.repository.findById(id);
-    if (!budgetRequest) throw new NotFoundException('Solicitação não encontrada');
+    if (!budgetRequest) throw new NotFoundException('Budget request not found');
     if (budgetRequest.userId !== userId) {
-      throw new ForbiddenException(
-        'Apenas o dono da solicitação pode excluí-la',
-      );
+      throw new ForbiddenException('Only the owner can delete this request');
     }
     await this.repository.delete(id);
   }

@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { SchedulesController } from './infra/controllers/schedules.controller';
 import { ScheduleService } from './application/services/schedule.service';
 import { DrizzleScheduleRepository } from './infra/repositories/drizzle-schedule.repository';
 import { SCHEDULE_REPOSITORY } from './domain/repositories/schedule-repository.interface';
 import { SharedModule } from '@shared/shared.module';
-import { ContestacaoModule } from '../proposal/contestacao.module';
+import { ProposalModule } from '../proposal/proposal.module';
 
 @Module({
-  imports: [SharedModule, ContestacaoModule],
+  imports: [SharedModule, forwardRef(() => ProposalModule)],
   controllers: [SchedulesController],
   providers: [
     ScheduleService,
@@ -17,5 +17,6 @@ import { ContestacaoModule } from '../proposal/contestacao.module';
       useExisting: DrizzleScheduleRepository,
     },
   ],
+  exports: [ScheduleService],
 })
 export class SchedulesModule {}

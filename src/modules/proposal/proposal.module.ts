@@ -1,10 +1,10 @@
-import { Module } from '@nestjs/common';
-// import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { forwardRef, Module } from '@nestjs/common';
 import { SharedModule } from '../../shared/shared.module';
 import { BudgetRequestsModule } from '../budget-requests/budget-requests.module';
 import { ChatModule } from '../chat/chat.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { UsersModule } from '../users/users.module';
+import { SchedulesModule } from '../schedules/schedules.module';
 import { ProposalService } from './application/services/proposal.service';
 import { NegotiationService } from './application/services/negotiation.service';
 import {
@@ -27,15 +27,7 @@ import {
     ChatModule,
     PaymentsModule,
     UsersModule,
-    // RabbitMQModule.forRoot({
-    //   exchanges: [
-    //     {
-    //       name: 'tafeito.events',
-    //       type: 'topic',
-    //     },
-    //   ],
-    //   uri: process.env.RABBITMQ_URI || 'amqp://guest:guest@localhost:5672',
-    // }),
+    forwardRef(() => SchedulesModule),
   ],
   controllers: [ProposalsController, NegotiationsController],
   providers: [
@@ -52,4 +44,4 @@ import {
   ],
   exports: [ProposalService, NegotiationService],
 })
-export class ContestacaoModule {}
+export class ProposalModule {}

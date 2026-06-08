@@ -40,11 +40,10 @@ export class NegotiationService {
   ): Promise<NegotiationMessageDto> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
-      throw new NotFoundException('Proposta não encontrada');
+      throw new NotFoundException('Proposal not found');
     }
-
     if (proposal.status !== ProposalStatus.NEGOTIATING) {
-      throw new BadRequestException('Proposta não está em negociação');
+      throw new BadRequestException('Proposal is not under negotiation');
     }
 
     let senderRole: SenderRole;
@@ -53,9 +52,7 @@ export class NegotiationService {
     } else if (userId === proposal.providerId) {
       senderRole = SenderRole.PROVIDER;
     } else {
-      throw new ForbiddenException(
-        'Apenas participantes da proposta podem enviar mensagens',
-      );
+      throw new ForbiddenException('Only proposal participants can send messages');
     }
 
     const message = NegotiationMessage.create({
@@ -77,17 +74,13 @@ export class NegotiationService {
   ): Promise<NegotiationMessageDto> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
-      throw new NotFoundException('Proposta não encontrada');
+      throw new NotFoundException('Proposal not found');
     }
-
     if (proposal.providerId !== providerId) {
-      throw new ForbiddenException(
-        'Apenas o prestador pode enviar proposta revisada',
-      );
+      throw new ForbiddenException('Only the provider can send a revised proposal');
     }
-
     if (proposal.status !== ProposalStatus.NEGOTIATING) {
-      throw new BadRequestException('Proposta não está em negociação');
+      throw new BadRequestException('Proposal is not under negotiation');
     }
 
     proposal.updateEstimate(dto.estimatedHours);
@@ -108,17 +101,13 @@ export class NegotiationService {
   async closeNegotiation(proposalId: string, userId: string): Promise<void> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
-      throw new NotFoundException('Proposta não encontrada');
+      throw new NotFoundException('Proposal not found');
     }
-
     if (proposal.clientId !== userId) {
-      throw new ForbiddenException(
-        'Apenas o cliente pode encerrar a negociação',
-      );
+      throw new ForbiddenException('Only the client can close the negotiation');
     }
-
     if (proposal.status !== ProposalStatus.NEGOTIATING) {
-      throw new BadRequestException('Proposta não está em negociação');
+      throw new BadRequestException('Proposal is not under negotiation');
     }
 
     proposal.closeNegotiation();
@@ -128,11 +117,10 @@ export class NegotiationService {
   async getMessages(proposalId: string): Promise<NegotiationMessageDto[]> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) {
-      throw new NotFoundException('Proposta não encontrada');
+      throw new NotFoundException('Proposal not found');
     }
 
-    const messages =
-      await this.messageRepository.findByProposalId(proposalId);
+    const messages = await this.messageRepository.findByProposalId(proposalId);
     return messages.map((m) => NegotiationMessageDto.from(m)!);
   }
 }

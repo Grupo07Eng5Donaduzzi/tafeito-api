@@ -28,14 +28,14 @@ export class AuthGuard implements CanActivate {
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Token não fornecido ou inválido');
+      throw new UnauthorizedException('Token not provided or invalid');
     }
 
     const token = authHeader.substring(7);
 
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
-      throw new InternalServerErrorException('JWT_SECRET não configurado');
+      throw new InternalServerErrorException('JWT_SECRET is not configured');
     }
 
     try {
@@ -44,7 +44,7 @@ export class AuthGuard implements CanActivate {
       const user = await this.userService.findById(payload.sub);
 
       if (!user) {
-        throw new UnauthorizedException('Usuário não encontrado');
+        throw new UnauthorizedException('User not found');
       }
 
       (request as { user?: unknown }).user = user;
@@ -56,7 +56,7 @@ export class AuthGuard implements CanActivate {
       ) {
         throw err;
       }
-      throw new UnauthorizedException('Token inválido');
+      throw new UnauthorizedException('Invalid token');
     }
   }
 
@@ -67,8 +67,16 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
+    if (path.startsWith('/uploads')) {
+      return true;
+    }
+
     if (request.method === 'POST') {
-      if (path.endsWith('/auth/login') || path.endsWith('/auth/register')) {
+      if (
+        path.endsWith('/auth/login') ||
+        path.endsWith('/auth/register') ||
+        path.endsWith('/auth/forgot-password')
+      ) {
         return true;
       }
       if (path.includes('/payments/webhook')) {

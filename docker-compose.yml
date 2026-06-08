@@ -25,12 +25,23 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      PORT: 3000
+      PORT: ${PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+      FIREBASE_API_KEY: ${FIREBASE_API_KEY}
+      ASAAS_ACCESS_TOKEN: ${ASAAS_ACCESS_TOKEN}
+      ASAAS_BASE_URL: ${ASAAS_BASE_URL}
+      ASAAS_USER_AGENT: ${ASAAS_USER_AGENT}
     ports:
       - "${PORT}:3000"
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   postgres_data:
+  uploads_data:

@@ -23,6 +23,8 @@ COPY --from=builder /app/package.json ./package.json
 COPY drizzle ./drizzle
 COPY drizzle.config.ts ./drizzle.config.ts
 
+RUN mkdir -p /app/uploads/photos
+
 EXPOSE 3000
 
 CMD ["node", "dist/main"]

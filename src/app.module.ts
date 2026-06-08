@@ -7,7 +7,7 @@ import { AuthGuard } from './modules/auth/infra/guards/auth.guard';
 import { ServicesModule } from './modules/services/services.module';
 import { BudgetRequestsModule } from './modules/budget-requests/budget-requests.module';
 import { ChatModule } from './modules/chat/chat.module';
-import { ContestacaoModule } from './modules/proposal/contestacao.module';
+import { ProposalModule } from './modules/proposal/proposal.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { SchedulesModule } from './modules/schedules/schedules.module';
@@ -20,7 +20,7 @@ import { SchedulesModule } from './modules/schedules/schedules.module';
     ServicesModule,
     BudgetRequestsModule,
     ChatModule,
-    ContestacaoModule,
+    ProposalModule,
     PaymentsModule,
     ReviewsModule,
     SchedulesModule,

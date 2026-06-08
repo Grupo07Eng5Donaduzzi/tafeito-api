@@ -14,6 +14,7 @@ import { usersSchema } from '../../../users/infra/schemas/user.schema';
 export const proposalStatusEnum = pgEnum('proposal_status', [
   'PENDING',
   'NEGOTIATING',
+  'AWAITING_PAYMENT',
   'ACCEPTED',
   'PROVIDER_CONFIRMED',
   'COMPLETED',
@@ -44,6 +45,7 @@ export const proposalsSchema = pgTable('proposals', {
   rejectionReason: text('rejection_reason'),
   linkedChatId: uuid('linked_chat_id').references(() => conversationSchema.id),
   canResubmit: boolean('can_resubmit').notNull().default(true),
+  paymentId: text('payment_id'),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull(),
 });

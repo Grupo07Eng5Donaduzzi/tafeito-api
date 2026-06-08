@@ -1,10 +1,8 @@
 import {
   IsString,
   IsNumber,
-  IsEnum,
   IsOptional,
   Min,
-  Max,
   IsUUID,
 } from 'class-validator';
 import {
@@ -65,6 +63,7 @@ export class ProposalDto {
   rejectionReason?: string;
   linkedChatId?: string;
   canResubmit: boolean;
+  paymentId?: string;
   createdAt: Date;
   updatedAt: Date;
 
@@ -82,10 +81,25 @@ export class ProposalDto {
     dto.rejectionReason = proposal.rejectionReason;
     dto.linkedChatId = proposal.linkedChatId;
     dto.canResubmit = proposal.canResubmit;
+    dto.paymentId = proposal.paymentId;
     dto.createdAt = proposal.createdAt!;
     dto.updatedAt = proposal.updatedAt!;
     return dto;
   }
+}
+
+export class AcceptProposalResponseDto {
+  proposal: ProposalDto;
+  paymentId: string;
+  qrCode: string;
+  qrCodeBase64: string;
+  ticketUrl?: string;
+}
+
+export class PaymentCheckResponseDto {
+  paid: boolean;
+  status: string;
+  proposal: ProposalDto;
 }
 
 export class NegotiationMessageDto {

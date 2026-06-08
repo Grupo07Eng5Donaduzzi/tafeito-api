@@ -32,67 +32,49 @@ export class AuthService {
 
     if (!this.jwtSecret) {
       throw new InternalServerErrorException(
-        'JWT secret não está configurado. Defina a variável de ambiente JWT_SECRET.',
+        'JWT secret is not configured. Set the JWT_SECRET environment variable.',
       );
     }
   }
 
-  async login(
-    email: string,
-    password: string,
-  ): Promise<{ accessToken: string; user: UserDto }> {
-    const firebaseUid =
-      await this.firebaseAuthService.signInWithEmailAndPassword(
-        email,
-        password,
-      );
+  async login(email: string, password: string): Promise<{ accessToken: string; user: UserDto }> {
+    const firebaseUid = await this.firebaseAuthService.signInWithEmailAndPassword(email, password);
 
     const user = await this.userService.findByFirebaseUid(firebaseUid);
     if (!user || !user.id) {
-      throw new UnauthorizedException(
-        'Usuário não encontrado ou credenciais inválidas.',
-      );
+      throw new UnauthorizedException('User not found or invalid credentials.');
     }
 
     return this.buildAuthResponse(user);
   }
 
-  async register(
-    dto: CreateUserDto,
-  ): Promise<{ accessToken: string; user: UserDto }> {
+  async register(dto: CreateUserDto): Promise<{ accessToken: string; user: UserDto }> {
     const user = await this.userService.create(dto);
     return this.buildAuthResponse(user);
   }
 
-  async becomeProvider(
-    userId: string,
-    dto: BecomeProviderDto,
-  ): Promise<UserDto> {
+  async becomeProvider(userId: string, dto: BecomeProviderDto): Promise<UserDto> {
     return this.userService.edit(userId, {
       pixKey: dto.pixKey,
       hourlyRate: dto.hourlyRate,
     });
   }
 
-  private buildAuthResponse(user: UserDto): {
-    accessToken: string;
-    user: UserDto;
-  } {
+  async forgotPassword(email: string): Promise<void> {
+    await this.firebaseAuthService.sendPasswordResetEmail(email);
+  }
+
+  private buildAuthResponse(user: UserDto): { accessToken: string; user: UserDto } {
     const payload: AuthJwtPayload = {
       sub: user.id!,
       uid: user.firebaseUid,
       email: user.email,
     };
 
-    const signOptions = {
+    const accessToken = jwtModule.sign(payload, this.jwtSecret, {
       expiresIn: this.jwtExpiresIn,
-    };
+    });
 
-    const accessToken = jwtModule.sign(payload, this.jwtSecret, signOptions);
-
-    return {
-      accessToken,
-      user,
-    };
+    return { accessToken, user };
   }
 }

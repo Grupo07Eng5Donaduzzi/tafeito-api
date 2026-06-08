@@ -32,6 +32,7 @@ export class DrizzleProposalRepository implements ProposalRepository {
       rejectionReason: proposal.rejectionReason,
       linkedChatId: proposal.linkedChatId,
       canResubmit: proposal.canResubmit,
+      paymentId: proposal.paymentId,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -48,6 +49,7 @@ export class DrizzleProposalRepository implements ProposalRepository {
         rejectionReason: proposal.rejectionReason,
         linkedChatId: proposal.linkedChatId,
         canResubmit: proposal.canResubmit,
+        paymentId: proposal.paymentId,
         updatedAt: new Date(),
       })
       .where(eq(proposalsSchema.id, proposal.id!));
@@ -136,9 +138,10 @@ export class DrizzleProposalRepository implements ProposalRepository {
       hourlyRate: parseFloat(row.hourlyRate),
       amount: parseFloat(row.amount),
       status: row.status as ProposalStatus,
-      rejectionReason: row.rejectionReason,
-      linkedChatId: row.linkedChatId,
+      rejectionReason: row.rejectionReason ?? undefined,
+      linkedChatId: row.linkedChatId ?? undefined,
       canResubmit: row.canResubmit,
+      paymentId: row.paymentId ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     });
@@ -194,9 +197,7 @@ export class DrizzleNegotiationMessageRepository
       senderRole: row.senderRole as SenderRole,
       senderUserId: row.senderUserId,
       message: row.message,
-      revisedAmount: row.revisedAmount
-        ? parseFloat(row.revisedAmount)
-        : undefined,
+      revisedAmount: row.revisedAmount ? parseFloat(row.revisedAmount) : undefined,
       createdAt: row.createdAt,
     });
   }

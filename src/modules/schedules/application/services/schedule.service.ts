@@ -1,4 +1,10 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { SCHEDULE_REPOSITORY } from '../../domain/repositories/schedule-repository.interface';
 import type { ScheduleRepository } from '../../domain/repositories/schedule-repository.interface';
 import { Schedule } from '../../domain/models/schedule.entity';
@@ -12,22 +18,23 @@ export class ScheduleService {
   constructor(
     @Inject(SCHEDULE_REPOSITORY)
     private readonly repository: ScheduleRepository,
+    @Inject(forwardRef(() => ProposalService))
     private readonly proposalService: ProposalService,
   ) {}
 
   async create(dto: CreateScheduleDto): Promise<ScheduleDto> {
     const proposal = await this.proposalService.getProposal(dto.proposalId);
-    if (!proposal) throw new NotFoundException('Proposta não encontrada');
+    if (!proposal) throw new NotFoundException('Proposal not found');
     if (proposal.status !== ProposalStatus.ACCEPTED) {
-      throw new BadRequestException('Agendamento permitido apenas para propostas aceitas');
+      throw new BadRequestException('Scheduling is only allowed for accepted proposals');
     }
     if (proposal.requestId !== dto.budgetRequestId) {
-      throw new BadRequestException('O budgetRequestId não corresponde à proposta informada');
+      throw new BadRequestException('budgetRequestId does not match the proposal');
     }
 
     const existing = await this.repository.findByProposalId(dto.proposalId);
     if (existing) {
-      throw new BadRequestException('Já existe um agendamento para esta proposta');
+      throw new BadRequestException('A schedule already exists for this proposal');
     }
 
     const schedule = new Schedule({

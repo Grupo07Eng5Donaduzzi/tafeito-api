@@ -9,7 +9,7 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { RequireProviderGuard } from '@shared/infra/guards/require-provider.guard';
 import { ConversationResponseDto } from '@chat/application/dto/conversation.dto';
@@ -23,6 +23,8 @@ import {
   SendRevisedProposalDto,
   ProposalDto,
   NegotiationMessageDto,
+  AcceptProposalResponseDto,
+  PaymentCheckResponseDto,
 } from '../../application/dto/proposal.dto';
 
 @ApiTags('Proposals')
@@ -31,6 +33,7 @@ import {
 export class ProposalsController {
   constructor(private readonly proposalService: ProposalService) {}
 
+  @ApiOperation({ summary: 'Create a new proposal (provider only)' })
   @Post()
   @UseGuards(RequireProviderGuard)
   async create(
@@ -40,6 +43,7 @@ export class ProposalsController {
     return this.proposalService.createProposal(providerId, body);
   }
 
+  @ApiOperation({ summary: 'Get all proposals created by the authenticated provider' })
   @Get('provider/created')
   async findProviderCreated(
     @CurrentUser() providerId: string,
@@ -47,6 +51,7 @@ export class ProposalsController {
     return this.proposalService.getProposalsByProvider(providerId);
   }
 
+  @ApiOperation({ summary: 'Get all proposals received by the authenticated client' })
   @Get('client/requested')
   async findClientRequested(
     @CurrentUser() clientId: string,
@@ -54,6 +59,7 @@ export class ProposalsController {
     return this.proposalService.getProposalsByClient(clientId);
   }
 
+  @ApiOperation({ summary: 'Get a proposal by ID' })
   @Get(':id')
   async findById(
     @Param('id') id: string,
@@ -62,6 +68,7 @@ export class ProposalsController {
     return this.proposalService.getProposal(id, userId);
   }
 
+  @ApiOperation({ summary: 'Contest a proposal and start negotiation' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id/contest')
   async contest(
@@ -72,6 +79,7 @@ export class ProposalsController {
     await this.proposalService.contestProposal(proposalId, clientId, body);
   }
 
+  @ApiOperation({ summary: 'Definitively reject a proposal' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id/reject')
   async reject(
@@ -82,15 +90,25 @@ export class ProposalsController {
     await this.proposalService.rejectProposal(proposalId, clientId, body);
   }
 
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @Patch(':id/accept')
+  @ApiOperation({ summary: 'Accept a proposal — returns a PIX QR code for payment' })
+  @Post(':id/accept')
   async accept(
     @Param('id') proposalId: string,
     @CurrentUser() clientId: string,
-  ): Promise<void> {
-    await this.proposalService.acceptProposal(proposalId, clientId);
+  ): Promise<AcceptProposalResponseDto> {
+    return this.proposalService.acceptProposal(proposalId, clientId);
   }
 
+  @ApiOperation({ summary: 'Poll payment status — activates the proposal and creates a schedule when paid' })
+  @Get(':id/payment')
+  async checkPayment(
+    @Param('id') proposalId: string,
+    @CurrentUser() clientId: string,
+  ): Promise<PaymentCheckResponseDto> {
+    return this.proposalService.checkPaymentStatus(proposalId, clientId);
+  }
+
+  @ApiOperation({ summary: 'Provider confirms service completion' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id/providerConfirm')
   @UseGuards(RequireProviderGuard)
@@ -101,6 +119,7 @@ export class ProposalsController {
     await this.proposalService.providerConfirmCompletion(proposalId, providerId);
   }
 
+  @ApiOperation({ summary: 'Client confirms service completion — triggers payment transfer to provider' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id/clientConfirm')
   async clientConfirm(
@@ -110,6 +129,7 @@ export class ProposalsController {
     await this.proposalService.clientConfirmCompletion(proposalId, clientId);
   }
 
+  @ApiOperation({ summary: 'Get the linked chat conversation for a proposal' })
   @Get(':id/chat')
   async getChat(
     @Param('id') proposalId: string,
@@ -125,6 +145,7 @@ export class ProposalsController {
 export class NegotiationsController {
   constructor(private readonly negotiationService: NegotiationService) {}
 
+  @ApiOperation({ summary: 'Send a negotiation message' })
   @Post(':proposalId/messages')
   async sendMessage(
     @Param('proposalId') proposalId: string,
@@ -134,6 +155,7 @@ export class NegotiationsController {
     return this.negotiationService.sendMessage(proposalId, userId, body);
   }
 
+  @ApiOperation({ summary: 'Send a revised proposal (provider only)' })
   @Post(':proposalId/revisedProposal')
   @UseGuards(RequireProviderGuard)
   async sendRevisedProposal(
@@ -141,13 +163,10 @@ export class NegotiationsController {
     @CurrentUser() providerId: string,
     @Body() body: SendRevisedProposalDto,
   ): Promise<NegotiationMessageDto> {
-    return this.negotiationService.sendRevisedProposal(
-      proposalId,
-      providerId,
-      body,
-    );
+    return this.negotiationService.sendRevisedProposal(proposalId, providerId, body);
   }
 
+  @ApiOperation({ summary: 'Close a negotiation' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':proposalId/close')
   async closeNegotiation(
@@ -157,10 +176,10 @@ export class NegotiationsController {
     await this.negotiationService.closeNegotiation(proposalId, userId);
   }
 
+  @ApiOperation({ summary: 'Get all negotiation messages for a proposal' })
   @Get(':proposalId/messages')
   async getMessages(
     @Param('proposalId') proposalId: string,
-    @CurrentUser() userId: string,
   ): Promise<NegotiationMessageDto[]> {
     return this.negotiationService.getMessages(proposalId);
   }

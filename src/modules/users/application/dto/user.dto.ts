@@ -14,6 +14,9 @@ export class UserDto {
   @ApiProperty()
   public email: string;
 
+  @ApiProperty()
+  public identification: string;
+
   @ApiPropertyOptional()
   public pixKey: string | undefined;
 
@@ -31,6 +34,7 @@ export class UserDto {
     firebaseUid: string,
     name: string,
     email: string,
+    identification: string,
     pixKey: string | undefined,
     hourlyRate: number | undefined,
     createdAt: Date | undefined,
@@ -40,6 +44,7 @@ export class UserDto {
     this.firebaseUid = firebaseUid;
     this.name = name;
     this.email = email;
+    this.identification = identification;
     this.pixKey = pixKey;
     this.hourlyRate = hourlyRate;
     this.createdAt = createdAt;
@@ -53,6 +58,7 @@ export class UserDto {
       user.firebaseUid,
       user.name,
       user.email,
+      user.identification,
       user.pixKey,
       user.hourlyRate,
       user.createdAt,

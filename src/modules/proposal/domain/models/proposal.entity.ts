@@ -3,6 +3,7 @@ import { v4 as uuid } from 'uuid';
 export enum ProposalStatus {
   PENDING = 'PENDING',
   NEGOTIATING = 'NEGOTIATING',
+  AWAITING_PAYMENT = 'AWAITING_PAYMENT',
   ACCEPTED = 'ACCEPTED',
   PROVIDER_CONFIRMED = 'PROVIDER_CONFIRMED',
   COMPLETED = 'COMPLETED',
@@ -17,7 +18,6 @@ export enum SenderRole {
 
 export class Proposal {
   private readonly _id?: string;
-  private _proposalId?: string;
   private _requestId: string;
   private _clientId: string;
   private _providerId: string;
@@ -28,6 +28,7 @@ export class Proposal {
   private _rejectionReason?: string;
   private _linkedChatId?: string;
   private _canResubmit: boolean;
+  private _paymentId?: string;
   private readonly _createdAt?: Date;
   private readonly _updatedAt?: Date;
 
@@ -39,10 +40,6 @@ export class Proposal {
 
   get id(): string | undefined {
     return this._id;
-  }
-
-  get proposalId(): string | undefined {
-    return this._proposalId;
   }
 
   get requestId(): string {
@@ -85,6 +82,10 @@ export class Proposal {
     return this._canResubmit;
   }
 
+  get paymentId(): string | undefined {
+    return this._paymentId;
+  }
+
   get createdAt(): Date | undefined {
     return this._createdAt;
   }
@@ -124,6 +125,7 @@ export class Proposal {
     rejectionReason?: string;
     linkedChatId?: string;
     canResubmit: boolean;
+    paymentId?: string;
     createdAt: Date;
     updatedAt: Date;
   }): Proposal {
@@ -138,12 +140,13 @@ export class Proposal {
     proposal._rejectionReason = props.rejectionReason;
     proposal._linkedChatId = props.linkedChatId;
     proposal._canResubmit = props.canResubmit;
+    proposal._paymentId = props.paymentId;
     return proposal;
   }
 
   contest(reason: string): void {
     if (this._status !== ProposalStatus.PENDING) {
-      throw new Error('Cannot contest proposal that is not PENDING');
+      throw new Error('Cannot contest a proposal that is not PENDING');
     }
     this._status = ProposalStatus.NEGOTIATING;
     this._rejectionReason = reason;
@@ -154,28 +157,34 @@ export class Proposal {
       this._status !== ProposalStatus.PENDING &&
       this._status !== ProposalStatus.NEGOTIATING
     ) {
-      throw new Error('Cannot reject proposal in current status');
+      throw new Error('Cannot reject a proposal in its current status');
     }
     this._status = ProposalStatus.REJECTED;
     this._rejectionReason = reason;
     this._canResubmit = false;
   }
 
-  accept(): void {
+  accept(paymentId: string): void {
     if (
       this._status !== ProposalStatus.NEGOTIATING &&
       this._status !== ProposalStatus.PENDING
     ) {
-      throw new Error('Cannot accept proposal in current status');
+      throw new Error('Cannot accept a proposal in its current status');
+    }
+    this._status = ProposalStatus.AWAITING_PAYMENT;
+    this._paymentId = paymentId;
+  }
+
+  confirmPayment(): void {
+    if (this._status !== ProposalStatus.AWAITING_PAYMENT) {
+      throw new Error('Cannot confirm payment for a proposal not awaiting payment');
     }
     this._status = ProposalStatus.ACCEPTED;
   }
 
   closeNegotiation(): void {
     if (this._status !== ProposalStatus.NEGOTIATING) {
-      throw new Error(
-        'Cannot close negotiation for proposal that is not NEGOTIATING',
-      );
+      throw new Error('Cannot close negotiation for a proposal that is not NEGOTIATING');
     }
     this._status = ProposalStatus.CANCELLED;
     this._canResubmit = false;
@@ -183,9 +192,7 @@ export class Proposal {
 
   updateEstimate(estimatedHours: number): void {
     if (this._status !== ProposalStatus.NEGOTIATING) {
-      throw new Error(
-        'Cannot update estimate for proposal that is not NEGOTIATING',
-      );
+      throw new Error('Cannot update estimate for a proposal that is not NEGOTIATING');
     }
     this._estimatedHours = estimatedHours;
     this._amount = estimatedHours * this._hourlyRate;
@@ -193,14 +200,14 @@ export class Proposal {
 
   providerConfirm(): void {
     if (this._status !== ProposalStatus.ACCEPTED) {
-      throw new Error('Cannot confirm completion for proposal that is not ACCEPTED');
+      throw new Error('Cannot confirm completion for a proposal that is not ACCEPTED');
     }
     this._status = ProposalStatus.PROVIDER_CONFIRMED;
   }
 
   clientConfirm(): void {
     if (this._status !== ProposalStatus.PROVIDER_CONFIRMED) {
-      throw new Error('Cannot confirm completion before provider confirms');
+      throw new Error('Cannot confirm completion before the provider confirms');
     }
     this._status = ProposalStatus.COMPLETED;
   }

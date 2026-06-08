@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from '../../application/services/auth.service';
 import { AuthResponseDto } from '../../application/dto/auth-response.dto';
 import { LoginUserDto } from '../../application/dto/login-user.dto';
+import { ForgotPasswordDto } from '../../application/dto/forgot-password.dto';
 import { CreateUserDto } from '@users/application/dto/create-user.dto';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { BecomeProviderDto } from '../../application/dto/become-provider.dto';
@@ -12,24 +13,21 @@ import { BecomeProviderDto } from '../../application/dto/become-provider.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @ApiOperation({ summary: 'Login com e-mail e senha' })
+  @ApiOperation({ summary: 'Sign in with email and password' })
   @Post('login')
   async login(@Body() body: LoginUserDto): Promise<AuthResponseDto> {
-    const { accessToken, user } = await this.authService.login(
-      body.email,
-      body.password,
-    );
+    const { accessToken, user } = await this.authService.login(body.email, body.password);
     return new AuthResponseDto(accessToken, user);
   }
 
-  @ApiOperation({ summary: 'Cadastrar novo usuário' })
+  @ApiOperation({ summary: 'Register a new user' })
   @Post('register')
   async register(@Body() body: CreateUserDto): Promise<AuthResponseDto> {
     const { accessToken, user } = await this.authService.register(body);
     return new AuthResponseDto(accessToken, user);
   }
 
-  @ApiOperation({ summary: 'Tornar-se prestador de serviço' })
+  @ApiOperation({ summary: 'Become a service provider' })
   @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch('becomeProvider')
@@ -38,5 +36,12 @@ export class AuthController {
     @Body() body: BecomeProviderDto,
   ): Promise<void> {
     await this.authService.becomeProvider(userId, body);
+  }
+
+  @ApiOperation({ summary: 'Send a password reset email via Firebase' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: ForgotPasswordDto): Promise<void> {
+    await this.authService.forgotPassword(body.email);
   }
 }
