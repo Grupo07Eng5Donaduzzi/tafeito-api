@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths": {
+      "@shared/infra/guards/*": ["src/shared/infra/guards/*"],
+      "@shared/*": ["../../shared/src/*"],
+      "@users/*": ["src/modules/users/*"]
+    }
+  },
+  "include": ["src/**/*", "../../shared/src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

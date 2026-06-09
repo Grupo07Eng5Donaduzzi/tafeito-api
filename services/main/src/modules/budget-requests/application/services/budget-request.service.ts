@@ -1,0 +1,125 @@
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import type { BudgetRequestRepository } from '../../domain/repositories/budget-request-repository.interface';
+import { BUDGET_REQUEST_REPOSITORY } from '../../domain/repositories/budget-request-repository.interface';
+import { BudgetRequest } from '../../domain/models/budget-request.entity';
+import { CreateBudgetRequestDto } from '../dto/create-budget-request.dto';
+import { CancelBudgetRequestDto } from '../dto/cancel-budget-request.dto';
+import { BudgetRequestDto } from '../dto/budget-request.dto';
+
+const MAX_PHOTOS = 5;
+
+@Injectable()
+export class BudgetRequestService {
+  constructor(
+    @Inject(BUDGET_REQUEST_REPOSITORY)
+    private readonly repository: BudgetRequestRepository,
+  ) {}
+
+  async create(
+    userId: string,
+    dto: CreateBudgetRequestDto,
+  ): Promise<BudgetRequestDto> {
+    const budgetRequest = new BudgetRequest({
+      userId,
+      serviceId: dto.serviceId,
+      title: dto.title,
+      description: dto.description,
+      category: dto.category,
+      location: dto.location,
+      requestDate: dto.requestDate,
+      status: 'pending',
+      photos: dto.photos,
+    });
+    await this.repository.create(budgetRequest);
+    return this.toDto(budgetRequest);
+  }
+
+  async findById(id: string): Promise<BudgetRequestDto | null> {
+    const result = await this.repository.findById(id);
+    return result ? this.toDto(result) : null;
+  }
+
+  async findByUserId(userId: string): Promise<BudgetRequestDto[]> {
+    const result = await this.repository.findByUserId(userId);
+    return result.map((s) => this.toDto(s));
+  }
+
+  async findAvailableByServiceId(serviceId: string): Promise<BudgetRequestDto[]> {
+    if (!serviceId || serviceId.trim().length === 0) {
+      throw new BadRequestException('serviceId is required');
+    }
+
+    const result = await this.repository.findAvailableByServiceId(serviceId);
+    return result.map((s) => this.toDto(s));
+  }
+
+  async addPhotos(id: string, userId: string, filenames: string[]): Promise<BudgetRequestDto> {
+    const budgetRequest = await this.repository.findById(id);
+    if (!budgetRequest) throw new NotFoundException('Budget request not found');
+    if (budgetRequest.userId !== userId) {
+      throw new ForbiddenException('Only the owner can add photos to this request');
+    }
+
+    const existingPhotos = budgetRequest.photos ?? [];
+    if (existingPhotos.length + filenames.length > MAX_PHOTOS) {
+      throw new BadRequestException(
+        `Cannot exceed ${MAX_PHOTOS} photos. Currently has ${existingPhotos.length}.`,
+      );
+    }
+
+    budgetRequest.photos = [...existingPhotos, ...filenames];
+    budgetRequest.updatedAt = new Date();
+    await this.repository.update(budgetRequest);
+    return this.toDto(budgetRequest);
+  }
+
+  async cancel(id: string, userId: string, dto: CancelBudgetRequestDto): Promise<void> {
+    const budgetRequest = await this.repository.findById(id);
+    if (!budgetRequest) throw new NotFoundException('Budget request not found');
+    if (budgetRequest.userId !== userId) {
+      throw new ForbiddenException('Only the owner can cancel this request');
+    }
+    if (budgetRequest.status !== 'pending') {
+      throw new BadRequestException(
+        'Cancellation is only allowed for pending requests',
+      );
+    }
+    budgetRequest.status = 'cancelled';
+    budgetRequest.cancellationReason = dto.reason;
+    budgetRequest.updatedAt = new Date();
+    await this.repository.update(budgetRequest);
+  }
+
+  async delete(id: string, userId: string): Promise<void> {
+    const budgetRequest = await this.repository.findById(id);
+    if (!budgetRequest) throw new NotFoundException('Budget request not found');
+    if (budgetRequest.userId !== userId) {
+      throw new ForbiddenException('Only the owner can delete this request');
+    }
+    await this.repository.delete(id);
+  }
+
+  private toDto(s: BudgetRequest): BudgetRequestDto {
+    return {
+      id: s.id!,
+      userId: s.userId,
+      serviceId: s.serviceId,
+      title: s.title,
+      description: s.description,
+      category: s.category,
+      location: s.location,
+      requestDate: s.requestDate,
+      status: s.status,
+      photos: s.photos,
+      cancellationReason: s.cancellationReason,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+    };
+  }
+}
