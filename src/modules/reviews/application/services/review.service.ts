@@ -128,7 +128,7 @@ export class ReviewService {
       data: data.map((r) => ReviewDto.from(r)!),
       total,
       page: safePage,
-      pageSize: safePageSize,
+      limit: safePageSize,
       hasMore: offset + data.length < total,
     };
   }

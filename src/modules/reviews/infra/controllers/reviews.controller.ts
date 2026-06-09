@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
+import { HateoasItem, HateoasList } from '@shared/infra/hateoas';
 import { ReviewService } from '../../application/services/review.service';
 import {
   CreateReviewDto,
@@ -49,6 +50,15 @@ export class ReviewsController {
   }
 
   @Get('proposals/:proposalId')
+  @HateoasItem<ReviewDto>({
+    basePath: '/reviews',
+    itemLinks: (item) => ({
+      self: { href: `/reviews/proposals/${item.proposalId}`, method: 'GET' },
+      update: { href: `/reviews/${item.id}`, method: 'PATCH' },
+      proposal: { href: `/proposals/${item.proposalId}`, method: 'GET' },
+      provider: { href: `/reviews/provider/${item.reviewedId}`, method: 'GET' },
+    }),
+  })
   async getByProposal(
     @Param('proposalId', ParseUUIDPipe) proposalId: string,
     @CurrentUser() userId: string,
@@ -57,6 +67,14 @@ export class ReviewsController {
   }
 
   @Get('provider/:providerId')
+  @HateoasList<ReviewDto>({
+    basePath: '/reviews/provider',
+    itemLinks: (item) => ({
+      self: { href: `/reviews/proposals/${item.proposalId}`, method: 'GET' },
+      update: { href: `/reviews/${item.id}`, method: 'PATCH' },
+      proposal: { href: `/proposals/${item.proposalId}`, method: 'GET' },
+    }),
+  })
   async getByProvider(
     @Param('providerId', ParseUUIDPipe) providerId: string,
     @Query('_page', new DefaultValuePipe(1), ParseIntPipe) page: number,

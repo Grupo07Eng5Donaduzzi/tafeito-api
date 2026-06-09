@@ -12,6 +12,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
+import { HateoasItem } from '@shared/infra/hateoas';
 import { MessageService } from '../../application/services/message.service';
 import { ConversationService } from '../../application/services/conversation.service';
 import {
@@ -29,7 +30,6 @@ export class ChatController {
     private readonly conversationService: ConversationService,
   ) {}
 
-  // Messages endpoints
   @Post('messages')
   async sendMessage(
     @Body() dto: SendMessageDto,
@@ -46,6 +46,18 @@ export class ChatController {
   }
 
   @Get('messages/:id')
+  @HateoasItem<MessageResponseDto>({
+    basePath: '/chat/messages',
+    itemLinks: (item) => ({
+      self: { href: `/chat/messages/${item.id}`, method: 'GET' },
+      markRead: { href: `/chat/messages/${item.id}/read`, method: 'PATCH' },
+      markDelivered: { href: `/chat/messages/${item.id}/delivered`, method: 'PATCH' },
+      delete: { href: `/chat/messages/${item.id}`, method: 'DELETE' },
+      conversation: item.conversationId
+        ? { href: `/chat/conversations/${item.conversationId}`, method: 'GET' }
+        : null,
+    }),
+  })
   async getMessage(
     @Param('id') id: string,
     @CurrentUser() currentUserId: string,
@@ -133,7 +145,6 @@ export class ChatController {
     return this.messageService.deleteMessageForUser(id, currentUserId);
   }
 
-  // Conversations endpoints
   @Get('services/:serviceId/conversations')
   async getServiceConversations(
     @Param('serviceId') serviceId: string,
@@ -142,6 +153,18 @@ export class ChatController {
   }
 
   @Get('conversations/:id')
+  @HateoasItem<ConversationResponseDto>({
+    basePath: '/chat/conversations',
+    itemLinks: (item) => ({
+      self: { href: `/chat/conversations/${item.id}`, method: 'GET' },
+      messages: { href: `/chat/conversations/${item.id}/messages`, method: 'GET' },
+      sendMessage: { href: `/chat/conversations/${item.id}/messages`, method: 'POST' },
+      service: { href: `/services/${item.serviceId}`, method: 'GET' },
+      proposal: item.proposalId
+        ? { href: `/proposals/${item.proposalId}`, method: 'GET' }
+        : null,
+    }),
+  })
   async getConversation(
     @Param('id') id: string,
   ): Promise<ConversationResponseDto> {

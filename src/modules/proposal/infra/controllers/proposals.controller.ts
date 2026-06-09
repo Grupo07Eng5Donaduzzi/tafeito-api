@@ -22,7 +22,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiConsumes } from '@nestjs/swagger';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { RequireProviderGuard } from '@shared/infra/guards/require-provider.guard';
+import { HateoasItem } from '@shared/infra/hateoas';
 import { ConversationResponseDto } from '@chat/application/dto/conversation.dto';
+import { ProposalStatus } from '../../domain/models/proposal.entity';
 import { ProposalService } from '../../application/services/proposal.service';
 import { NegotiationService } from '../../application/services/negotiation.service';
 import {
@@ -87,6 +89,40 @@ export class ProposalsController {
 
   @ApiOperation({ summary: 'Get a proposal by ID' })
   @Get(':id')
+  @HateoasItem<ProposalDto>({
+    basePath: '/proposals',
+    itemLinks: (item) => ({
+      self: { href: `/proposals/${item.id}`, method: 'GET' },
+      budgetRequest: { href: `/budgetRequests/${item.requestId}`, method: 'GET' },
+      chat: item.linkedChatId
+        ? { href: `/proposals/${item.id}/chat`, method: 'GET' }
+        : null,
+      payment: item.status === ProposalStatus.AWAITING_PAYMENT
+        ? { href: `/proposals/${item.id}/payment`, method: 'GET' }
+        : null,
+      accept: (item.status === ProposalStatus.PENDING || item.status === ProposalStatus.NEGOTIATING)
+        ? { href: `/proposals/${item.id}/accept`, method: 'POST' }
+        : null,
+      contest: item.status === ProposalStatus.PENDING
+        ? { href: `/proposals/${item.id}/contest`, method: 'PATCH' }
+        : null,
+      reject: (item.status === ProposalStatus.PENDING || item.status === ProposalStatus.NEGOTIATING)
+        ? { href: `/proposals/${item.id}/reject`, method: 'PATCH' }
+        : null,
+      providerConfirm: item.status === ProposalStatus.ACCEPTED
+        ? { href: `/proposals/${item.id}/providerConfirm`, method: 'PATCH' }
+        : null,
+      clientConfirm: item.status === ProposalStatus.PROVIDER_CONFIRMED
+        ? { href: `/proposals/${item.id}/clientConfirm`, method: 'PATCH' }
+        : null,
+      invoice: item.invoiceFile
+        ? { href: `/proposals/${item.id}/invoice`, method: 'GET' }
+        : null,
+      uploadInvoice: (item.status === ProposalStatus.ACCEPTED || item.status === ProposalStatus.PROVIDER_CONFIRMED)
+        ? { href: `/proposals/${item.id}/invoice`, method: 'POST' }
+        : null,
+    }),
+  })
   async findById(
     @Param('id') id: string,
     @CurrentUser() userId: string,
@@ -208,6 +244,17 @@ export class ProposalsController {
 
   @ApiOperation({ summary: 'Get the linked chat conversation for a proposal' })
   @Get(':id/chat')
+  @HateoasItem<ConversationResponseDto>({
+    basePath: '/chat/conversations',
+    itemLinks: (item) => ({
+      self: { href: `/chat/conversations/${item.id}`, method: 'GET' },
+      messages: { href: `/chat/conversations/${item.id}/messages`, method: 'GET' },
+      sendMessage: { href: `/chat/conversations/${item.id}/messages`, method: 'POST' },
+      proposal: item.proposalId
+        ? { href: `/proposals/${item.proposalId}`, method: 'GET' }
+        : null,
+    }),
+  })
   async getChat(
     @Param('id') proposalId: string,
     @CurrentUser() userId: string,

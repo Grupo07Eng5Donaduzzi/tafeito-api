@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { SharedModule } from '@shared/shared.module';
+import { HateoasInterceptor } from '@shared/infra/hateoas';
 import { UsersModule } from '@users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthGuard } from './modules/auth/infra/guards/auth.guard';
@@ -29,6 +30,10 @@ import { SchedulesModule } from './modules/schedules/schedules.module';
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: HateoasInterceptor,
     },
   ],
 })

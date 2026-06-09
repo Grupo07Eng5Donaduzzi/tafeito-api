@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Logger, Param, Post } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { HateoasItem } from '@shared/infra/hateoas';
 import { PaymentsService } from '../../application/services/payments.service';
 import { CreatePixPaymentDto } from '../../application/dto/create-pix-payment.dto';
 import { PixPaymentDto } from '../../application/dto/pix-payment.dto';
@@ -19,6 +20,12 @@ export class PaymentsController {
   }
 
   @Get(':id/status')
+  @HateoasItem<PaymentStatusDto>({
+    basePath: '/payments',
+    itemLinks: (item) => ({
+      self: { href: `/payments/${item.id}/status`, method: 'GET' },
+    }),
+  })
   async getStatus(@Param('id') id: string): Promise<PaymentStatusDto> {
     return this.paymentsService.getStatus(id);
   }

@@ -63,6 +63,6 @@ export class ProviderReviewsPageDto {
   data: ReviewDto[];
   total: number;
   page: number;
-  pageSize: number;
+  limit: number;
   hasMore: boolean;
 }

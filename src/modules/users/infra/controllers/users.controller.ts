@@ -2,6 +2,7 @@ import { UpdateUserDto } from '@users/application/dto/create-user.dto';
 import { UserDto } from '@users/application/dto/user.dto';
 import { UserService } from '@users/application/services/user.service';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
+import { HateoasItem } from '@shared/infra/hateoas';
 import {
   Body,
   Controller,
@@ -23,6 +24,14 @@ export class UsersController {
   constructor(private readonly userService: UserService) {}
 
   @Get('me')
+  @HateoasItem<UserDto>({
+    basePath: '/users',
+    itemLinks: (item) => ({
+      self: { href: `/users/${item.id}`, method: 'GET' },
+      update: { href: `/users/${item.id}`, method: 'PUT' },
+      delete: { href: `/users/${item.id}`, method: 'DELETE' },
+    }),
+  })
   async getMe(@CurrentUser() userId: string): Promise<UserDto> {
     const user = await this.userService.findById(userId);
     if (!user) throw new NotFoundException('Usuário não encontrado');
@@ -30,6 +39,14 @@ export class UsersController {
   }
 
   @Get(':id')
+  @HateoasItem<UserDto>({
+    basePath: '/users',
+    itemLinks: (item) => ({
+      self: { href: `/users/${item.id}`, method: 'GET' },
+      update: { href: `/users/${item.id}`, method: 'PUT' },
+      delete: { href: `/users/${item.id}`, method: 'DELETE' },
+    }),
+  })
   async findById(@Param('id') id: string): Promise<UserDto> {
     const user = await this.userService.findById(id);
     if (!user) throw new NotFoundException('Usuário não encontrado');

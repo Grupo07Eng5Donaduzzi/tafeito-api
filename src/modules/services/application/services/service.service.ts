@@ -66,6 +66,17 @@ export class ServiceService {
     return this.repository.findAll();
   }
 
+  async listPaginated(params: {
+    page: number;
+    limit: number;
+    category?: string;
+  }) {
+    const { page, limit, category } = params;
+    const offset = (page - 1) * limit;
+    const { data, total } = await this.repository.findAllPaginated({ limit, offset, category });
+    return { data, total, page, limit };
+  }
+
   async listByCategory(category: string): Promise<any[]> {
     return this.repository.findByCategory(category);
   }

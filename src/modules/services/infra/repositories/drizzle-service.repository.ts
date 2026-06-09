@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
 import { servicesSchema } from '../schemas/service.schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { UpdateServiceDto } from '../../application/dto/update-service.dto';
 
 @Injectable()
@@ -34,6 +34,30 @@ export class DrizzleServiceRepository {
 
   async findAll(): Promise<any[]> {
     return this.drizzleService.db.select().from(servicesSchema);
+  }
+
+  async findAllPaginated(params: {
+    limit: number;
+    offset: number;
+    category?: string;
+  }): Promise<{ data: any[]; total: number }> {
+    const { limit, offset, category } = params;
+    const where = category ? eq(servicesSchema.category, category) : undefined;
+
+    const [data, [{ total }]] = await Promise.all([
+      this.drizzleService.db
+        .select()
+        .from(servicesSchema)
+        .where(where)
+        .limit(limit)
+        .offset(offset),
+      this.drizzleService.db
+        .select({ total: sql<number>`cast(count(*) as int)` })
+        .from(servicesSchema)
+        .where(where),
+    ]);
+
+    return { data, total };
   }
 
   async findByCategory(category: string): Promise<any[]> {

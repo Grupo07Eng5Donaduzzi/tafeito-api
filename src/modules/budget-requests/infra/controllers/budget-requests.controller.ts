@@ -20,6 +20,7 @@ import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 import { CurrentUser } from '@shared/infra/current-user.decorator';
+import { HateoasItem } from '@shared/infra/hateoas';
 import { BudgetRequestService } from '../../application/services/budget-request.service';
 import { CreateBudgetRequestDto } from '../../application/dto/create-budget-request.dto';
 import { CancelBudgetRequestDto } from '../../application/dto/cancel-budget-request.dto';
@@ -55,6 +56,20 @@ export class BudgetRequestsController {
 
   @ApiOperation({ summary: 'Get a budget request by ID' })
   @Get(':id')
+  @HateoasItem<BudgetRequestDto>({
+    basePath: '/budgetRequests',
+    itemLinks: (item) => ({
+      self: { href: `/budgetRequests/${item.id}`, method: 'GET' },
+      photos: { href: `/budgetRequests/${item.id}/photos`, method: 'POST' },
+      cancel: item.status === 'pending'
+        ? { href: `/budgetRequests/${item.id}/cancel`, method: 'PATCH' }
+        : null,
+      delete: item.status !== 'cancelled'
+        ? { href: `/budgetRequests/${item.id}`, method: 'DELETE' }
+        : null,
+      list: { href: '/budgetRequests/mine', method: 'GET' },
+    }),
+  })
   findById(@Param('id') id: string) {
     return this.service.findById(id);
   }
