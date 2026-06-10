@@ -16,6 +16,8 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class UserService {
@@ -270,6 +272,24 @@ export class UserService {
       );
     }
 
+    await this.userRepository.update(user);
+
+    const updated = await this.userRepository.findById(id);
+    return UserDto.from(updated)!;
+  }
+
+  async uploadPhoto(id: string, file: Express.Multer.File): Promise<UserDto> {
+    if (!file) {
+      throw new BadRequestException('Arquivo de foto obrigatório');
+    }
+
+    const user = await this.userRepository.findById(id);
+    if (!user) throw new NotFoundException();
+
+    const baseUrl = process.env.API_BASE_URL ?? 'https://tafeito.rietto.com';
+    const photoUrl = `${baseUrl}/uploads/profiles/${file.filename}`;
+
+    user.withPhotoUrl(photoUrl);
     await this.userRepository.update(user);
 
     const updated = await this.userRepository.findById(id);
