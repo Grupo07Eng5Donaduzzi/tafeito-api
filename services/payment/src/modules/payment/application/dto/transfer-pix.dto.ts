@@ -1,4 +1,4 @@
 export class TransferPixDto {
-    id: string;
-    status: string;
+    id!: string;
+    status!: string;
 }

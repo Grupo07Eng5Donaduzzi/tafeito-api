@@ -12,6 +12,7 @@ import { servicesSchema } from '../../../services/infra/schemas/service.schema';
 export const statusEnum = pgEnum('status', [
   'pending',
   'answered',
+  'accepted',
   'cancelled',
 ]);
 

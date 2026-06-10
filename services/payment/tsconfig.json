@@ -2,11 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "baseUrl": "./",
+    "rootDir": "../..",
     "paths": {
       "@shared/*": ["../../shared/src/*"]
     }
   },
-  "include": ["src/**/*", "../../shared/src/**/*"],
+  "include": ["src/**/*.ts", "../../shared/src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

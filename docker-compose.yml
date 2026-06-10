@@ -78,7 +78,7 @@ services:
       FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
     ports:
       - "4001:4001"
-    command: sh -c "npm run db:migrate && npm run start:prod"
+    command: sh -c "npm run db:push && npm run start:prod"
 
   payment:
     <<: *service-defaults
@@ -92,12 +92,12 @@ services:
       JWT_SECRET: super-secret
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/tafeito_payment
       RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
-      ASAAS_BASE_URL: ${ASAAS_BASE_URL:-https://api-sandbox.asaas.com/v3}
+      ASAAS_BASE_URL: https://api-sandbox.asaas.com/v3
       ASAAS_ACCESS_TOKEN: ${ASAAS_ACCESS_TOKEN}
       ASAAS_USER_AGENT: tafeito-api/1.0
     ports:
       - "4002:4002"
-    command: sh -c "npm run db:migrate && npm run start:prod"
+    command: sh -c "npm run db:push && npm run start:prod"
 
   chat:
     <<: *service-defaults
@@ -114,7 +114,7 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-*}
     ports:
       - "4003:4003"
-    command: sh -c "npm run db:migrate && npm run start:prod"
+    command: sh -c "npm run db:push && npm run start:prod"
 
 volumes:
   postgres_data:
