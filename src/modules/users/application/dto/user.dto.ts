@@ -9,6 +9,7 @@ export class UserDto {
     public identification: string,
     public pixKey: string | undefined,
     public hourlyRate: number | undefined,
+    public photoUrl: string | undefined,
     public createdAt: Date | undefined,
     public updatedAt: Date | undefined,
   ) {}
@@ -23,6 +24,7 @@ export class UserDto {
       user.identification,
       user.pixKey,
       user.hourlyRate,
+      user.photoUrl,
       user.createdAt,
       user.updatedAt,
     );

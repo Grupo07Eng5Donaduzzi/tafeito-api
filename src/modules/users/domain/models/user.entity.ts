@@ -3,9 +3,10 @@ export class User {
   private _firebaseUid: string;
   private _name: string;
   private _email: string;
-  private _identification: string; // CPF or CNPJ
+  private _identification: string;
   private _pixKey?: string;
   private _hourlyRate?: number;
+  private _photoUrl?: string;
   private readonly _createdAt?: Date;
   private readonly _updatedAt?: Date;
 
@@ -15,71 +16,24 @@ export class User {
     this._updatedAt = updatedAt;
   }
 
-  get id(): string | undefined {
-    return this._id;
-  }
+  get id(): string | undefined { return this._id; }
+  get firebaseUid(): string { return this._firebaseUid; }
+  get name(): string { return this._name; }
+  get email(): string { return this._email; }
+  get identification(): string { return this._identification; }
+  get pixKey(): string | undefined { return this._pixKey; }
+  get hourlyRate(): number | undefined { return this._hourlyRate; }
+  get photoUrl(): string | undefined { return this._photoUrl; }
+  get createdAt(): Date | undefined { return this._createdAt; }
+  get updatedAt(): Date | undefined { return this._updatedAt; }
 
-  get firebaseUid(): string {
-    return this._firebaseUid;
-  }
-
-  get name(): string {
-    return this._name;
-  }
-
-  get email(): string {
-    return this._email;
-  }
-
-  get identification(): string {
-    return this._identification;
-  }
-
-  get pixKey(): string | undefined {
-    return this._pixKey;
-  }
-
-  get hourlyRate(): number | undefined {
-    return this._hourlyRate;
-  }
-
-  get createdAt(): Date | undefined {
-    return this._createdAt;
-  }
-
-  get updatedAt(): Date | undefined {
-    return this._updatedAt;
-  }
-
-  withFirebaseUid(firebaseUid: string): this {
-    this._firebaseUid = firebaseUid;
-    return this;
-  }
-
-  withName(name: string): this {
-    this._name = name;
-    return this;
-  }
-
-  withEmail(email: string): this {
-    this._email = email;
-    return this;
-  }
-
-  withIdentification(identification: string): this {
-    this._identification = identification;
-    return this;
-  }
-
-  withPixKey(pixKey?: string): this {
-    this._pixKey = pixKey;
-    return this;
-  }
-
-  withHourlyRate(hourlyRate?: number): this {
-    this._hourlyRate = hourlyRate;
-    return this;
-  }
+  withFirebaseUid(firebaseUid: string): this { this._firebaseUid = firebaseUid; return this; }
+  withName(name: string): this { this._name = name; return this; }
+  withEmail(email: string): this { this._email = email; return this; }
+  withIdentification(identification: string): this { this._identification = identification; return this; }
+  withPixKey(pixKey?: string): this { this._pixKey = pixKey; return this; }
+  withHourlyRate(hourlyRate?: number): this { this._hourlyRate = hourlyRate; return this; }
+  withPhotoUrl(photoUrl?: string): this { this._photoUrl = photoUrl; return this; }
 
   static restore(props?: {
     id?: string;
@@ -89,6 +43,7 @@ export class User {
     identification: string;
     pixKey?: string | null;
     hourlyRate?: number | string | null;
+    photoUrl?: string | null;
     createdAt?: Date;
     updatedAt?: Date;
   }): User | null {
@@ -103,6 +58,7 @@ export class User {
       props.hourlyRate !== undefined && props.hourlyRate !== null
         ? Number(props.hourlyRate)
         : undefined;
+    user._photoUrl = props.photoUrl ?? undefined;
     return user;
   }
 }
