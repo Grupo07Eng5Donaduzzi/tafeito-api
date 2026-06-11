@@ -8,11 +8,9 @@ import {
   ForbiddenException,
   InternalServerErrorException,
   Logger,
-  forwardRef,
 } from '@nestjs/common';
 import { UserService } from '../../../users/application/services/user.service';
 import { BudgetRequestService } from '../../../budget-requests/application/services/budget-request.service';
-import { ScheduleService } from '../../../schedules/application/services/schedule.service';
 import { ProposalMessagingService } from './proposal-messaging.service';
 import { Proposal, ProposalStatus } from '../../domain/models/proposal.entity';
 import type { ProposalRepository } from '../../domain/repositories/proposal-repository.interface';
@@ -34,8 +32,6 @@ export class ProposalService {
     private readonly proposalRepository: ProposalRepository,
     private readonly budgetRequestService: BudgetRequestService,
     private readonly userService: UserService,
-    @Inject(forwardRef(() => ScheduleService))
-    private readonly scheduleService: ScheduleService,
     private readonly proposalMessagingService: ProposalMessagingService,
   ) {}
 

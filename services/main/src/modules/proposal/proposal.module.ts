@@ -1,7 +1,6 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { BudgetRequestsModule } from '../budget-requests/budget-requests.module';
 import { UsersModule } from '../users/users.module';
-import { SchedulesModule } from '../schedules/schedules.module';
 import { ProposalService } from './application/services/proposal.service';
 import { NegotiationService } from './application/services/negotiation.service';
 import { ProposalMessagingService } from './application/services/proposal-messaging.service';
@@ -24,7 +23,6 @@ import {
   imports: [
     BudgetRequestsModule,
     UsersModule,
-    forwardRef(() => SchedulesModule),
   ],
   controllers: [ProposalsController, NegotiationsController],
   providers: [

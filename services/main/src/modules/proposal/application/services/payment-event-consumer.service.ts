@@ -9,8 +9,6 @@ import {
 import type { ProposalRepository } from '../../domain/repositories/proposal-repository.interface';
 import { PROPOSAL_REPOSITORY } from '../../domain/repositories/proposal-repository.interface';
 import { Inject } from '@nestjs/common';
-import { BudgetRequestService } from '../../../budget-requests/application/services/budget-request.service';
-import { ScheduleService } from '../../../schedules/application/services/schedule.service';
 
 @Injectable()
 export class PaymentEventConsumerService implements OnModuleInit {
@@ -20,8 +18,6 @@ export class PaymentEventConsumerService implements OnModuleInit {
     private readonly messagingService: SharedMessagingService,
     @Inject(PROPOSAL_REPOSITORY)
     private readonly proposalRepository: ProposalRepository,
-    private readonly budgetRequestService: BudgetRequestService,
-    private readonly scheduleService: ScheduleService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -71,19 +67,5 @@ export class PaymentEventConsumerService implements OnModuleInit {
 
     proposal.confirmPayment();
     await this.proposalRepository.update(proposal);
-
-    const budgetRequest = await this.budgetRequestService.findById(proposal.requestId);
-    if (budgetRequest) {
-      try {
-        await this.scheduleService.create({
-          proposalId: proposal.id!,
-          budgetRequestId: budgetRequest.id,
-        });
-      } catch (err) {
-        this.logger.warn(
-          `Failed to auto-create schedule for proposal ${payload.proposalId}: ${(err as Error).message}`,
-        );
-      }
-    }
   }
 }

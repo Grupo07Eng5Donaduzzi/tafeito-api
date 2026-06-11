@@ -9,7 +9,6 @@ import { ServicesModule } from './modules/services/services.module';
 import { BudgetRequestsModule } from './modules/budget-requests/budget-requests.module';
 import { ProposalModule } from './modules/proposal/proposal.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
-import { SchedulesModule } from './modules/schedules/schedules.module';
 
 @Module({
   imports: [
@@ -20,7 +19,6 @@ import { SchedulesModule } from './modules/schedules/schedules.module';
     BudgetRequestsModule,
     ProposalModule,
     ReviewsModule,
-    SchedulesModule,
   ],
   providers: [
     {
