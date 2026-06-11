@@ -63,7 +63,7 @@ export class AuthGuard implements CanActivate {
   private isPublicRoute(request: Request): boolean {
     const path = request.path ?? request.url ?? '';
 
-    if (path.startsWith('/api')) {
+    if (path.startsWith('/docs')) {
       return true;
     }
 
