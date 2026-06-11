@@ -15,7 +15,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiBearerAuth, ApiConsumes, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -77,6 +77,19 @@ export class BudgetRequestsController {
 
   @ApiOperation({ summary: 'Fazer upload de até 5 fotos para um orçamento' })
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['photos'],
+      properties: {
+        photos: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+          description: 'Imagens do orçamento (até 5 arquivos, JPEG/PNG/WebP, máx 5 MB cada)',
+        },
+      },
+    },
+  })
   @Post(':id/photos')
   @UseInterceptors(
     FilesInterceptor('photos', MAX_PHOTOS, {

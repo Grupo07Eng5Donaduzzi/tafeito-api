@@ -39,7 +39,11 @@ export class CreateBudgetRequestDto {
   @IsDate()
   requestDate!: Date;
 
-  @ApiPropertyOptional({ type: [String], example: ['https://exemplo.com/foto1.jpg'] })
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'URLs de fotos já hospedadas (opcional). Para fazer upload de arquivos use POST /budgetRequests/{id}/photos após criar o orçamento.',
+    example: ['https://exemplo.com/foto1.jpg'],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })

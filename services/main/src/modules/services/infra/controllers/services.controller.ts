@@ -19,7 +19,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { RequireProviderGuard } from '@shared/infra/guards/require-provider.guard';
 import { HateoasList } from '@shared/infra/hateoas';
@@ -55,6 +55,12 @@ export class ServicesController {
     return this.serviceService.listPaginated({ page, limit, category });
   }
 
+  @ApiOperation({ summary: 'Listar todas as categorias de serviços cadastradas' })
+  @Get('categories')
+  async listCategories(): Promise<string[]> {
+    return this.serviceService.listCategories();
+  }
+
   @ApiOperation({ summary: 'Buscar detalhes de um serviço com provedor e avaliações' })
   @Get(':id')
   async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
@@ -73,6 +79,19 @@ export class ServicesController {
 
   @ApiOperation({ summary: 'Fazer upload da foto do serviço' })
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['photo'],
+      properties: {
+        photo: {
+          type: 'string',
+          format: 'binary',
+          description: 'Foto do serviço (JPEG/PNG/WebP, máx 5 MB)',
+        },
+      },
+    },
+  })
   @Post(':id/photo')
   @UseGuards(RequireProviderGuard)
   @UseInterceptors(

@@ -59,6 +59,10 @@ export class ServiceService {
     return this.repository.findAll();
   }
 
+  async listCategories(): Promise<string[]> {
+    return this.repository.findDistinctCategories();
+  }
+
   async listPaginated(params: { page: number; limit: number; category?: string }) {
     const { page, limit, category } = params;
     const offset = (page - 1) * limit;

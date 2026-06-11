@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { desc, eq, sql } from 'drizzle-orm';
+import { asc, desc, eq, sql } from 'drizzle-orm';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
 import { servicesSchema } from '../schemas/service.schema';
 import { usersSchema } from '@users/infra/schemas/user.schema';
@@ -119,6 +119,14 @@ export class DrizzleServiceRepository {
         average: summary?.average ?? null,
       },
     };
+  }
+
+  async findDistinctCategories(): Promise<string[]> {
+    const rows = await this.drizzleService.db
+      .selectDistinct({ category: servicesSchema.category })
+      .from(servicesSchema)
+      .orderBy(asc(servicesSchema.category));
+    return rows.map((r) => r.category);
   }
 
   async deleteById(id: string): Promise<void> {
