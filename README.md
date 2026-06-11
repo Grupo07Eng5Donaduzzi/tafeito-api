@@ -308,11 +308,3 @@ Se a ideia for testar o fluxo completo do dominio, esta ordem ajuda:
 11. Prestador faz upload da nota fiscal
 12. Cliente confirma conclusao (`clientConfirm`) — dispara repasse PIX ao prestador
 13. Cliente cria uma review para a proposta
-
-Um script de teste completo cobrindo todos os endpoints esta em `test-project/run-tests.mjs`. Para executa-lo:
-
-```bash
-node test-project/run-tests.mjs
-```
-
-Requer Node.js 22+ com fetch nativo e os tres servicos rodando.
