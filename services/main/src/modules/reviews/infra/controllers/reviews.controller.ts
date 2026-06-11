@@ -12,7 +12,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { HateoasItem, HateoasList } from '@shared/infra/hateoas';
 import { ReviewService } from '../../application/services/review.service';
@@ -20,6 +20,7 @@ import {
   CreateReviewDto,
   ProviderReviewsPageDto,
   ReviewDto,
+  ServiceReviewsPageDto,
   UpdateReviewDto,
 } from '../../application/dto/review.dto';
 import type { RatingSummary } from '../../domain/repositories/review-repository.interface';
@@ -30,15 +31,17 @@ import type { RatingSummary } from '../../domain/repositories/review-repository.
 export class ReviewsController {
   constructor(private readonly reviewService: ReviewService) {}
 
-  @Post('proposals/:proposalId')
+  @ApiOperation({ summary: 'Create a review for a service' })
+  @Post('services/:serviceId')
   async create(
-    @Param('proposalId', ParseUUIDPipe) proposalId: string,
+    @Param('serviceId', ParseUUIDPipe) serviceId: string,
     @CurrentUser() clientId: string,
     @Body() body: CreateReviewDto,
   ): Promise<ReviewDto> {
-    return this.reviewService.createReview(proposalId, clientId, body);
+    return this.reviewService.createReview(serviceId, clientId, body);
   }
 
+  @ApiOperation({ summary: 'Update a review' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':reviewId')
   async update(
@@ -49,32 +52,52 @@ export class ReviewsController {
     await this.reviewService.updateReview(reviewId, clientId, body);
   }
 
-  @Get('proposals/:proposalId')
+  @ApiOperation({ summary: 'Get my review for a specific service' })
   @HateoasItem<ReviewDto>({
     basePath: '/reviews',
     itemLinks: (item) => ({
-      self: { href: `/reviews/proposals/${item.proposalId}`, method: 'GET' },
+      self: { href: `/reviews/services/${item.serviceId}/my`, method: 'GET' },
       update: { href: `/reviews/${item.id}`, method: 'PATCH' },
-      proposal: { href: `/proposals/${item.proposalId}`, method: 'GET' },
+      service: { href: `/services/${item.serviceId}`, method: 'GET' },
       provider: { href: `/reviews/provider/${item.reviewedId}`, method: 'GET' },
     }),
   })
-  async getByProposal(
-    @Param('proposalId', ParseUUIDPipe) proposalId: string,
+  @Get('services/:serviceId/my')
+  async getMyReview(
+    @Param('serviceId', ParseUUIDPipe) serviceId: string,
     @CurrentUser() userId: string,
   ): Promise<ReviewDto> {
-    return this.reviewService.getReviewByProposal(proposalId, userId);
+    return this.reviewService.getMyReviewForService(serviceId, userId);
   }
 
-  @Get('provider/:providerId')
+  @ApiOperation({ summary: 'List all reviews for a service' })
+  @HateoasList<ReviewDto>({
+    basePath: '/reviews/services',
+    itemLinks: (item) => ({
+      self: { href: `/reviews/services/${item.serviceId}/my`, method: 'GET' },
+      update: { href: `/reviews/${item.id}`, method: 'PATCH' },
+      service: { href: `/services/${item.serviceId}`, method: 'GET' },
+    }),
+  })
+  @Get('services/:serviceId')
+  async getByService(
+    @Param('serviceId', ParseUUIDPipe) serviceId: string,
+    @Query('_page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('_size', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
+  ): Promise<ServiceReviewsPageDto> {
+    return this.reviewService.getReviewsByService(serviceId, page, pageSize);
+  }
+
+  @ApiOperation({ summary: 'List all reviews for a provider' })
   @HateoasList<ReviewDto>({
     basePath: '/reviews/provider',
     itemLinks: (item) => ({
-      self: { href: `/reviews/proposals/${item.proposalId}`, method: 'GET' },
+      self: { href: `/reviews/services/${item.serviceId}/my`, method: 'GET' },
       update: { href: `/reviews/${item.id}`, method: 'PATCH' },
-      proposal: { href: `/proposals/${item.proposalId}`, method: 'GET' },
+      service: { href: `/services/${item.serviceId}`, method: 'GET' },
     }),
   })
+  @Get('provider/:providerId')
   async getByProvider(
     @Param('providerId', ParseUUIDPipe) providerId: string,
     @Query('_page', new DefaultValuePipe(1), ParseIntPipe) page: number,
@@ -83,10 +106,19 @@ export class ReviewsController {
     return this.reviewService.getReviewsByProvider(providerId, page, pageSize);
   }
 
+  @ApiOperation({ summary: 'Get rating summary for a provider' })
   @Get('provider/:providerId/summary')
   async getProviderSummary(
     @Param('providerId', ParseUUIDPipe) providerId: string,
   ): Promise<RatingSummary> {
     return this.reviewService.getRatingSummary(providerId);
+  }
+
+  @ApiOperation({ summary: 'Get rating summary for a service' })
+  @Get('services/:serviceId/summary')
+  async getServiceSummary(
+    @Param('serviceId', ParseUUIDPipe) serviceId: string,
+  ): Promise<RatingSummary> {
+    return this.reviewService.getRatingSummaryByService(serviceId);
   }
 }

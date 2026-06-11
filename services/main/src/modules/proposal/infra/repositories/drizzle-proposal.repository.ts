@@ -15,6 +15,7 @@ import {
   negotiationMessagesSchema,
 } from '../schemas/proposal.schema';
 import { eq, and } from 'drizzle-orm';
+import { budgetRequestsSchema } from '../../../budget-requests/infra/schemas/budget-request.schema';
 
 @Injectable()
 export class DrizzleProposalRepository implements ProposalRepository {
@@ -134,6 +135,29 @@ export class DrizzleProposalRepository implements ProposalRepository {
       .limit(1);
 
     return result[0] ? this.mapToEntity(result[0]) : null;
+  }
+
+  async findCompletedByServiceAndClient(
+    serviceId: string,
+    clientId: string,
+  ): Promise<Proposal | null> {
+    const result = await this.drizzleService.db
+      .select({ proposal: proposalsSchema })
+      .from(proposalsSchema)
+      .innerJoin(
+        budgetRequestsSchema,
+        eq(proposalsSchema.requestId, budgetRequestsSchema.id),
+      )
+      .where(
+        and(
+          eq(budgetRequestsSchema.serviceId, serviceId),
+          eq(proposalsSchema.clientId, clientId),
+          eq(proposalsSchema.status, ProposalStatus.COMPLETED),
+        ),
+      )
+      .limit(1);
+
+    return result[0] ? this.mapToEntity(result[0].proposal) : null;
   }
 
   private mapToEntity(row: any): Proposal {

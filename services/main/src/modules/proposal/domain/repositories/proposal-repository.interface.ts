@@ -18,6 +18,10 @@ export interface ProposalRepository {
     requestId: string,
     providerId: string,
   ): Promise<Proposal | null>;
+  findCompletedByServiceAndClient(
+    serviceId: string,
+    clientId: string,
+  ): Promise<Proposal | null>;
 }
 
 export interface NegotiationMessageRepository {

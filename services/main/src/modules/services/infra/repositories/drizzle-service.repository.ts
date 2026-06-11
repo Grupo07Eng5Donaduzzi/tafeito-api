@@ -98,7 +98,7 @@ export class DrizzleServiceRepository {
           reviewerId: reviewsSchema.reviewerId,
         })
         .from(reviewsSchema)
-        .where(eq(reviewsSchema.reviewedId, service.userId))
+        .where(eq(reviewsSchema.serviceId, service.id))
         .orderBy(desc(reviewsSchema.createdAt))
         .limit(5),
       this.drizzleService.db
@@ -107,7 +107,7 @@ export class DrizzleServiceRepository {
           average: sql<number>`round(avg(${reviewsSchema.rating})::numeric, 1)`,
         })
         .from(reviewsSchema)
-        .where(eq(reviewsSchema.reviewedId, service.userId)),
+        .where(eq(reviewsSchema.serviceId, service.id)),
     ]);
 
     return {

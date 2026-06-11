@@ -5,20 +5,20 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { usersSchema } from '@users/infra/schemas/user.schema';
-import { proposalsSchema } from '../../../proposal/infra/schemas/proposal.schema';
+import { servicesSchema } from '../../../services/infra/schemas/service.schema';
 
 export const reviewsSchema = pgTable(
   'reviews',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    proposalId: uuid('proposal_id')
-      .references(() => proposalsSchema.id)
-      .notNull()
-      .unique(),
+    serviceId: uuid('service_id')
+      .references(() => servicesSchema.id)
+      .notNull(),
     reviewerId: uuid('reviewer_id')
       .references(() => usersSchema.id)
       .notNull(),
@@ -32,10 +32,8 @@ export const reviewsSchema = pgTable(
   },
   (t) => ({
     ratingCheck: check('reviews_rating_check', sql`${t.rating} BETWEEN 1 AND 5`),
+    uniqueServiceReviewer: unique('reviews_service_reviewer_unique').on(t.serviceId, t.reviewerId),
     reviewedIdIdx: index('reviews_reviewed_id_idx').on(t.reviewedId),
-    reviewedIdCreatedAtIdx: index('reviews_reviewed_id_created_at_idx').on(
-      t.reviewedId,
-      t.createdAt,
-    ),
+    serviceIdIdx: index('reviews_service_id_idx').on(t.serviceId),
   }),
 );

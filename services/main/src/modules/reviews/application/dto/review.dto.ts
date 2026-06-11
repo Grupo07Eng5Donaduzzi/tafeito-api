@@ -36,7 +36,7 @@ export class UpdateReviewDto {
 
 export class ReviewDto {
   id: string;
-  proposalId: string;
+  serviceId: string;
   reviewerId: string;
   reviewedId: string;
   rating: number;
@@ -48,7 +48,7 @@ export class ReviewDto {
     if (!review) return null;
     const dto = new ReviewDto();
     dto.id = review.id!;
-    dto.proposalId = review.proposalId;
+    dto.serviceId = review.serviceId;
     dto.reviewerId = review.reviewerId;
     dto.reviewedId = review.reviewedId;
     dto.rating = review.rating;
@@ -57,6 +57,14 @@ export class ReviewDto {
     dto.updatedAt = review.updatedAt!;
     return dto;
   }
+}
+
+export class ServiceReviewsPageDto {
+  data: ReviewDto[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
 }
 
 export class ProviderReviewsPageDto {

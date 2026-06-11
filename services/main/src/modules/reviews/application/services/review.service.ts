@@ -6,8 +6,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ServiceService } from '../../../services/application/services/service.service';
 import { ProposalService } from '../../../proposal/application/services/proposal.service';
-import { ProposalStatus } from '../../../proposal/domain/models/proposal.entity';
 import { Review } from '../../domain/models/review.entity';
 import {
   REVIEW_REPOSITORY,
@@ -19,6 +19,7 @@ import {
   CreateReviewDto,
   ProviderReviewsPageDto,
   ReviewDto,
+  ServiceReviewsPageDto,
   UpdateReviewDto,
 } from '../dto/review.dto';
 
@@ -30,30 +31,36 @@ export class ReviewService {
   constructor(
     @Inject(REVIEW_REPOSITORY)
     private readonly reviewRepository: ReviewRepository,
+    private readonly serviceService: ServiceService,
     private readonly proposalService: ProposalService,
   ) {}
 
   async createReview(
-    proposalId: string,
+    serviceId: string,
     clientId: string,
     dto: CreateReviewDto,
   ): Promise<ReviewDto> {
-    const proposal = await this.proposalService.getProposal(proposalId);
+    const service = await this.serviceService.findByIdWithDetails(serviceId);
 
-    if (proposal.status !== ProposalStatus.COMPLETED) {
+    const completedProposal = await this.proposalService.findCompletedByServiceAndClient(
+      serviceId,
+      clientId,
+    );
+
+    if (!completedProposal) {
       throw new BadRequestException(
-        'Review can only be created after service is completed',
+        'Review can only be created after a service is completed',
       );
     }
 
-    if (proposal.clientId !== clientId) {
-      throw new ForbiddenException('Only the client can review this service');
+    if (service.userId === clientId) {
+      throw new ForbiddenException('Service owner cannot review their own service');
     }
 
     const review = Review.create({
-      proposalId,
+      serviceId,
       reviewerId: clientId,
-      reviewedId: proposal.providerId,
+      reviewedId: service.userId,
       rating: dto.rating,
       comment: dto.comment,
     });
@@ -63,9 +70,7 @@ export class ReviewService {
       return ReviewDto.from(persisted)!;
     } catch (err) {
       if (err instanceof UniqueReviewViolation) {
-        throw new ConflictException(
-          'A review already exists for this proposal',
-        );
+        throw new ConflictException('A review already exists for this service');
       }
       throw err;
     }
@@ -90,24 +95,38 @@ export class ReviewService {
     return ReviewDto.from(persisted)!;
   }
 
-  async getReviewByProposal(
-    proposalId: string,
+  async getMyReviewForService(
+    serviceId: string,
     userId: string,
   ): Promise<ReviewDto> {
-    const proposal = await this.proposalService.getProposal(proposalId);
-
-    if (proposal.clientId !== userId && proposal.providerId !== userId) {
-      throw new ForbiddenException(
-        'Only proposal participants can access this review',
-      );
-    }
-
-    const review = await this.reviewRepository.findByProposalId(proposalId);
+    const review = await this.reviewRepository.findByServiceAndReviewer(serviceId, userId);
     if (!review) {
-      throw new NotFoundException('Review not found for this proposal');
+      throw new NotFoundException('Review not found for this service');
     }
-
     return ReviewDto.from(review)!;
+  }
+
+  async getReviewsByService(
+    serviceId: string,
+    page = 1,
+    pageSize = DEFAULT_PAGE_SIZE,
+  ): Promise<ServiceReviewsPageDto> {
+    const safePageSize = Math.min(Math.max(1, pageSize), MAX_PAGE_SIZE);
+    const safePage = Math.max(1, page);
+    const offset = (safePage - 1) * safePageSize;
+
+    const { data, total } = await this.reviewRepository.findByServiceId(
+      serviceId,
+      { limit: safePageSize, offset },
+    );
+
+    return {
+      data: data.map((r) => ReviewDto.from(r)!),
+      total,
+      page: safePage,
+      limit: safePageSize,
+      hasMore: offset + data.length < total,
+    };
   }
 
   async getReviewsByProvider(
@@ -135,5 +154,9 @@ export class ReviewService {
 
   async getRatingSummary(providerId: string): Promise<RatingSummary> {
     return this.reviewRepository.ratingSummary(providerId);
+  }
+
+  async getRatingSummaryByService(serviceId: string): Promise<RatingSummary> {
+    return this.reviewRepository.ratingSummaryByService(serviceId);
   }
 }

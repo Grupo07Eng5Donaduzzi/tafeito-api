@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { count, desc, eq, sql } from 'drizzle-orm';
+import { SQL } from 'drizzle-orm';
+import { and, count, desc, eq } from 'drizzle-orm';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
 import { Review } from '../../domain/models/review.entity';
 import type {
@@ -11,7 +12,7 @@ import { reviewsSchema } from '../schemas/review.schema';
 
 export class UniqueReviewViolation extends Error {
   constructor() {
-    super('Review already exists for this proposal');
+    super('Review already exists for this service');
     this.name = 'UniqueReviewViolation';
   }
 }
@@ -35,7 +36,7 @@ export class DrizzleReviewRepository implements ReviewRepository {
       const [row] = await this.drizzleService.db
         .insert(reviewsSchema)
         .values({
-          proposalId: review.proposalId,
+          serviceId: review.serviceId,
           reviewerId: review.reviewerId,
           reviewedId: review.reviewedId,
           rating: review.rating,
@@ -77,14 +78,38 @@ export class DrizzleReviewRepository implements ReviewRepository {
     return result[0] ? this.mapToEntity(result[0]) : null;
   }
 
-  async findByProposalId(proposalId: string): Promise<Review | null> {
+  async findByServiceAndReviewer(serviceId: string, reviewerId: string): Promise<Review | null> {
     const result = await this.drizzleService.db
       .select()
       .from(reviewsSchema)
-      .where(eq(reviewsSchema.proposalId, proposalId))
+      .where(and(eq(reviewsSchema.serviceId, serviceId), eq(reviewsSchema.reviewerId, reviewerId)))
       .limit(1);
 
     return result[0] ? this.mapToEntity(result[0]) : null;
+  }
+
+  async findByServiceId(
+    serviceId: string,
+    options: { limit: number; offset: number },
+  ): Promise<FindReviewedPage> {
+    const [rows, totalRow] = await Promise.all([
+      this.drizzleService.db
+        .select()
+        .from(reviewsSchema)
+        .where(eq(reviewsSchema.serviceId, serviceId))
+        .orderBy(desc(reviewsSchema.createdAt))
+        .limit(options.limit)
+        .offset(options.offset),
+      this.drizzleService.db
+        .select({ value: count() })
+        .from(reviewsSchema)
+        .where(eq(reviewsSchema.serviceId, serviceId)),
+    ]);
+
+    return {
+      data: rows.map((row) => this.mapToEntity(row)),
+      total: totalRow[0]?.value ?? 0,
+    };
   }
 
   async findByReviewedId(
@@ -112,22 +137,24 @@ export class DrizzleReviewRepository implements ReviewRepository {
   }
 
   async ratingSummary(reviewedId: string): Promise<RatingSummary> {
+    return this.computeSummary(eq(reviewsSchema.reviewedId, reviewedId));
+  }
+
+  async ratingSummaryByService(serviceId: string): Promise<RatingSummary> {
+    return this.computeSummary(eq(reviewsSchema.serviceId, serviceId));
+  }
+
+  private async computeSummary(condition: SQL<boolean> | SQL): Promise<RatingSummary> {
     const rows = await this.drizzleService.db
       .select({
         rating: reviewsSchema.rating,
         c: count(),
       })
       .from(reviewsSchema)
-      .where(eq(reviewsSchema.reviewedId, reviewedId))
+      .where(condition)
       .groupBy(reviewsSchema.rating);
 
-    const distribution: Record<1 | 2 | 3 | 4 | 5, number> = {
-      1: 0,
-      2: 0,
-      3: 0,
-      4: 0,
-      5: 0,
-    };
+    const distribution: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     let total = 0;
     let sumRatings = 0;
     for (const row of rows) {
@@ -147,7 +174,7 @@ export class DrizzleReviewRepository implements ReviewRepository {
   private mapToEntity(row: typeof reviewsSchema.$inferSelect): Review {
     return Review.restore({
       id: row.id,
-      proposalId: row.proposalId,
+      serviceId: row.serviceId,
       reviewerId: row.reviewerId,
       reviewedId: row.reviewedId,
       rating: row.rating,

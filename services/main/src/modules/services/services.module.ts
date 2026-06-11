@@ -8,5 +8,6 @@ import { SharedModule } from '@shared/shared.module';
   imports: [SharedModule],
   controllers: [ServicesController],
   providers: [ServiceService, DrizzleServiceRepository],
+  exports: [ServiceService],
 })
 export class ServicesModule {}

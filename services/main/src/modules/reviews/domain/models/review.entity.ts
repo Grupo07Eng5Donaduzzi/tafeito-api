@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 
 export class Review {
   private readonly _id?: string;
-  private _proposalId: string;
+  private _serviceId: string;
   private _reviewerId: string;
   private _reviewedId: string;
   private _rating: number;
@@ -17,7 +17,7 @@ export class Review {
   }
 
   get id(): string | undefined { return this._id; }
-  get proposalId(): string { return this._proposalId; }
+  get serviceId(): string { return this._serviceId; }
   get reviewerId(): string { return this._reviewerId; }
   get reviewedId(): string { return this._reviewedId; }
   get rating(): number { return this._rating; }
@@ -32,7 +32,7 @@ export class Review {
   }
 
   static create(props: {
-    proposalId: string;
+    serviceId: string;
     reviewerId: string;
     reviewedId: string;
     rating: number;
@@ -40,7 +40,7 @@ export class Review {
   }): Review {
     Review.validateRating(props.rating);
     const review = new Review();
-    review._proposalId = props.proposalId;
+    review._serviceId = props.serviceId;
     review._reviewerId = props.reviewerId;
     review._reviewedId = props.reviewedId;
     review._rating = props.rating;
@@ -50,7 +50,7 @@ export class Review {
 
   static restore(props: {
     id: string;
-    proposalId: string;
+    serviceId: string;
     reviewerId: string;
     reviewedId: string;
     rating: number;
@@ -60,7 +60,7 @@ export class Review {
   }): Review {
     Review.validateRating(props.rating);
     const review = new Review(props.id, props.createdAt, props.updatedAt);
-    review._proposalId = props.proposalId;
+    review._serviceId = props.serviceId;
     review._reviewerId = props.reviewerId;
     review._reviewedId = props.reviewedId;
     review._rating = props.rating;

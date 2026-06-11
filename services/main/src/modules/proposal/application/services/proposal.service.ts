@@ -217,6 +217,14 @@ export class ProposalService {
     return proposals.filter((p) => p.status === ProposalStatus.COMPLETED).map((p) => ProposalDto.from(p)!);
   }
 
+  async findCompletedByServiceAndClient(
+    serviceId: string,
+    clientId: string,
+  ): Promise<ProposalDto | null> {
+    const proposal = await this.proposalRepository.findCompletedByServiceAndClient(serviceId, clientId);
+    return proposal ? ProposalDto.from(proposal) : null;
+  }
+
   async getProviderServiceHistory(providerId: string): Promise<ProposalDto[]> {
     const proposals = await this.proposalRepository.findByProviderId(providerId);
     return proposals.filter((p) => p.status === ProposalStatus.COMPLETED).map((p) => ProposalDto.from(p)!);
