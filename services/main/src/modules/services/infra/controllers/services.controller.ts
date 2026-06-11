@@ -61,6 +61,7 @@ export class ServicesController {
     return this.serviceService.findByIdWithDetails(id);
   }
 
+  @ApiOperation({ summary: 'Criar um novo serviço (somente prestador)' })
   @Post()
   @UseGuards(RequireProviderGuard)
   async create(
@@ -94,6 +95,7 @@ export class ServicesController {
     return this.serviceService.uploadPhoto(id, userId, file.filename);
   }
 
+  @ApiOperation({ summary: 'Atualizar dados de um serviço (somente prestador dono)' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id')
   @UseGuards(RequireProviderGuard)
@@ -105,6 +107,7 @@ export class ServicesController {
     await this.serviceService.edit(id, userId, body);
   }
 
+  @ApiOperation({ summary: 'Remover um serviço (somente prestador dono)' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   @UseGuards(RequireProviderGuard)
