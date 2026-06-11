@@ -24,6 +24,9 @@ export class UserDto {
   public hourlyRate: number | undefined;
 
   @ApiPropertyOptional()
+  public avatarUrl: string | undefined;
+
+  @ApiPropertyOptional()
   public createdAt: Date | undefined;
 
   @ApiPropertyOptional()
@@ -37,6 +40,7 @@ export class UserDto {
     identification: string,
     pixKey: string | undefined,
     hourlyRate: number | undefined,
+    avatarUrl: string | undefined,
     createdAt: Date | undefined,
     updatedAt: Date | undefined,
   ) {
@@ -47,6 +51,7 @@ export class UserDto {
     this.identification = identification;
     this.pixKey = pixKey;
     this.hourlyRate = hourlyRate;
+    this.avatarUrl = avatarUrl;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -61,6 +66,7 @@ export class UserDto {
       user.identification,
       user.pixKey,
       user.hourlyRate,
+      user.avatarUrl,
       user.createdAt,
       user.updatedAt,
     );

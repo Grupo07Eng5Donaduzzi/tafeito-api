@@ -3,9 +3,10 @@ export class User {
   private _firebaseUid: string;
   private _name: string;
   private _email: string;
-  private _identification: string; // CPF or CNPJ
+  private _identification: string;
   private _pixKey?: string;
   private _hourlyRate?: number;
+  private _avatarUrl?: string;
   private readonly _createdAt?: Date;
   private readonly _updatedAt?: Date;
 
@@ -41,6 +42,10 @@ export class User {
 
   get hourlyRate(): number | undefined {
     return this._hourlyRate;
+  }
+
+  get avatarUrl(): string | undefined {
+    return this._avatarUrl;
   }
 
   get createdAt(): Date | undefined {
@@ -81,6 +86,11 @@ export class User {
     return this;
   }
 
+  withAvatarUrl(avatarUrl?: string): this {
+    this._avatarUrl = avatarUrl;
+    return this;
+  }
+
   static restore(props?: {
     id?: string;
     firebaseUid: string;
@@ -89,6 +99,7 @@ export class User {
     identification: string;
     pixKey?: string | null;
     hourlyRate?: number | string | null;
+    avatarUrl?: string | null;
     createdAt?: Date;
     updatedAt?: Date;
   }): User | null {
@@ -103,6 +114,7 @@ export class User {
       props.hourlyRate !== undefined && props.hourlyRate !== null
         ? Number(props.hourlyRate)
         : undefined;
+    user._avatarUrl = props.avatarUrl ?? undefined;
     return user;
   }
 }

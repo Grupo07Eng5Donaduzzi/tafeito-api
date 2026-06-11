@@ -297,4 +297,12 @@ export class UserService {
     const user = await this.userRepository.findByFirebaseUid(firebaseUid);
     return UserDto.from(user);
   }
+
+  async uploadAvatar(id: string, filename: string): Promise<UserDto> {
+    const user = await this.userRepository.findById(id);
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    await this.userRepository.updateAvatar(id, filename);
+    const updated = await this.userRepository.findById(id);
+    return UserDto.from(updated)!;
+  }
 }

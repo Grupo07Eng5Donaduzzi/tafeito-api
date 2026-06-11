@@ -14,9 +14,15 @@ import {
   NotFoundException,
   Param,
   ParseUUIDPipe,
+  Post,
   Put,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
 
 @ApiTags('Users')
 @ApiBearerAuth('access-token')
@@ -65,6 +71,41 @@ export class UsersController {
       throw new ForbiddenException('Operação não permitida');
     }
     await this.userService.edit(id, body);
+  }
+
+  @ApiOperation({ summary: 'Fazer upload do avatar do usuário' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['avatar'],
+      properties: {
+        avatar: {
+          type: 'string',
+          format: 'binary',
+          description: 'Foto de perfil (JPEG/PNG/WebP, máx 5 MB)',
+        },
+      },
+    },
+  })
+  @Post('me/avatar')
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: diskStorage({
+        destination: './uploads/avatars',
+        filename: (_req, file, cb) => {
+          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          cb(null, `${unique}${extname(file.originalname)}`);
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadAvatar(
+    @CurrentUser() userId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<UserDto> {
+    return this.userService.uploadAvatar(userId, file.filename);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)

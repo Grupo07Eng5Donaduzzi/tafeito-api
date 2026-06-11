@@ -60,6 +60,13 @@ export class DrizzleUserRepository implements UserRepository {
     }
   }
 
+  async updateAvatar(id: string, avatarUrl: string): Promise<void> {
+    await this.drizzleService.db
+      .update(usersSchema)
+      .set({ avatarUrl, updatedAt: new Date() })
+      .where(eq(usersSchema.id, id));
+  }
+
   async delete(id: string): Promise<void> {
     await this.drizzleService.db
       .delete(usersSchema)
