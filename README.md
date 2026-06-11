@@ -1,60 +1,60 @@
 # TaFeito Monorepo
 
-Projeto de estudo de microservicos para uma plataforma de contratacao de servicos, organizado como um monorepo com servicos NestJS independentes, bancos separados por contexto e comunicacao assincrona via RabbitMQ.
+Projeto de estudo de microsserviços para uma plataforma de contratação de serviços, organizado como um monorepo com serviços NestJS independentes, bancos separados por contexto e comunicação assíncrona via RabbitMQ.
 
-Cada micro-servico possui:
+Cada microsserviço possui:
 
 - API HTTP com prefixo global `/v1`
-- documentacao Swagger em `/docs`
-- banco PostgreSQL proprio
-- integracao por eventos para manter projecoes locais entre contextos
-- autenticacao JWT
+- documentação Swagger em `/docs`
+- banco PostgreSQL próprio
+- integração por eventos para manter projeções locais entre contextos
+- autenticação JWT
 
 ## O que o projeto cobre
 
-O dominio foi separado em tres contextos:
+O domínio foi separado em três contextos:
 
-| Micro-servico | Porta padrao | Banco padrao    | Responsabilidade principal                                         |
+| Microsserviço | Porta padrão | Banco padrão    | Responsabilidade principal                                         |
 | ------------- | ------------ | --------------- | ------------------------------------------------------------------ |
-| `main`        | `4001`       | `tafeito_main`  | Auth, usuarios, servicos, orcamentos, propostas, agendas e reviews |
+| `main`        | `4001`       | `tafeito_main`  | Auth, usuários, serviços, orçamentos, propostas, agendas e reviews |
 | `payment`     | `4002`       | `tafeito_payment` | Pagamentos PIX via Asaas, webhooks e repasses ao prestador       |
 | `chat`        | `4003`       | `tafeito_chat`  | Mensagens e conversas em tempo real entre cliente e prestador      |
 
-## Relacao entre os servicos
+## Relação entre os serviços
 
-| Micro-servico | Publica eventos                                        | Consome eventos                                  |
+| Microsserviço | Publica eventos                                        | Consome eventos                                  |
 | ------------- | ------------------------------------------------------ | ------------------------------------------------ |
 | `main`        | `proposal.accepted`, `proposal.contested`, `proposal.client-confirmed` | `payment.created`, `payment.confirmed`, `conversation.created` |
 | `payment`     | `payment.created`, `payment.confirmed`                 | `proposal.accepted`, `proposal.client-confirmed` |
 | `chat`        | `conversation.created`                                 | `proposal.accepted`, `proposal.contested`        |
 
-Como os servicos mantem projecoes locais a partir de eventos, o ideal e subir todos antes de comecar a cadastrar dados.
+Como os serviços mantêm projeções locais a partir de eventos, o ideal é subir todos antes de começar a cadastrar dados.
 
-## Fluxo de negocio
+## Fluxo de negócio
 
 ```
-Cliente registra → Prestador vira provider → Prestador cria servico
-→ Cliente cria orcamento → Prestador envia proposta
+Cliente registra → Prestador vira provider → Prestador cria serviço
+→ Cliente cria orçamento → Prestador envia proposta
 → Cliente contesta (negocia) ou aceita
 → Aceite gera pagamento PIX via Asaas
-→ Pagamento confirmado → Prestador confirma conclusao
-→ Cliente confirma conclusao → Avaliacao + repasse PIX ao prestador
+→ Pagamento confirmado → Prestador confirma conclusão
+→ Cliente confirma conclusão → Avaliação + repasse PIX ao prestador
 ```
 
-## Pre-requisitos
+## Pré-requisitos
 
 - Node.js com `npm`
 - PostgreSQL
 - RabbitMQ
 - Docker e Docker Compose
 
-Voce pode usar uma unica instancia do PostgreSQL, desde que crie tres bancos:
+Você pode usar uma única instância do PostgreSQL, desde que crie três bancos:
 
 - `tafeito_main`
 - `tafeito_payment`
 - `tafeito_chat`
 
-## Variaveis de ambiente
+## Variáveis de ambiente
 
 ### `main`
 
@@ -90,25 +90,25 @@ JWT_SECRET=your-jwt-secret
 FRONTEND_URL=*
 ```
 
-Observacoes importantes:
+Observações importantes:
 
-- O `JWT_SECRET` deve ser o mesmo em todos os servicos.
-- O `DATABASE_URL` muda de acordo com o banco de cada micro-servico.
-- O `PORT` muda de acordo com o servico.
-- O `FIREBASE_*` so e necessario no `main` e apenas para o endpoint de recuperacao de senha.
+- O `JWT_SECRET` deve ser o mesmo em todos os serviços.
+- O `DATABASE_URL` muda de acordo com o banco de cada microsserviço.
+- O `PORT` muda de acordo com o serviço.
+- O `FIREBASE_*` só é necessário no `main` e apenas para o endpoint de recuperação de senha.
 - O `ASAAS_ACCESS_TOKEN` pode ser obtido no [painel sandbox da Asaas](https://sandbox.asaas.com/).
-- Os arquivos de exemplo ja existem em `services/*/.env.example`.
+- Os arquivos de exemplo já existem em `services/*/.env.example`.
 
 ## Como rodar
 
 ### Com Docker Compose
 
-O jeito mais rapido de subir todo o ambiente e usar o `docker-compose.yml` da raiz. Ele sobe:
+O jeito mais rápido de subir todo o ambiente é usar o `docker-compose.yml` da raiz. Ele sobe:
 
-- os 3 micro-servicos
-- 1 instancia do PostgreSQL com 3 bancos separados
-- 1 instancia do RabbitMQ
-- 1 instancia do Adminer
+- os 3 microsserviços
+- 1 instância do PostgreSQL com 3 bancos separados
+- 1 instância do RabbitMQ
+- 1 instância do Adminer
 
 Subir tudo com build:
 
@@ -141,7 +141,7 @@ docker compose build --no-cache
 docker compose up -d
 ```
 
-Endpoints uteis depois que o ambiente subir:
+Endpoints úteis depois que o ambiente subir:
 
 - `main`: `http://localhost:4001/api`
 - `payment`: `http://localhost:4002/docs`
@@ -149,39 +149,39 @@ Endpoints uteis depois que o ambiente subir:
 - Adminer: `http://localhost:8080`
 - RabbitMQ Management: `http://localhost:15672`
 
-Credenciais padrao:
+Credenciais padrão:
 
-- PostgreSQL: usuario `postgres`, senha `postgres`
-- RabbitMQ: usuario `admin`, senha `admin`
+- PostgreSQL: usuário `postgres`, senha `postgres`
+- RabbitMQ: usuário `admin`, senha `admin`
 
 No Adminer, use:
 
 - Sistema: `PostgreSQL`
 - Servidor: `postgres`
-- Usuario: `postgres`
+- Usuário: `postgres`
 - Senha: `postgres`
 - Base de dados: uma das bases do projeto, como `tafeito_main`
 
-Observacao:
+Observação:
 
-- O script de criacao dos bancos roda na inicializacao do Postgres. Se voce ja tiver um volume antigo sem os bancos criados, rode `docker compose down -v` antes de subir novamente.
+- O script de criação dos bancos roda na inicialização do Postgres. Se você já tiver um volume antigo sem os bancos criados, rode `docker compose down -v` antes de subir novamente.
 
 ### Rodando manualmente
 
 Fluxo recomendado:
 
 1. Inicie PostgreSQL e RabbitMQ.
-2. Copie o `.env.example` para `.env` em cada servico.
-3. Instale as dependencias de cada servico com `npm install`.
+2. Copie o `.env.example` para `.env` em cada serviço.
+3. Instale as dependências de cada serviço com `npm install`.
 4. Rode as migrations de cada banco com `npm run db:push`.
-5. Suba os servicos com `npm run start:dev`.
+5. Suba os serviços com `npm run start:dev`.
 
-## Como rodar cada micro-servico
+## Como rodar cada microsserviço
 
 ### `main`
 
 Responsabilidade:
-Gerencia o nucleo do dominio: autenticacao, usuarios, servicos, orcamentos, propostas, negociacoes, agendamentos e reviews.
+Gerencia o núcleo do domínio: autenticação, usuários, serviços, orçamentos, propostas, negociações, agendamentos e reviews.
 
 Principais rotas:
 - `POST /v1/auth/register`
@@ -189,6 +189,7 @@ Principais rotas:
 - `POST /v1/auth/forgot-password`
 - `PATCH /v1/auth/becomeProvider`
 - `GET /v1/users/me`
+- `POST /v1/users/me/avatar`
 - `GET/PUT/DELETE /v1/users/:id`
 - `GET/POST /v1/services`
 - `POST /v1/services/:id/photo`
@@ -234,7 +235,7 @@ Swagger:
 ### `payment`
 
 Responsabilidade:
-Gerencia pagamentos PIX via Asaas. Cria cobrancas a partir do evento de proposta aceita, processa webhooks de confirmacao e realiza repasses ao prestador quando o servico e concluido.
+Gerencia pagamentos PIX via Asaas. Cria cobranças a partir do evento de proposta aceita, processa webhooks de confirmação e realiza repasses ao prestador quando o serviço é concluído.
 
 Principais rotas:
 - `GET /v1/payments/:id/status`
@@ -256,7 +257,7 @@ Swagger:
 ### `chat`
 
 Responsabilidade:
-Gerencia mensagens e conversas entre cliente e prestador. Cria conversas automaticamente quando uma proposta e aceita ou contestada.
+Gerencia mensagens e conversas entre cliente e prestador. Cria conversas automaticamente quando uma proposta é aceita ou contestada.
 
 Principais rotas:
 - `POST /v1/chat/messages`
@@ -283,28 +284,28 @@ npm run start:dev
 Swagger:
 `http://localhost:4003/docs`
 
-## Autenticacao
+## Autenticação
 
-- O registro e feito em `POST /v1/auth/register`.
-- O login e feito em `POST /v1/auth/login`.
-- O token JWT emitido pelo `main` deve ser enviado como `Bearer Token` em todos os servicos.
-- Para se tornar prestador, o usuario logado deve chamar `PATCH /v1/auth/becomeProvider` com `pixKey` e `hourlyRate`.
-- Rotas publicas: `POST /auth/register`, `POST /auth/login`, `POST /auth/forgot-password` e `POST /payments/webhook/asaas`.
+- O registro é feito em `POST /v1/auth/register`.
+- O login é feito em `POST /v1/auth/login`.
+- O token JWT emitido pelo `main` deve ser enviado como `Bearer Token` em todos os serviços.
+- Para se tornar prestador, o usuário logado deve chamar `PATCH /v1/auth/becomeProvider` com `pixKey` e `hourlyRate`.
+- Rotas públicas: `POST /auth/register`, `POST /auth/login`, `POST /auth/forgot-password` e `POST /payments/webhook/asaas`.
 
 ## Ordem sugerida para testes integrados
 
-Se a ideia for testar o fluxo completo do dominio, esta ordem ajuda:
+Se a ideia for testar o fluxo completo do domínio, esta ordem ajuda:
 
-1. Registrar um usuario como cliente e outro como prestador
-2. Prestador chama `becomeProvider` para habilitar criacao de servicos e propostas
-3. Prestador cria um servico
-4. Cliente cria um orcamento vinculado ao servico
-5. Prestador envia uma proposta para o orcamento
-6. Cliente contesta a proposta (inicia negociacao) — nesse momento uma conversa e criada no `chat`
+1. Registrar um usuário como cliente e outro como prestador
+2. Prestador chama `becomeProvider` para habilitar criação de serviços e propostas
+3. Prestador cria um serviço
+4. Cliente cria um orçamento vinculado ao serviço
+5. Prestador envia uma proposta para o orçamento
+6. Cliente contesta a proposta (inicia negociação) — nesse momento uma conversa é criada no `chat`
 7. Prestador envia proposta revisada
-8. Cliente aceita a proposta — gera cobranca PIX via Asaas no `payment`
-9. Pagamento e confirmado via webhook `POST /payments/webhook/asaas`
-10. Prestador confirma conclusao do servico (`providerConfirm`)
+8. Cliente aceita a proposta — gera cobrança PIX via Asaas no `payment`
+9. Pagamento é confirmado via webhook `POST /payments/webhook/asaas`
+10. Prestador confirma conclusão do serviço (`providerConfirm`)
 11. Prestador faz upload da nota fiscal
-12. Cliente confirma conclusao (`clientConfirm`) — dispara repasse PIX ao prestador
+12. Cliente confirma conclusão (`clientConfirm`) — dispara repasse PIX ao prestador
 13. Cliente cria uma review para a proposta
