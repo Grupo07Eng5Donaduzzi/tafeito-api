@@ -143,7 +143,7 @@ docker compose up -d
 
 Endpoints uteis depois que o ambiente subir:
 
-- `main`: `http://localhost:4001/docs`
+- `main`: `http://localhost:4001/api`
 - `payment`: `http://localhost:4002/docs`
 - `chat`: `http://localhost:4003/docs`
 - Adminer: `http://localhost:8080`
@@ -229,7 +229,7 @@ npm run start:dev
 ```
 
 Swagger:
-`http://localhost:4001/docs`
+`http://localhost:4001/api`
 
 ### `payment`
 

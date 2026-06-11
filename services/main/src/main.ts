@@ -8,7 +8,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  mkdirSync(join(process.cwd(), 'uploads', 'services'), { recursive: true });
+  for (const dir of ['services', 'photos', 'invoices']) {
+    mkdirSync(join(process.cwd(), 'uploads', dir), { recursive: true });
+  }
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
