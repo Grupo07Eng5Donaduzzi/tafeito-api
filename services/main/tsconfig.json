@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "../..",
+    "strictPropertyInitialization": false,
+    "paths": {
+      "@shared/infra/guards/*": ["./src/shared/infra/guards/*"],
+      "@shared/*": ["../../shared/src/*"],
+      "@users/*": ["./src/modules/users/*"],
+      "@reviews/*": ["./src/modules/reviews/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "../../shared/src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

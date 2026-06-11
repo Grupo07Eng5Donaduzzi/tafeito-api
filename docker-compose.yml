@@ -1,0 +1,125 @@
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  depends_on:
+    postgres:
+      condition: service_healthy
+    rabbitmq:
+      condition: service_healthy
+  networks:
+    - tafeito-network
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init/01-create-databases.sql:/docker-entrypoint-initdb.d/01-create-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - tafeito-network
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      start_period: 30s
+      timeout: 20s
+      retries: 12
+    networks:
+      - tafeito-network
+
+  adminer:
+    image: adminer:4.8.1-standalone
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - tafeito-network
+
+  main:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: main
+    environment:
+      PORT: 4001
+      JWT_SECRET: super-secret
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/tafeito_main
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+      FIREBASE_API_KEY: ${FIREBASE_API_KEY}
+    ports:
+      - "4001:4001"
+    command: sh -c "npm run db:push && npm run start:prod"
+
+  payment:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: payment
+    environment:
+      PORT: 4002
+      JWT_SECRET: super-secret
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/tafeito_payment
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+      ASAAS_BASE_URL: https://api-sandbox.asaas.com/v3
+      ASAAS_ACCESS_TOKEN: ${ASAAS_ACCESS_TOKEN}
+      ASAAS_USER_AGENT: tafeito-api/1.0
+    ports:
+      - "4002:4002"
+    command: sh -c "npm run db:push && npm run start:prod"
+
+  chat:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: chat
+    environment:
+      PORT: 4003
+      JWT_SECRET: super-secret
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/tafeito_chat
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+      FRONTEND_URL: ${FRONTEND_URL:-*}
+    ports:
+      - "4003:4003"
+    command: sh -c "npm run db:push && npm run start:prod"
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+networks:
+  tafeito-network:

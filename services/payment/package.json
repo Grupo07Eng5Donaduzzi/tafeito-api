@@ -1,0 +1,42 @@
+{
+  "name": "tafeito-payment",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "nest build && tsc-alias -p tsconfig.build.json",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/services/payment/src/main.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.4.4",
+    "amqplib": "^1.0.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.20.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@types/amqplib": "^0.10.7",
+    "@types/node": "^22.10.7",
+    "@types/pg": "^8.11.14",
+    "drizzle-kit": "^0.31.10",
+    "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.10",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.3"
+  }
+}
