@@ -11,7 +11,7 @@ export class DrizzleMessageRepository implements MessageRepository {
   constructor(private readonly drizzleService: DrizzleService) {}
 
   async create(message: Message): Promise<void> {
-    await this.drizzleService.db.insert(messageSchema).values({
+    const [inserted] = await this.drizzleService.db.insert(messageSchema).values({
       serviceId: message.serviceId,
       conversationId: message.conversationId,
       senderId: message.senderId,
@@ -20,7 +20,8 @@ export class DrizzleMessageRepository implements MessageRepository {
       status: message.status,
       createdAt: message.createdAt,
       updatedAt: message.updatedAt,
-    });
+    }).returning({ id: messageSchema.id });
+    message.id = inserted.id;
   }
 
   async findById(id: string): Promise<Message | null> {

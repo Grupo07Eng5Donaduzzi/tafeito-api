@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { desc, eq, sql } from 'drizzle-orm';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
 import { servicesSchema } from '../schemas/service.schema';
-import { eq, sql } from 'drizzle-orm';
+import { usersSchema } from '@users/infra/schemas/user.schema';
+import { reviewsSchema } from '@reviews/infra/schemas/review.schema';
 import { UpdateServiceDto } from '../../application/dto/update-service.dto';
+import { PricingType } from '../../application/dto/create-service.dto';
 
 @Injectable()
 export class DrizzleServiceRepository {
@@ -14,7 +17,7 @@ export class DrizzleServiceRepository {
     description: string;
     category: string;
     price: string;
-    duration: string;
+    pricingType: PricingType;
   }): Promise<any> {
     const [inserted] = await this.drizzleService.db
       .insert(servicesSchema)
@@ -24,7 +27,7 @@ export class DrizzleServiceRepository {
         description: data.description,
         category: data.category,
         price: data.price,
-        duration: data.duration,
+        pricingType: data.pricingType,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -72,8 +75,50 @@ export class DrizzleServiceRepository {
       .select()
       .from(servicesSchema)
       .where(eq(servicesSchema.id, id));
-
     return result[0] ?? null;
+  }
+
+  async findByIdWithDetails(id: string): Promise<any | null> {
+    const service = await this.findById(id);
+    if (!service) return null;
+
+    const [provider] = await this.drizzleService.db
+      .select({ id: usersSchema.id, name: usersSchema.name })
+      .from(usersSchema)
+      .where(eq(usersSchema.id, service.userId))
+      .limit(1);
+
+    const [recentReviews, [summary]] = await Promise.all([
+      this.drizzleService.db
+        .select({
+          id: reviewsSchema.id,
+          rating: reviewsSchema.rating,
+          comment: reviewsSchema.comment,
+          createdAt: reviewsSchema.createdAt,
+          reviewerId: reviewsSchema.reviewerId,
+        })
+        .from(reviewsSchema)
+        .where(eq(reviewsSchema.reviewedId, service.userId))
+        .orderBy(desc(reviewsSchema.createdAt))
+        .limit(5),
+      this.drizzleService.db
+        .select({
+          total: sql<number>`cast(count(*) as int)`,
+          average: sql<number>`round(avg(${reviewsSchema.rating})::numeric, 1)`,
+        })
+        .from(reviewsSchema)
+        .where(eq(reviewsSchema.reviewedId, service.userId)),
+    ]);
+
+    return {
+      ...service,
+      provider: provider ?? null,
+      reviews: {
+        data: recentReviews,
+        total: summary?.total ?? 0,
+        average: summary?.average ?? null,
+      },
+    };
   }
 
   async deleteById(id: string): Promise<void> {
@@ -82,13 +127,19 @@ export class DrizzleServiceRepository {
       .where(eq(servicesSchema.id, id));
   }
 
-  async updateById(id: string, dto: UpdateServiceDto): Promise<void> {
+  async updateById(id: string, dto: Partial<UpdateServiceDto> & { photo?: string }): Promise<void> {
+    const payload: Record<string, any> = { updatedAt: new Date() };
+    if (dto.name !== undefined) payload.name = dto.name;
+    if (dto.description !== undefined) payload.description = dto.description;
+    if (dto.category !== undefined) payload.category = dto.category;
+    if (dto.price !== undefined) payload.price = dto.price;
+    if (dto.pricingType !== undefined) payload.pricingType = dto.pricingType;
+    if (dto.userId !== undefined) payload.userId = dto.userId;
+    if (dto.photo !== undefined) payload.photo = dto.photo;
+
     await this.drizzleService.db
       .update(servicesSchema)
-      .set({
-        ...dto,
-        updatedAt: new Date(),
-      })
+      .set(payload)
       .where(eq(servicesSchema.id, id));
   }
 }

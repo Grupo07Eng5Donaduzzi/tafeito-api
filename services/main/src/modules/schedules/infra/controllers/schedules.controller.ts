@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { HateoasItem } from '@shared/infra/hateoas';
 import { ScheduleService } from '../../application/services/schedule.service';
@@ -25,7 +25,7 @@ export class SchedulesController {
       budgetRequest: { href: `/budgetRequests/${item.budgetRequestId}`, method: 'GET' },
     }),
   })
-  findById(@Param('id') id: string) {
+  findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.findById(id);
   }
 
@@ -38,7 +38,7 @@ export class SchedulesController {
       budgetRequest: { href: `/budgetRequests/${item.budgetRequestId}`, method: 'GET' },
     }),
   })
-  findByProposalId(@Param('proposalId') proposalId: string) {
+  findByProposalId(@Param('proposalId', ParseUUIDPipe) proposalId: string) {
     return this.service.findByProposalId(proposalId);
   }
 }

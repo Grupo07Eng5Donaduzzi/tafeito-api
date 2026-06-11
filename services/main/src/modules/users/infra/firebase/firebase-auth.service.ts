@@ -1,11 +1,43 @@
 import 'dotenv/config';
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as admin from 'firebase-admin';
+
+const FIREBASE_CLIENT_ERRORS = new Set([
+  'EMAIL_NOT_FOUND',
+  'INVALID_EMAIL',
+  'INVALID_LOGIN_CREDENTIALS',
+  'USER_DISABLED',
+  'MISSING_EMAIL',
+  'WEAK_PASSWORD',
+]);
+
+function mapFirebaseAdminError(err: unknown, context: string): never {
+  const code: string = (err as { code?: string })?.code ?? '';
+  const message: string = (err as { message?: string })?.message ?? String(err);
+
+  if (code === 'auth/email-already-exists') {
+    throw new ConflictException('E-mail já cadastrado');
+  }
+  if (code === 'auth/user-not-found') {
+    throw new NotFoundException('Usuário não encontrado no Firebase');
+  }
+  if (code === 'auth/invalid-email') {
+    throw new BadRequestException('Formato de e-mail inválido');
+  }
+  if (code === 'auth/weak-password') {
+    throw new BadRequestException('Senha muito fraca');
+  }
+
+  throw new InternalServerErrorException(`Erro Firebase (${context}): ${message}`);
+}
 
 @Injectable()
 export class FirebaseAuthService implements OnModuleInit {
@@ -25,22 +57,38 @@ export class FirebaseAuthService implements OnModuleInit {
   }
 
   async createUser(email: string, password: string): Promise<string> {
-    const record = await this.auth.createUser({ email, password });
-    return record.uid;
+    try {
+      const record = await this.auth.createUser({ email, password });
+      return record.uid;
+    } catch (err) {
+      mapFirebaseAdminError(err, 'createUser');
+    }
   }
 
   async updateUser(uid: string, email?: string): Promise<void> {
-    await this.auth.updateUser(uid, { email });
+    try {
+      await this.auth.updateUser(uid, { email });
+    } catch (err) {
+      mapFirebaseAdminError(err, 'updateUser');
+    }
   }
 
   async setCustomUserClaims(uid: string, claims: Record<string, unknown>): Promise<void> {
-    const record = await this.auth.getUser(uid);
-    const existingClaims = record.customClaims ?? {};
-    await this.auth.setCustomUserClaims(uid, { ...existingClaims, ...claims });
+    try {
+      const record = await this.auth.getUser(uid);
+      const existingClaims = record.customClaims ?? {};
+      await this.auth.setCustomUserClaims(uid, { ...existingClaims, ...claims });
+    } catch (err) {
+      mapFirebaseAdminError(err, 'setCustomUserClaims');
+    }
   }
 
   async deleteUser(uid: string): Promise<void> {
-    await this.auth.deleteUser(uid);
+    try {
+      await this.auth.deleteUser(uid);
+    } catch (err) {
+      mapFirebaseAdminError(err, 'deleteUser');
+    }
   }
 
   async getUserByEmail(email: string): Promise<admin.auth.UserRecord | null> {
@@ -94,8 +142,12 @@ export class FirebaseAuthService implements OnModuleInit {
     if (!response.ok) {
       type FirebaseErrorResponse = { error?: { message?: string } };
       const data = (await response.json()) as FirebaseErrorResponse;
-      const message = data?.error?.message ?? 'Failed to send password reset email';
-      throw new InternalServerErrorException(message);
+      const errorCode = data?.error?.message ?? '';
+
+      if (FIREBASE_CLIENT_ERRORS.has(errorCode)) {
+        throw new BadRequestException('E-mail inválido ou não encontrado');
+      }
+      throw new InternalServerErrorException('Falha ao enviar e-mail de recuperação de senha');
     }
   }
 

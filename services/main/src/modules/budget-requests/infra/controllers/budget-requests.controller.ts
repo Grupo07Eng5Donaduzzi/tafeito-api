@@ -8,6 +8,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Query,
   UseInterceptors,
   UploadedFiles,
@@ -36,25 +37,25 @@ const UPLOADS_PATH = './uploads/photos';
 export class BudgetRequestsController {
   constructor(private readonly service: BudgetRequestService) {}
 
-  @ApiOperation({ summary: 'Create a new budget request' })
+  @ApiOperation({ summary: 'Criar um novo orçamento' })
   @Post()
   create(@CurrentUser() userId: string, @Body() dto: CreateBudgetRequestDto) {
     return this.service.create(userId, dto);
   }
 
-  @ApiOperation({ summary: 'Get all budget requests for the authenticated user' })
+  @ApiOperation({ summary: 'Listar orçamentos do usuário autenticado' })
   @Get('mine')
   findMine(@CurrentUser() userId: string) {
     return this.service.findByUserId(userId);
   }
 
-  @ApiOperation({ summary: 'Get available budget requests for a service' })
+  @ApiOperation({ summary: 'Listar orçamentos disponíveis para um serviço' })
   @Get('available')
   findAvailable(@Query('service_id') serviceId: string) {
     return this.service.findAvailableByServiceId(serviceId);
   }
 
-  @ApiOperation({ summary: 'Get a budget request by ID' })
+  @ApiOperation({ summary: 'Buscar orçamento por ID' })
   @Get(':id')
   @HateoasItem<BudgetRequestDto>({
     basePath: '/budgetRequests',
@@ -70,11 +71,11 @@ export class BudgetRequestsController {
       list: { href: '/budgetRequests/mine', method: 'GET' },
     }),
   })
-  findById(@Param('id') id: string) {
+  findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.findById(id);
   }
 
-  @ApiOperation({ summary: 'Upload up to 5 photos for a budget request' })
+  @ApiOperation({ summary: 'Fazer upload de até 5 fotos para um orçamento' })
   @ApiConsumes('multipart/form-data')
   @Post(':id/photos')
   @UseInterceptors(
@@ -96,7 +97,7 @@ export class BudgetRequestsController {
     }),
   )
   async addPhotos(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() userId: string,
     @UploadedFiles() files: Express.Multer.File[],
   ): Promise<BudgetRequestDto> {
@@ -106,21 +107,21 @@ export class BudgetRequestsController {
     return this.service.addPhotos(id, userId, files.map((f) => f.filename));
   }
 
-  @ApiOperation({ summary: 'Cancel a budget request' })
+  @ApiOperation({ summary: 'Cancelar um orçamento' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id/cancel')
   async cancel(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() userId: string,
     @Body() dto: CancelBudgetRequestDto,
   ): Promise<void> {
     await this.service.cancel(id, userId, dto);
   }
 
-  @ApiOperation({ summary: 'Delete a budget request' })
+  @ApiOperation({ summary: 'Excluir um orçamento' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  async remove(@Param('id') id: string, @CurrentUser() userId: string): Promise<void> {
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() userId: string): Promise<void> {
     await this.service.delete(id, userId);
   }
 }

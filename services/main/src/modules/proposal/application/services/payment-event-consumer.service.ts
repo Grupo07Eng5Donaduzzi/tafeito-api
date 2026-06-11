@@ -43,14 +43,21 @@ export class PaymentEventConsumerService implements OnModuleInit {
   private async handlePaymentCreated(payload: PaymentCreatedPayload): Promise<void> {
     this.logger.log(`Payment created for proposal ${payload.proposalId}`);
 
-    const proposal = await this.proposalRepository.findById(payload.proposalId);
-    if (!proposal) {
-      this.logger.warn(`Proposal ${payload.proposalId} not found for payment.created event`);
-      return;
-    }
+    try {
+      const proposal = await this.proposalRepository.findById(payload.proposalId);
+      if (!proposal) {
+        this.logger.warn(`Proposal ${payload.proposalId} not found for payment.created event`);
+        return;
+      }
 
-    proposal.setPaymentData(payload.paymentId, payload.qrCode, payload.qrCodeBase64, payload.ticketUrl);
-    await this.proposalRepository.update(proposal);
+      proposal.setPaymentData(payload.paymentId, payload.qrCode, payload.qrCodeBase64, payload.ticketUrl);
+      await this.proposalRepository.update(proposal);
+    } catch (err) {
+      this.logger.error(
+        `Failed to process payment.created for ${payload.proposalId}: ${(err as Error).message}`,
+        (err as Error).stack,
+      );
+    }
   }
 
   private async handlePaymentConfirmed(payload: PaymentConfirmedPayload): Promise<void> {

@@ -1,15 +1,30 @@
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 import type { MessageStatus } from '../../domain/models/message.entity';
 
 export class SendMessageDto {
+  @IsUUID()
   serviceId!: string;
+
+  @IsOptional()
+  @IsUUID()
   conversationId?: string;
-  senderId!: string;
+
+  @IsOptional()
+  @IsUUID()
+  senderId?: string;
+
+  @IsUUID()
   recipientId!: string;
+
+  @IsString()
   content!: string;
 }
 
 export class SendConversationMessageDto {
+  @IsUUID()
   recipientId!: string;
+
+  @IsString()
   content!: string;
 }
 

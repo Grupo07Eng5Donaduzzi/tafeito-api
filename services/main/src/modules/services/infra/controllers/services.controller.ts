@@ -12,9 +12,14 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { RequireProviderGuard } from '@shared/infra/guards/require-provider.guard';
 import { HateoasList } from '@shared/infra/hateoas';
@@ -50,6 +55,12 @@ export class ServicesController {
     return this.serviceService.listPaginated({ page, limit, category });
   }
 
+  @ApiOperation({ summary: 'Buscar detalhes de um serviço com provedor e avaliações' })
+  @Get(':id')
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+    return this.serviceService.findByIdWithDetails(id);
+  }
+
   @Post()
   @UseGuards(RequireProviderGuard)
   async create(
@@ -57,6 +68,30 @@ export class ServicesController {
     @Body() body: CreateServiceDto,
   ): Promise<any> {
     return this.serviceService.create(userId, body);
+  }
+
+  @ApiOperation({ summary: 'Fazer upload da foto do serviço' })
+  @ApiConsumes('multipart/form-data')
+  @Post(':id/photo')
+  @UseGuards(RequireProviderGuard)
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      storage: diskStorage({
+        destination: './uploads/services',
+        filename: (_req, file, cb) => {
+          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          cb(null, `${unique}${extname(file.originalname)}`);
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadPhoto(
+    @CurrentUser() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<any> {
+    return this.serviceService.uploadPhoto(id, userId, file.filename);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)

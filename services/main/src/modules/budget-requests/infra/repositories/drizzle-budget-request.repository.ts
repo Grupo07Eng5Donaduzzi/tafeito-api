@@ -11,19 +11,23 @@ export class DrizzleBudgetRequestRepository implements BudgetRequestRepository {
   constructor(private readonly drizzleService: DrizzleService) {}
 
   async create(budgetRequest: BudgetRequest): Promise<void> {
-    await this.drizzleService.db.insert(budgetRequestsSchema).values({
-      userId: budgetRequest.userId,
-      serviceId: budgetRequest.serviceId,
-      title: budgetRequest.title,
-      description: budgetRequest.description,
-      category: budgetRequest.category,
-      location: budgetRequest.location,
-      requestDate: budgetRequest.requestDate,
-      status: budgetRequest.status,
-      photos: budgetRequest.photos,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const [inserted] = await this.drizzleService.db
+      .insert(budgetRequestsSchema)
+      .values({
+        userId: budgetRequest.userId,
+        serviceId: budgetRequest.serviceId,
+        title: budgetRequest.title,
+        description: budgetRequest.description,
+        category: budgetRequest.category,
+        location: budgetRequest.location,
+        requestDate: budgetRequest.requestDate,
+        status: budgetRequest.status,
+        photos: budgetRequest.photos,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning({ id: budgetRequestsSchema.id });
+    budgetRequest.id = inserted.id;
   }
 
   async update(budgetRequest: BudgetRequest): Promise<void> {

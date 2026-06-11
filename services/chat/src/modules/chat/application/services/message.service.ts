@@ -31,7 +31,7 @@ export class MessageService {
     const message = new Message({
       serviceId: dto.serviceId,
       conversationId: dto.conversationId,
-      senderId: dto.senderId,
+      senderId: dto.senderId!,
       recipientId: dto.recipientId,
       content: dto.content.trim(),
       status: 'sent',
@@ -47,10 +47,26 @@ export class MessageService {
     dto: Omit<SendMessageDto, 'senderId'>,
     senderId: string,
   ): Promise<MessageResponseDto> {
-    return this.sendMessage({
-      ...dto,
-      senderId,
-    });
+    let { conversationId } = dto;
+
+    if (!conversationId) {
+      const existing = await this.conversationService.getServiceConversations(dto.serviceId);
+      const matched = existing.find(
+        (c) => c.participantIds.includes(senderId) && c.participantIds.includes(dto.recipientId),
+      );
+      if (matched) {
+        conversationId = matched.id;
+      } else {
+        const created = await this.conversationService.createConversation(
+          dto.serviceId,
+          senderId,
+          [senderId, dto.recipientId],
+        );
+        conversationId = created.id;
+      }
+    }
+
+    return this.sendMessage({ ...dto, conversationId, senderId });
   }
 
   async getServiceMessages(

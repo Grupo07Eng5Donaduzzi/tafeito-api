@@ -7,7 +7,8 @@
     "paths": {
       "@shared/infra/guards/*": ["./src/shared/infra/guards/*"],
       "@shared/*": ["../../shared/src/*"],
-      "@users/*": ["./src/modules/users/*"]
+      "@users/*": ["./src/modules/users/*"],
+      "@reviews/*": ["./src/modules/reviews/*"]
     }
   },
   "include": ["src/**/*.ts", "../../shared/src/**/*.ts"],

@@ -6,6 +6,7 @@ import {
   BadRequestException,
   Inject,
   ForbiddenException,
+  InternalServerErrorException,
   Logger,
   forwardRef,
 } from '@nestjs/common';
@@ -75,15 +76,19 @@ export class ProposalService {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) throw new NotFoundException('Proposal not found');
     this.ensureClient(proposal, clientId);
-    proposal.contest(dto.reason);
+    this.tryEntityOp(() => proposal.contest(dto.reason));
     await this.proposalRepository.update(proposal);
     const budgetRequest = await this.budgetRequestService.findById(proposal.requestId);
-    await this.proposalMessagingService.publishProposalContested({
-      proposalId,
-      clientId: proposal.clientId,
-      providerId: proposal.providerId,
-      serviceId: budgetRequest?.serviceId ?? '',
-    });
+    try {
+      await this.proposalMessagingService.publishProposalContested({
+        proposalId,
+        clientId: proposal.clientId,
+        providerId: proposal.providerId,
+        serviceId: budgetRequest?.serviceId ?? '',
+      });
+    } catch (err) {
+      this.logger.warn(`Failed to publish proposal.contested for ${proposalId}: ${(err as Error).message}`);
+    }
     const updated = await this.proposalRepository.findById(proposalId);
     return ProposalDto.from(updated)!;
   }
@@ -92,7 +97,7 @@ export class ProposalService {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) throw new NotFoundException('Proposal not found');
     this.ensureClient(proposal, clientId);
-    proposal.definitivelyReject(dto.reason);
+    this.tryEntityOp(() => proposal.definitivelyReject(dto.reason));
     await this.proposalRepository.update(proposal);
     const updated = await this.proposalRepository.findById(proposalId);
     return ProposalDto.from(updated)!;
@@ -110,17 +115,22 @@ export class ProposalService {
     if (!client.identification) {
       throw new BadRequestException('Client must have a CPF or CNPJ registered to pay');
     }
-    proposal.accept();
+    this.tryEntityOp(() => proposal.accept());
     await this.proposalRepository.update(proposal);
-    await this.proposalMessagingService.publishProposalAccepted({
-      proposalId,
-      amount: proposal.amount,
-      clientId,
-      providerId: proposal.providerId,
-      clientEmail: client.email,
-      clientDocumentType: client.identification.replace(/\D/g, '').length === 11 ? 'CPF' : 'CNPJ',
-      clientDocumentNumber: client.identification,
-    });
+    try {
+      await this.proposalMessagingService.publishProposalAccepted({
+        proposalId,
+        amount: proposal.amount,
+        clientId,
+        providerId: proposal.providerId,
+        clientEmail: client.email,
+        clientDocumentType: client.identification.replace(/\D/g, '').length === 11 ? 'CPF' : 'CNPJ',
+        clientDocumentNumber: client.identification,
+      });
+    } catch (err) {
+      this.logger.error(`Failed to publish proposal.accepted for ${proposalId}: ${(err as Error).message}`);
+      throw new InternalServerErrorException('Falha ao iniciar o processo de pagamento. Tente novamente.');
+    }
     const updated = await this.proposalRepository.findById(proposalId);
     return ProposalDto.from(updated)!;
   }
@@ -146,7 +156,7 @@ export class ProposalService {
     if (proposal.providerId !== providerId) {
       throw new ForbiddenException('Only the provider can confirm completion');
     }
-    proposal.providerConfirm();
+    this.tryEntityOp(() => proposal.providerConfirm());
     await this.proposalRepository.update(proposal);
     const updated = await this.proposalRepository.findById(proposalId);
     return ProposalDto.from(updated)!;
@@ -161,14 +171,19 @@ export class ProposalService {
     if (!provider.pixKey) {
       throw new BadRequestException('Provider must register a Pix key to receive payment');
     }
-    proposal.clientConfirm();
+    this.tryEntityOp(() => proposal.clientConfirm());
     await this.proposalRepository.update(proposal);
-    await this.proposalMessagingService.publishProposalClientConfirmed({
-      proposalId,
-      amount: proposal.amount,
-      providerId: proposal.providerId,
-      providerPixKey: provider.pixKey,
-    });
+    try {
+      await this.proposalMessagingService.publishProposalClientConfirmed({
+        proposalId,
+        amount: proposal.amount,
+        providerId: proposal.providerId,
+        providerPixKey: provider.pixKey,
+      });
+    } catch (err) {
+      this.logger.error(`Failed to publish proposal.clientConfirmed for ${proposalId}: ${(err as Error).message}`);
+      throw new InternalServerErrorException('Falha ao iniciar a transferência. Tente novamente.');
+    }
     const updated = await this.proposalRepository.findById(proposalId);
     return ProposalDto.from(updated)!;
   }
@@ -179,7 +194,7 @@ export class ProposalService {
     if (proposal.providerId !== providerId) {
       throw new ForbiddenException('Only the provider can upload the invoice');
     }
-    proposal.attachInvoice(filename);
+    this.tryEntityOp(() => proposal.attachInvoice(filename));
     await this.proposalRepository.update(proposal);
     const updated = await this.proposalRepository.findById(proposalId);
     return ProposalDto.from(updated)!;
@@ -238,6 +253,22 @@ export class ProposalService {
   private ensureParticipant(proposal: Proposal, userId: string): void {
     if (proposal.clientId !== userId && proposal.providerId !== userId) {
       throw new ForbiddenException('Only proposal participants can access this resource');
+    }
+  }
+
+  private tryEntityOp(fn: () => void): void {
+    try {
+      fn();
+    } catch (err) {
+      if (
+        err instanceof Error &&
+        !(err instanceof BadRequestException) &&
+        !(err instanceof ForbiddenException) &&
+        !(err instanceof NotFoundException)
+      ) {
+        throw new BadRequestException(err.message);
+      }
+      throw err;
     }
   }
 }

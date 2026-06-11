@@ -13,21 +13,22 @@ import { BecomeProviderDto } from '../../application/dto/become-provider.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @ApiOperation({ summary: 'Sign in with email and password' })
+  @ApiOperation({ summary: 'Autenticar com e-mail e senha' })
+  @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(@Body() body: LoginUserDto): Promise<AuthResponseDto> {
     const { accessToken, user } = await this.authService.login(body.email, body.password);
     return new AuthResponseDto(accessToken, user);
   }
 
-  @ApiOperation({ summary: 'Register a new user' })
+  @ApiOperation({ summary: 'Cadastrar um novo usuário' })
   @Post('register')
   async register(@Body() body: CreateUserDto): Promise<AuthResponseDto> {
     const { accessToken, user } = await this.authService.register(body);
     return new AuthResponseDto(accessToken, user);
   }
 
-  @ApiOperation({ summary: 'Become a service provider' })
+  @ApiOperation({ summary: 'Tornar-se prestador de serviço' })
   @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch('becomeProvider')
@@ -38,7 +39,7 @@ export class AuthController {
     await this.authService.becomeProvider(userId, body);
   }
 
-  @ApiOperation({ summary: 'Send a password reset email via Firebase' })
+  @ApiOperation({ summary: 'Enviar e-mail de recuperação de senha' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post('forgot-password')
   async forgotPassword(@Body() body: ForgotPasswordDto): Promise<void> {

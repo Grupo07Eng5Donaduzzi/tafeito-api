@@ -1,35 +1,36 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { PricingType } from './create-service.dto';
 
 export class UpdateServiceDto {
-  @ApiPropertyOptional({ example: 'Manutenção elétrica' })
+  @ApiPropertyOptional({ example: 'Plantio de flores e plantas' })
   @IsOptional()
   @IsString()
   @IsNotEmpty()
   name?: string;
 
-  @ApiPropertyOptional({ example: 'Serviço de instalação e reparo elétrico residencial' })
+  @ApiPropertyOptional({ example: 'Realizo o plantio de flores, plantas e árvores.' })
   @IsOptional()
   @IsString()
   @IsNotEmpty()
   description?: string;
 
-  @ApiPropertyOptional({ example: 'Elétrica' })
+  @ApiPropertyOptional({ example: 'Jardinagem' })
   @IsOptional()
   @IsString()
   @IsNotEmpty()
   category?: string;
 
-  @ApiPropertyOptional({ example: '150.00' })
+  @ApiPropertyOptional({ example: '100.00' })
   @IsOptional()
   @IsString()
   @IsNotEmpty()
   price?: string;
 
-  @ApiPropertyOptional({ example: '2h' })
+  @ApiPropertyOptional({ enum: PricingType, example: PricingType.DAILY })
   @IsOptional()
-  @IsString()
-  duration?: string;
+  @IsEnum(PricingType)
+  pricingType?: PricingType;
 
   @ApiPropertyOptional()
   @IsOptional()

@@ -1,39 +1,63 @@
 import { User } from '@users/domain/models/user.entity';
 import type { UserRepository } from '@users/domain/repositories/user-repository.interface';
 import { usersSchema } from '@users/infra/schemas/user.schema';
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
 import { eq } from 'drizzle-orm';
+
+const PG_UNIQUE_VIOLATION = '23505';
+
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    (err as { code?: string }).code === PG_UNIQUE_VIOLATION
+  );
+}
 
 @Injectable()
 export class DrizzleUserRepository implements UserRepository {
   constructor(private readonly drizzleService: DrizzleService) {}
 
   async create(user: User): Promise<void> {
-    await this.drizzleService.db.insert(usersSchema).values({
-      firebaseUid: user.firebaseUid,
-      name: user.name,
-      email: user.email,
-      identification: user.identification,
-      pixKey: user.pixKey ?? null,
-      hourlyRate: user.hourlyRate?.toString(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-  }
-
-  async update(user: User): Promise<void> {
-    await this.drizzleService.db
-      .update(usersSchema)
-      .set({
+    try {
+      await this.drizzleService.db.insert(usersSchema).values({
+        firebaseUid: user.firebaseUid,
         name: user.name,
         email: user.email,
         identification: user.identification,
         pixKey: user.pixKey ?? null,
         hourlyRate: user.hourlyRate?.toString(),
+        createdAt: new Date(),
         updatedAt: new Date(),
-      })
-      .where(eq(usersSchema.id, user.id!));
+      });
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictException('E-mail ou identificação já cadastrado');
+      }
+      throw err;
+    }
+  }
+
+  async update(user: User): Promise<void> {
+    try {
+      await this.drizzleService.db
+        .update(usersSchema)
+        .set({
+          name: user.name,
+          email: user.email,
+          identification: user.identification,
+          pixKey: user.pixKey ?? null,
+          hourlyRate: user.hourlyRate?.toString(),
+          updatedAt: new Date(),
+        })
+        .where(eq(usersSchema.id, user.id!));
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictException('E-mail já está sendo usado por outro usuário');
+      }
+      throw err;
+    }
   }
 
   async delete(id: string): Promise<void> {

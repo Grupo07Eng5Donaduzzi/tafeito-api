@@ -10,6 +10,7 @@ import {
   DefaultValuePipe,
   ForbiddenException,
   ParseIntPipe,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { HateoasItem } from '@shared/infra/hateoas';
@@ -59,7 +60,7 @@ export class ChatController {
     }),
   })
   async getMessage(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUserId: string,
   ): Promise<MessageResponseDto> {
     return this.messageService.getMessageByIdForUser(id, currentUserId);
@@ -67,7 +68,7 @@ export class ChatController {
 
   @Post('conversations/:conversationId/messages')
   async sendConversationMessage(
-    @Param('conversationId') conversationId: string,
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
     @Body() dto: SendConversationMessageDto,
     @CurrentUser() currentUserId: string,
   ): Promise<MessageResponseDto> {
@@ -81,7 +82,7 @@ export class ChatController {
 
   @Get('conversations/:conversationId/messages')
   async getConversationMessages(
-    @Param('conversationId') conversationId: string,
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
     @CurrentUser() currentUserId: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('pageSize', new DefaultValuePipe(50), ParseIntPipe) pageSize: number,
@@ -96,7 +97,7 @@ export class ChatController {
 
   @Get('services/:serviceId/messages')
   async getServiceMessages(
-    @Param('serviceId') serviceId: string,
+    @Param('serviceId', ParseUUIDPipe) serviceId: string,
     @CurrentUser() currentUserId: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('pageSize', new DefaultValuePipe(50), ParseIntPipe) pageSize: number,
@@ -111,7 +112,7 @@ export class ChatController {
 
   @Get('users/:userId/messages')
   async getUserMessages(
-    @Param('userId') userId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
     @CurrentUser() currentUserId: string,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
   ): Promise<MessageResponseDto[]> {
@@ -123,7 +124,7 @@ export class ChatController {
 
   @Patch('messages/:id/read')
   async markAsRead(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUserId: string,
   ): Promise<MessageResponseDto> {
     return this.messageService.markAsReadForUser(id, currentUserId);
@@ -131,7 +132,7 @@ export class ChatController {
 
   @Patch('messages/:id/delivered')
   async markAsDelivered(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUserId: string,
   ): Promise<MessageResponseDto> {
     return this.messageService.markAsDeliveredForUser(id, currentUserId);
@@ -139,7 +140,7 @@ export class ChatController {
 
   @Delete('messages/:id')
   async deleteMessage(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUserId: string,
   ): Promise<void> {
     return this.messageService.deleteMessageForUser(id, currentUserId);
@@ -147,7 +148,7 @@ export class ChatController {
 
   @Get('services/:serviceId/conversations')
   async getServiceConversations(
-    @Param('serviceId') serviceId: string,
+    @Param('serviceId', ParseUUIDPipe) serviceId: string,
   ): Promise<ConversationResponseDto[]> {
     return this.conversationService.getServiceConversations(serviceId);
   }
@@ -166,7 +167,7 @@ export class ChatController {
     }),
   })
   async getConversation(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ConversationResponseDto> {
     return this.conversationService.getConversationById(id);
   }

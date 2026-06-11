@@ -13,6 +13,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Put,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -47,7 +48,7 @@ export class UsersController {
       delete: { href: `/users/${item.id}`, method: 'DELETE' },
     }),
   })
-  async findById(@Param('id') id: string): Promise<UserDto> {
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<UserDto> {
     const user = await this.userService.findById(id);
     if (!user) throw new NotFoundException('Usuário não encontrado');
     return user;
@@ -57,7 +58,7 @@ export class UsersController {
   @Put(':id')
   async update(
     @CurrentUser() currentUserId: string,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateUserDto,
   ): Promise<void> {
     if (currentUserId !== id) {
@@ -70,7 +71,7 @@ export class UsersController {
   @Delete(':id')
   async remove(
     @CurrentUser() currentUserId: string,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     if (currentUserId !== id) {
       throw new ForbiddenException('Operação não permitida');

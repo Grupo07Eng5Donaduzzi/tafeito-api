@@ -22,13 +22,13 @@ export class PaymentsController {
     private readonly paymentRecordRepository: PaymentRecordRepository,
   ) {}
 
-  @ApiOperation({ summary: 'Create a PIX payment (used internally via events)' })
+  @ApiOperation({ summary: 'Criar um pagamento PIX (usado internamente via eventos)' })
   @Post('pix')
   async createPix(@Body() dto: CreatePixPaymentDto): Promise<PixPaymentDto> {
     return this.paymentsService.createPix(dto);
   }
 
-  @ApiOperation({ summary: 'Get payment status by Asaas payment ID' })
+  @ApiOperation({ summary: 'Consultar status do pagamento pelo ID Asaas' })
   @Get(':id/status')
   @HateoasItem<PaymentStatusDto>({
     basePath: '/payments',
@@ -40,7 +40,7 @@ export class PaymentsController {
     return this.paymentsService.getStatus(id);
   }
 
-  @ApiOperation({ summary: 'Asaas webhook — fires payment.confirmed event on payment confirmation' })
+  @ApiOperation({ summary: 'Webhook Asaas — dispara evento payment.confirmed ao confirmar pagamento' })
   @Post('webhook/asaas')
   @HttpCode(HttpStatus.OK)
   async handleWebhook(@Body() payload: Record<string, any>): Promise<void> {

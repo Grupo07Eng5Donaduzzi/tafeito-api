@@ -33,13 +33,20 @@ export class ConversationEventConsumerService implements OnModuleInit {
       `Conversation ${payload.conversationId} created for proposal ${payload.proposalId}`,
     );
 
-    const proposal = await this.proposalRepository.findById(payload.proposalId);
-    if (!proposal) {
-      this.logger.warn(`Proposal ${payload.proposalId} not found for conversation.created event`);
-      return;
-    }
+    try {
+      const proposal = await this.proposalRepository.findById(payload.proposalId);
+      if (!proposal) {
+        this.logger.warn(`Proposal ${payload.proposalId} not found for conversation.created event`);
+        return;
+      }
 
-    proposal.linkChat(payload.conversationId);
-    await this.proposalRepository.update(proposal);
+      proposal.linkChat(payload.conversationId);
+      await this.proposalRepository.update(proposal);
+    } catch (err) {
+      this.logger.error(
+        `Failed to process conversation.created for ${payload.proposalId}: ${(err as Error).message}`,
+        (err as Error).stack,
+      );
+    }
   }
 }

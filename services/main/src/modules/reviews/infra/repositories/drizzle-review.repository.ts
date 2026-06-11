@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { count, desc, eq, sql } from 'drizzle-orm';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
 import { Review } from '../../domain/models/review.entity';
@@ -54,7 +54,7 @@ export class DrizzleReviewRepository implements ReviewRepository {
   }
 
   async update(review: Review): Promise<Review> {
-    if (!review.id) throw new Error('Cannot update a Review without an id');
+    if (!review.id) throw new BadRequestException('Cannot update a Review without an id');
     const [row] = await this.drizzleService.db
       .update(reviewsSchema)
       .set({

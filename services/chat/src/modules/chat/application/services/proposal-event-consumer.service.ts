@@ -54,29 +54,36 @@ export class ProposalEventConsumerService implements OnModuleInit {
     providerId: string,
     serviceId: string,
   ): Promise<void> {
-    const existing = await this.conversationService.getConversationByProposalId(proposalId);
-    if (existing) {
-      this.logger.log(`Conversation already exists for proposal ${proposalId}`);
+    try {
+      const existing = await this.conversationService.getConversationByProposalId(proposalId);
+      if (existing) {
+        this.logger.log(`Conversation already exists for proposal ${proposalId}`);
+        await this.chatMessagingService.publishConversationCreated({
+          proposalId,
+          conversationId: existing.id!,
+        });
+        return;
+      }
+
+      const effectiveServiceId = serviceId || proposalId;
+      const conversation = await this.conversationService.createConversation(
+        effectiveServiceId,
+        clientId,
+        [clientId, providerId],
+        proposalId,
+      );
+
+      this.logger.log(`Created conversation ${conversation.id} for proposal ${proposalId}`);
+
       await this.chatMessagingService.publishConversationCreated({
         proposalId,
-        conversationId: existing.id!,
+        conversationId: conversation.id!,
       });
-      return;
+    } catch (err) {
+      this.logger.error(
+        `Failed to ensure conversation for proposal ${proposalId}: ${(err as Error).message}`,
+        (err as Error).stack,
+      );
     }
-
-    const effectiveServiceId = serviceId || proposalId;
-    const conversation = await this.conversationService.createConversation(
-      effectiveServiceId,
-      clientId,
-      [clientId, providerId],
-      proposalId,
-    );
-
-    this.logger.log(`Created conversation ${conversation.id} for proposal ${proposalId}`);
-
-    await this.chatMessagingService.publishConversationCreated({
-      proposalId,
-      conversationId: conversation.id!,
-    });
   }
 }

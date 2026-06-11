@@ -42,47 +42,54 @@ export class ProposalEventConsumerService implements OnModuleInit {
   private async handleProposalAccepted(payload: ProposalAcceptedPayload): Promise<void> {
     this.logger.log(`Processing proposal.accepted for proposal ${payload.proposalId}`);
 
-    const existing = await this.paymentRecordRepository.findByProposalId(payload.proposalId);
-    if (existing) {
-      this.logger.warn(`Payment already exists for proposal ${payload.proposalId}, republishing`);
+    try {
+      const existing = await this.paymentRecordRepository.findByProposalId(payload.proposalId);
+      if (existing) {
+        this.logger.warn(`Payment already exists for proposal ${payload.proposalId}, republishing`);
+        await this.paymentMessagingService.publishPaymentCreated({
+          proposalId: payload.proposalId,
+          paymentId: existing.asaasPaymentId,
+          qrCode: existing.qrCode,
+          qrCodeBase64: existing.qrCodeBase64,
+          status: existing.status,
+          ticketUrl: existing.ticketUrl,
+        });
+        return;
+      }
+
+      const pixPayment = await this.paymentsService.createPix({
+        amount: payload.amount,
+        payerEmail: payload.clientEmail,
+        payerDocumentType: payload.clientDocumentType,
+        payerDocumentNumber: payload.clientDocumentNumber,
+      });
+
+      await this.paymentRecordRepository.create({
+        proposalId: payload.proposalId,
+        asaasPaymentId: pixPayment.id,
+        qrCode: pixPayment.qrCode,
+        qrCodeBase64: pixPayment.qrCodeBase64,
+        ticketUrl: pixPayment.ticketUrl,
+        status: pixPayment.status,
+        amount: payload.amount,
+      });
+
       await this.paymentMessagingService.publishPaymentCreated({
         proposalId: payload.proposalId,
-        paymentId: existing.asaasPaymentId,
-        qrCode: existing.qrCode,
-        qrCodeBase64: existing.qrCodeBase64,
-        status: existing.status,
-        ticketUrl: existing.ticketUrl,
+        paymentId: pixPayment.id,
+        qrCode: pixPayment.qrCode,
+        qrCodeBase64: pixPayment.qrCodeBase64,
+        status: pixPayment.status,
+        ticketUrl: pixPayment.ticketUrl,
       });
-      return;
+
+      this.logger.log(`PIX payment created for proposal ${payload.proposalId}`);
+    } catch (err) {
+      this.logger.error(
+        `Failed to process proposal.accepted for ${payload.proposalId}: ${(err as Error).message}`,
+        (err as Error).stack,
+      );
     }
-
-    const pixPayment = await this.paymentsService.createPix({
-      amount: payload.amount,
-      payerEmail: payload.clientEmail,
-      payerDocumentType: payload.clientDocumentType,
-      payerDocumentNumber: payload.clientDocumentNumber,
-    });
-
-    await this.paymentRecordRepository.create({
-      proposalId: payload.proposalId,
-      asaasPaymentId: pixPayment.id,
-      qrCode: pixPayment.qrCode,
-      qrCodeBase64: pixPayment.qrCodeBase64,
-      ticketUrl: pixPayment.ticketUrl,
-      status: pixPayment.status,
-      amount: payload.amount,
-    });
-
-    await this.paymentMessagingService.publishPaymentCreated({
-      proposalId: payload.proposalId,
-      paymentId: pixPayment.id,
-      qrCode: pixPayment.qrCode,
-      qrCodeBase64: pixPayment.qrCodeBase64,
-      status: pixPayment.status,
-      ticketUrl: pixPayment.ticketUrl,
-    });
-
-    this.logger.log(`PIX payment created for proposal ${payload.proposalId}`);
   }
 
   private async handleProposalClientConfirmed(payload: ProposalClientConfirmedPayload): Promise<void> {
@@ -98,8 +105,8 @@ export class ProposalEventConsumerService implements OnModuleInit {
     } catch (err) {
       this.logger.error(
         `Transfer failed for proposal ${payload.proposalId}: ${(err as Error).message}`,
+        (err as Error).stack,
       );
-      throw err;
     }
   }
 }

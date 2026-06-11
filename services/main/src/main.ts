@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { mkdirSync } from 'fs';
 import { join } from 'path';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
@@ -7,6 +8,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  mkdirSync(join(process.cwd(), 'uploads', 'services'), { recursive: true });
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.setGlobalPrefix('v1');

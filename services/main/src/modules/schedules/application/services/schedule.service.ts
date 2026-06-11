@@ -45,14 +45,16 @@ export class ScheduleService {
     return this.toDto(schedule);
   }
 
-  async findById(id: string): Promise<ScheduleDto | null> {
+  async findById(id: string): Promise<ScheduleDto> {
     const result = await this.repository.findById(id);
-    return result ? this.toDto(result) : null;
+    if (!result) throw new NotFoundException('Schedule not found');
+    return this.toDto(result);
   }
 
-  async findByProposalId(proposalId: string): Promise<ScheduleDto | null> {
+  async findByProposalId(proposalId: string): Promise<ScheduleDto> {
     const result = await this.repository.findByProposalId(proposalId);
-    return result ? this.toDto(result) : null;
+    if (!result) throw new NotFoundException('Schedule not found for this proposal');
+    return this.toDto(result);
   }
 
   private toDto(s: Schedule): ScheduleDto {

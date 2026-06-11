@@ -48,9 +48,11 @@ export class HateoasInterceptor implements NestInterceptor {
   private transformList(
     paginated: PaginatedResult<Record<string, unknown>>,
     options: HateoasListOptions,
-    _query: Record<string, string>,
+    query: Record<string, string>,
   ) {
-    const { data, total, page, limit } = paginated;
+    const { data, total } = paginated;
+    const page  = paginated.page  ?? (Number(query.page)  || 1);
+    const limit = paginated.limit ?? (Number(query.limit) || 10);
     const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
     const { basePath } = options;
 

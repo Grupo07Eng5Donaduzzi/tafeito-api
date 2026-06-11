@@ -8,6 +8,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -43,7 +44,7 @@ import {
 export class ProposalsController {
   constructor(private readonly proposalService: ProposalService) {}
 
-  @ApiOperation({ summary: 'Create a new proposal (provider only)' })
+  @ApiOperation({ summary: 'Criar uma nova proposta (somente prestador)' })
   @Post()
   @UseGuards(RequireProviderGuard)
   async create(
@@ -53,7 +54,7 @@ export class ProposalsController {
     return this.proposalService.createProposal(providerId, body);
   }
 
-  @ApiOperation({ summary: 'Get all proposals created by the authenticated provider' })
+  @ApiOperation({ summary: 'Listar propostas criadas pelo prestador autenticado' })
   @Get('provider/created')
   async findProviderCreated(
     @CurrentUser() providerId: string,
@@ -61,7 +62,7 @@ export class ProposalsController {
     return this.proposalService.getProposalsByProvider(providerId);
   }
 
-  @ApiOperation({ summary: 'Get all proposals received by the authenticated client' })
+  @ApiOperation({ summary: 'Listar propostas recebidas pelo cliente autenticado' })
   @Get('client/requested')
   async findClientRequested(
     @CurrentUser() clientId: string,
@@ -69,7 +70,7 @@ export class ProposalsController {
     return this.proposalService.getProposalsByClient(clientId);
   }
 
-  @ApiOperation({ summary: 'Get completed service history for the authenticated client' })
+  @ApiOperation({ summary: 'Histórico de serviços concluídos do cliente autenticado' })
   @Get('client/history')
   async getClientHistory(
     @CurrentUser() clientId: string,
@@ -77,7 +78,7 @@ export class ProposalsController {
     return this.proposalService.getClientServiceHistory(clientId);
   }
 
-  @ApiOperation({ summary: 'Get completed service history for the authenticated provider' })
+  @ApiOperation({ summary: 'Histórico de serviços concluídos do prestador autenticado' })
   @Get('provider/history')
   async getProviderHistory(
     @CurrentUser() providerId: string,
@@ -85,7 +86,7 @@ export class ProposalsController {
     return this.proposalService.getProviderServiceHistory(providerId);
   }
 
-  @ApiOperation({ summary: 'Get a proposal by ID' })
+  @ApiOperation({ summary: 'Buscar proposta por ID' })
   @Get(':id')
   @HateoasItem<ProposalDto>({
     basePath: '/proposals',
@@ -122,74 +123,74 @@ export class ProposalsController {
     }),
   })
   async findById(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() userId: string,
   ): Promise<ProposalDto> {
     return this.proposalService.getProposal(id, userId);
   }
 
-  @ApiOperation({ summary: 'Contest a proposal and start negotiation' })
+  @ApiOperation({ summary: 'Contestar uma proposta e iniciar negociação' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id/contest')
   async contest(
-    @Param('id') proposalId: string,
+    @Param('id', ParseUUIDPipe) proposalId: string,
     @CurrentUser() clientId: string,
     @Body() body: ContestProposalDto,
   ): Promise<void> {
     await this.proposalService.contestProposal(proposalId, clientId, body);
   }
 
-  @ApiOperation({ summary: 'Definitively reject a proposal' })
+  @ApiOperation({ summary: 'Recusar uma proposta definitivamente' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id/reject')
   async reject(
-    @Param('id') proposalId: string,
+    @Param('id', ParseUUIDPipe) proposalId: string,
     @CurrentUser() clientId: string,
     @Body() body: RejectProposalDto,
   ): Promise<void> {
     await this.proposalService.rejectProposal(proposalId, clientId, body);
   }
 
-  @ApiOperation({ summary: 'Accept a proposal — payment QR code will be available via GET :id/payment once processed' })
+  @ApiOperation({ summary: 'Aceitar uma proposta — QR code PIX disponível em GET :id/payment após processamento' })
   @Post(':id/accept')
   async accept(
-    @Param('id') proposalId: string,
+    @Param('id', ParseUUIDPipe) proposalId: string,
     @CurrentUser() clientId: string,
   ): Promise<ProposalDto> {
     return this.proposalService.acceptProposal(proposalId, clientId);
   }
 
-  @ApiOperation({ summary: 'Poll payment status — activates the proposal and creates a schedule when paid' })
+  @ApiOperation({ summary: 'Consultar status do pagamento — ativa a proposta e cria agenda após confirmação' })
   @Get(':id/payment')
   async checkPayment(
-    @Param('id') proposalId: string,
+    @Param('id', ParseUUIDPipe) proposalId: string,
     @CurrentUser() clientId: string,
   ): Promise<PaymentCheckResponseDto> {
     return this.proposalService.checkPaymentStatus(proposalId, clientId);
   }
 
-  @ApiOperation({ summary: 'Provider confirms service completion' })
+  @ApiOperation({ summary: 'Prestador confirma conclusão do serviço' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id/providerConfirm')
   @UseGuards(RequireProviderGuard)
   async providerConfirm(
-    @Param('id') proposalId: string,
+    @Param('id', ParseUUIDPipe) proposalId: string,
     @CurrentUser() providerId: string,
   ): Promise<void> {
     await this.proposalService.providerConfirmCompletion(proposalId, providerId);
   }
 
-  @ApiOperation({ summary: 'Client confirms service completion — triggers payment transfer to provider' })
+  @ApiOperation({ summary: 'Cliente confirma conclusão do serviço — dispara repasse PIX ao prestador' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id/clientConfirm')
   async clientConfirm(
-    @Param('id') proposalId: string,
+    @Param('id', ParseUUIDPipe) proposalId: string,
     @CurrentUser() clientId: string,
   ): Promise<void> {
     await this.proposalService.clientConfirmCompletion(proposalId, clientId);
   }
 
-  @ApiOperation({ summary: 'Upload invoice (PDF or XML) when provider confirms service completion' })
+  @ApiOperation({ summary: 'Fazer upload da nota fiscal (PDF ou XML) ao confirmar conclusão' })
   @ApiConsumes('multipart/form-data')
   @Post(':id/invoice')
   @UseGuards(RequireProviderGuard)
@@ -215,7 +216,7 @@ export class ProposalsController {
     }),
   )
   async uploadInvoice(
-    @Param('id') proposalId: string,
+    @Param('id', ParseUUIDPipe) proposalId: string,
     @CurrentUser() providerId: string,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<ProposalDto> {
@@ -225,10 +226,10 @@ export class ProposalsController {
     return this.proposalService.uploadInvoice(proposalId, providerId, file.filename);
   }
 
-  @ApiOperation({ summary: 'Download invoice for a proposal (client or provider)' })
+  @ApiOperation({ summary: 'Baixar nota fiscal de uma proposta (cliente ou prestador)' })
   @Get(':id/invoice')
   async downloadInvoice(
-    @Param('id') proposalId: string,
+    @Param('id', ParseUUIDPipe) proposalId: string,
     @CurrentUser() userId: string,
     @Res({ passthrough: true }) res: { set: (headers: Record<string, string>) => void },
   ): Promise<StreamableFile> {
@@ -248,41 +249,41 @@ export class ProposalsController {
 export class NegotiationsController {
   constructor(private readonly negotiationService: NegotiationService) {}
 
-  @ApiOperation({ summary: 'Send a negotiation message' })
+  @ApiOperation({ summary: 'Enviar mensagem de negociação' })
   @Post(':proposalId/messages')
   async sendMessage(
-    @Param('proposalId') proposalId: string,
+    @Param('proposalId', ParseUUIDPipe) proposalId: string,
     @CurrentUser() userId: string,
     @Body() body: CreateNegotiationMessageDto,
   ): Promise<NegotiationMessageDto> {
     return this.negotiationService.sendMessage(proposalId, userId, body);
   }
 
-  @ApiOperation({ summary: 'Send a revised proposal (provider only)' })
+  @ApiOperation({ summary: 'Enviar proposta revisada (somente prestador)' })
   @Post(':proposalId/revisedProposal')
   @UseGuards(RequireProviderGuard)
   async sendRevisedProposal(
-    @Param('proposalId') proposalId: string,
+    @Param('proposalId', ParseUUIDPipe) proposalId: string,
     @CurrentUser() providerId: string,
     @Body() body: SendRevisedProposalDto,
   ): Promise<NegotiationMessageDto> {
     return this.negotiationService.sendRevisedProposal(proposalId, providerId, body);
   }
 
-  @ApiOperation({ summary: 'Close a negotiation' })
+  @ApiOperation({ summary: 'Encerrar uma negociação' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':proposalId/close')
   async closeNegotiation(
-    @Param('proposalId') proposalId: string,
+    @Param('proposalId', ParseUUIDPipe) proposalId: string,
     @CurrentUser() userId: string,
   ): Promise<void> {
     await this.negotiationService.closeNegotiation(proposalId, userId);
   }
 
-  @ApiOperation({ summary: 'Get all negotiation messages for a proposal' })
+  @ApiOperation({ summary: 'Listar mensagens de negociação de uma proposta' })
   @Get(':proposalId/messages')
   async getMessages(
-    @Param('proposalId') proposalId: string,
+    @Param('proposalId', ParseUUIDPipe) proposalId: string,
   ): Promise<NegotiationMessageDto[]> {
     return this.negotiationService.getMessages(proposalId);
   }
