@@ -79,6 +79,8 @@ services:
       FIREBASE_API_KEY: ${FIREBASE_API_KEY}
     ports:
       - "4001:4001"
+    volumes:
+      - uploads_data:/app/services/main/uploads
     command: sh -c "npm run db:push && npm run start:prod"
 
   payment:
@@ -120,6 +122,7 @@ services:
 volumes:
   postgres_data:
   rabbitmq_data:
+  uploads_data:
 
 networks:
   tafeito-network:
