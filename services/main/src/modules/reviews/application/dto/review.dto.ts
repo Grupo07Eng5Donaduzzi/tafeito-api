@@ -38,7 +38,6 @@ export class ReviewDto {
   id: string;
   serviceId: string;
   reviewerId: string;
-  reviewedId: string;
   rating: number;
   comment?: string;
   createdAt: Date;
@@ -50,7 +49,6 @@ export class ReviewDto {
     dto.id = review.id!;
     dto.serviceId = review.serviceId;
     dto.reviewerId = review.reviewerId;
-    dto.reviewedId = review.reviewedId;
     dto.rating = review.rating;
     dto.comment = review.comment;
     dto.createdAt = review.createdAt!;
@@ -60,14 +58,6 @@ export class ReviewDto {
 }
 
 export class ServiceReviewsPageDto {
-  data: ReviewDto[];
-  total: number;
-  page: number;
-  limit: number;
-  hasMore: boolean;
-}
-
-export class ProviderReviewsPageDto {
   data: ReviewDto[];
   total: number;
   page: number;

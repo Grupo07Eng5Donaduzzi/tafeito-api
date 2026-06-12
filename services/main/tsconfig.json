@@ -5,7 +5,7 @@
     "rootDir": "../..",
     "strictPropertyInitialization": false,
     "paths": {
-      "@shared/infra/guards/*": ["./src/shared/infra/guards/*"],
+      "@shared/infra/guards/require-provider.guard": ["./src/shared/infra/guards/require-provider.guard"],
       "@shared/*": ["../../shared/src/*"],
       "@users/*": ["./src/modules/users/*"],
       "@reviews/*": ["./src/modules/reviews/*"]

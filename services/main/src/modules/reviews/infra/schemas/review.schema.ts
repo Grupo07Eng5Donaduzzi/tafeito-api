@@ -22,9 +22,6 @@ export const reviewsSchema = pgTable(
     reviewerId: uuid('reviewer_id')
       .references(() => usersSchema.id)
       .notNull(),
-    reviewedId: uuid('reviewed_id')
-      .references(() => usersSchema.id)
-      .notNull(),
     rating: integer('rating').notNull(),
     comment: text('comment'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
@@ -33,7 +30,6 @@ export const reviewsSchema = pgTable(
   (t) => ({
     ratingCheck: check('reviews_rating_check', sql`${t.rating} BETWEEN 1 AND 5`),
     uniqueServiceReviewer: unique('reviews_service_reviewer_unique').on(t.serviceId, t.reviewerId),
-    reviewedIdIdx: index('reviews_reviewed_id_idx').on(t.reviewedId),
     serviceIdIdx: index('reviews_service_id_idx').on(t.serviceId),
   }),
 );

@@ -12,12 +12,11 @@ import { Review } from '../../domain/models/review.entity';
 import {
   REVIEW_REPOSITORY,
   type RatingSummary,
+  type ReviewRepository,
 } from '../../domain/repositories/review-repository.interface';
-import type { ReviewRepository } from '../../domain/repositories/review-repository.interface';
 import { UniqueReviewViolation } from '../../infra/repositories/drizzle-review.repository';
 import {
   CreateReviewDto,
-  ProviderReviewsPageDto,
   ReviewDto,
   ServiceReviewsPageDto,
   UpdateReviewDto,
@@ -57,10 +56,14 @@ export class ReviewService {
       throw new ForbiddenException('Service owner cannot review their own service');
     }
 
+    const existing = await this.reviewRepository.findByServiceAndReviewer(serviceId, clientId);
+    if (existing) {
+      throw new ConflictException('A review already exists for this service');
+    }
+
     const review = Review.create({
       serviceId,
       reviewerId: clientId,
-      reviewedId: service.userId,
       rating: dto.rating,
       comment: dto.comment,
     });
@@ -82,9 +85,7 @@ export class ReviewService {
     dto: UpdateReviewDto,
   ): Promise<ReviewDto> {
     const review = await this.reviewRepository.findById(reviewId);
-    if (!review) {
-      throw new NotFoundException('Review not found');
-    }
+    if (!review) throw new NotFoundException('Review not found');
 
     if (review.reviewerId !== clientId) {
       throw new ForbiddenException('Only the review author can update it');
@@ -100,9 +101,7 @@ export class ReviewService {
     userId: string,
   ): Promise<ReviewDto> {
     const review = await this.reviewRepository.findByServiceAndReviewer(serviceId, userId);
-    if (!review) {
-      throw new NotFoundException('Review not found for this service');
-    }
+    if (!review) throw new NotFoundException('Review not found for this service');
     return ReviewDto.from(review)!;
   }
 
@@ -127,33 +126,6 @@ export class ReviewService {
       limit: safePageSize,
       hasMore: offset + data.length < total,
     };
-  }
-
-  async getReviewsByProvider(
-    providerId: string,
-    page = 1,
-    pageSize = DEFAULT_PAGE_SIZE,
-  ): Promise<ProviderReviewsPageDto> {
-    const safePageSize = Math.min(Math.max(1, pageSize), MAX_PAGE_SIZE);
-    const safePage = Math.max(1, page);
-    const offset = (safePage - 1) * safePageSize;
-
-    const { data, total } = await this.reviewRepository.findByReviewedId(
-      providerId,
-      { limit: safePageSize, offset },
-    );
-
-    return {
-      data: data.map((r) => ReviewDto.from(r)!),
-      total,
-      page: safePage,
-      limit: safePageSize,
-      hasMore: offset + data.length < total,
-    };
-  }
-
-  async getRatingSummary(providerId: string): Promise<RatingSummary> {
-    return this.reviewRepository.ratingSummary(providerId);
   }
 
   async getRatingSummaryByService(serviceId: string): Promise<RatingSummary> {

@@ -8,7 +8,7 @@ export interface RatingSummary {
   distribution: Record<1 | 2 | 3 | 4 | 5, number>;
 }
 
-export interface FindReviewedPage {
+export interface ReviewsPage {
   data: Review[];
   total: number;
 }
@@ -21,11 +21,6 @@ export interface ReviewRepository {
   findByServiceId(
     serviceId: string,
     options: { limit: number; offset: number },
-  ): Promise<FindReviewedPage>;
-  findByReviewedId(
-    reviewedId: string,
-    options: { limit: number; offset: number },
-  ): Promise<FindReviewedPage>;
-  ratingSummary(reviewedId: string): Promise<RatingSummary>;
+  ): Promise<ReviewsPage>;
   ratingSummaryByService(serviceId: string): Promise<RatingSummary>;
 }

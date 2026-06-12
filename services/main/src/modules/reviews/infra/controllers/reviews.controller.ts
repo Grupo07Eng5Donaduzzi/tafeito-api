@@ -18,7 +18,6 @@ import { HateoasItem, HateoasList } from '@shared/infra/hateoas';
 import { ReviewService } from '../../application/services/review.service';
 import {
   CreateReviewDto,
-  ProviderReviewsPageDto,
   ReviewDto,
   ServiceReviewsPageDto,
   UpdateReviewDto,
@@ -59,7 +58,6 @@ export class ReviewsController {
       self: { href: `/reviews/services/${item.serviceId}/my`, method: 'GET' },
       update: { href: `/reviews/${item.id}`, method: 'PATCH' },
       service: { href: `/services/${item.serviceId}`, method: 'GET' },
-      provider: { href: `/reviews/provider/${item.reviewedId}`, method: 'GET' },
     }),
   })
   @Get('services/:serviceId/my')
@@ -86,32 +84,6 @@ export class ReviewsController {
     @Query('_size', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
   ): Promise<ServiceReviewsPageDto> {
     return this.reviewService.getReviewsByService(serviceId, page, pageSize);
-  }
-
-  @ApiOperation({ summary: 'List all reviews for a provider' })
-  @HateoasList<ReviewDto>({
-    basePath: '/reviews/provider',
-    itemLinks: (item) => ({
-      self: { href: `/reviews/services/${item.serviceId}/my`, method: 'GET' },
-      update: { href: `/reviews/${item.id}`, method: 'PATCH' },
-      service: { href: `/services/${item.serviceId}`, method: 'GET' },
-    }),
-  })
-  @Get('provider/:providerId')
-  async getByProvider(
-    @Param('providerId', ParseUUIDPipe) providerId: string,
-    @Query('_page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('_size', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
-  ): Promise<ProviderReviewsPageDto> {
-    return this.reviewService.getReviewsByProvider(providerId, page, pageSize);
-  }
-
-  @ApiOperation({ summary: 'Get rating summary for a provider' })
-  @Get('provider/:providerId/summary')
-  async getProviderSummary(
-    @Param('providerId', ParseUUIDPipe) providerId: string,
-  ): Promise<RatingSummary> {
-    return this.reviewService.getRatingSummary(providerId);
   }
 
   @ApiOperation({ summary: 'Get rating summary for a service' })

@@ -4,9 +4,9 @@ import { and, count, desc, eq } from 'drizzle-orm';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
 import { Review } from '../../domain/models/review.entity';
 import type {
-  FindReviewedPage,
   RatingSummary,
   ReviewRepository,
+  ReviewsPage,
 } from '../../domain/repositories/review-repository.interface';
 import { reviewsSchema } from '../schemas/review.schema';
 
@@ -38,7 +38,6 @@ export class DrizzleReviewRepository implements ReviewRepository {
         .values({
           serviceId: review.serviceId,
           reviewerId: review.reviewerId,
-          reviewedId: review.reviewedId,
           rating: review.rating,
           comment: review.comment ?? null,
           createdAt: new Date(),
@@ -74,7 +73,6 @@ export class DrizzleReviewRepository implements ReviewRepository {
       .from(reviewsSchema)
       .where(eq(reviewsSchema.id, id))
       .limit(1);
-
     return result[0] ? this.mapToEntity(result[0]) : null;
   }
 
@@ -84,14 +82,13 @@ export class DrizzleReviewRepository implements ReviewRepository {
       .from(reviewsSchema)
       .where(and(eq(reviewsSchema.serviceId, serviceId), eq(reviewsSchema.reviewerId, reviewerId)))
       .limit(1);
-
     return result[0] ? this.mapToEntity(result[0]) : null;
   }
 
   async findByServiceId(
     serviceId: string,
     options: { limit: number; offset: number },
-  ): Promise<FindReviewedPage> {
+  ): Promise<ReviewsPage> {
     const [rows, totalRow] = await Promise.all([
       this.drizzleService.db
         .select()
@@ -110,34 +107,6 @@ export class DrizzleReviewRepository implements ReviewRepository {
       data: rows.map((row) => this.mapToEntity(row)),
       total: totalRow[0]?.value ?? 0,
     };
-  }
-
-  async findByReviewedId(
-    reviewedId: string,
-    options: { limit: number; offset: number },
-  ): Promise<FindReviewedPage> {
-    const [rows, totalRow] = await Promise.all([
-      this.drizzleService.db
-        .select()
-        .from(reviewsSchema)
-        .where(eq(reviewsSchema.reviewedId, reviewedId))
-        .orderBy(desc(reviewsSchema.createdAt))
-        .limit(options.limit)
-        .offset(options.offset),
-      this.drizzleService.db
-        .select({ value: count() })
-        .from(reviewsSchema)
-        .where(eq(reviewsSchema.reviewedId, reviewedId)),
-    ]);
-
-    return {
-      data: rows.map((row) => this.mapToEntity(row)),
-      total: totalRow[0]?.value ?? 0,
-    };
-  }
-
-  async ratingSummary(reviewedId: string): Promise<RatingSummary> {
-    return this.computeSummary(eq(reviewsSchema.reviewedId, reviewedId));
   }
 
   async ratingSummaryByService(serviceId: string): Promise<RatingSummary> {
@@ -176,7 +145,6 @@ export class DrizzleReviewRepository implements ReviewRepository {
       id: row.id,
       serviceId: row.serviceId,
       reviewerId: row.reviewerId,
-      reviewedId: row.reviewedId,
       rating: row.rating,
       comment: row.comment ?? undefined,
       createdAt: row.createdAt,

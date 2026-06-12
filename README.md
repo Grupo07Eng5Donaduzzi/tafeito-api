@@ -16,7 +16,7 @@ O domínio foi separado em três contextos:
 
 | Microsserviço | Porta padrão | Banco padrão    | Responsabilidade principal                                         |
 | ------------- | ------------ | --------------- | ------------------------------------------------------------------ |
-| `main`        | `4001`       | `tafeito_main`  | Auth, usuários, serviços, orçamentos, propostas, agendas e reviews |
+| `main`        | `4001`       | `tafeito_main`  | Auth, usuários, serviços, orçamentos, propostas e reviews |
 | `payment`     | `4002`       | `tafeito_payment` | Pagamentos PIX via Asaas, webhooks e repasses ao prestador       |
 | `chat`        | `4003`       | `tafeito_chat`  | Mensagens e conversas em tempo real entre cliente e prestador      |
 
@@ -181,7 +181,7 @@ Fluxo recomendado:
 ### `main`
 
 Responsabilidade:
-Gerencia o núcleo do domínio: autenticação, usuários, serviços, orçamentos, propostas, negociações, agendamentos e reviews.
+Gerencia o núcleo do domínio: autenticação, usuários, serviços, orçamentos, propostas, negociações e reviews.
 
 Principais rotas:
 - `POST /v1/auth/register`
@@ -212,12 +212,11 @@ Principais rotas:
 - `POST /v1/negotiations/:proposalId/messages`
 - `POST /v1/negotiations/:proposalId/revisedProposal`
 - `GET /v1/negotiations/:proposalId/messages`
-- `GET /v1/schedules/proposal/:proposalId`
-- `POST /v1/reviews/proposals/:proposalId`
-- `GET /v1/reviews/proposals/:proposalId`
-- `PATCH /v1/reviews/:id`
-- `GET /v1/reviews/provider/:providerId`
-- `GET /v1/reviews/provider/:providerId/summary`
+- `POST /v1/reviews/services/:serviceId`
+- `GET /v1/reviews/services/:serviceId`
+- `GET /v1/reviews/services/:serviceId/my`
+- `GET /v1/reviews/services/:serviceId/summary`
+- `PATCH /v1/reviews/:reviewId`
 
 Comandos:
 

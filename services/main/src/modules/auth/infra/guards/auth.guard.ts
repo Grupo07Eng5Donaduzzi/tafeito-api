@@ -1,75 +1,44 @@
 import {
-  CanActivate,
   ExecutionContext,
   Injectable,
-  InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '@shared/infra/guards/jwt-auth.guard';
 import { UserService } from '@users/application/services/user.service';
-import { Request } from 'express';
-import jwt from 'jsonwebtoken';
-import { AuthJwtPayload } from '../../domain/models/auth-jwt-payload.model';
+
+type HttpRequest = {
+  headers: { authorization?: string };
+  method?: string;
+  path?: string;
+  url?: string;
+  user?: unknown;
+};
 
 @Injectable()
-export class AuthGuard implements CanActivate {
-  constructor(private readonly userService: UserService) {}
-
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    if (context.getType() !== 'http') {
-      return true;
-    }
-
-    const request = context.switchToHttp().getRequest<Request>();
-
-    if (this.isPublicRoute(request)) {
-      return true;
-    }
-
-    const authHeader = request.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Token not provided or invalid');
-    }
-
-    const token = authHeader.substring(7);
-
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      throw new InternalServerErrorException('JWT_SECRET is not configured');
-    }
-
-    try {
-      const payload = jwt.verify(token, jwtSecret) as AuthJwtPayload;
-
-      const user = await this.userService.findById(payload.sub);
-
-      if (!user) {
-        throw new UnauthorizedException('User not found');
-      }
-
-      (request as { user?: unknown }).user = user;
-      return true;
-    } catch (err) {
-      if (
-        err instanceof UnauthorizedException ||
-        err instanceof InternalServerErrorException
-      ) {
-        throw err;
-      }
-      throw new UnauthorizedException('Invalid token');
-    }
+export class AuthGuard extends JwtAuthGuard {
+  constructor(private readonly userService: UserService) {
+    super();
   }
 
-  private isPublicRoute(request: Request): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const allowed = await super.canActivate(context);
+    if (!allowed) return false;
+
+    const request = context.switchToHttp().getRequest<HttpRequest>();
+    if (!request.user) return true;
+
+    const userId = (request.user as { id: string }).id;
+    const user = await this.userService.findById(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+
+    request.user = user;
+    return true;
+  }
+
+  protected isPublicPath(request: HttpRequest): boolean {
     const path = request.path ?? request.url ?? '';
 
-    if (path.startsWith('/docs')) {
-      return true;
-    }
-
-    if (path.startsWith('/uploads')) {
-      return true;
-    }
+    if (path.startsWith('/docs') || path.startsWith('/uploads')) return true;
 
     if (request.method === 'POST') {
       if (
@@ -79,9 +48,7 @@ export class AuthGuard implements CanActivate {
       ) {
         return true;
       }
-      if (path.includes('/payments/webhook')) {
-        return true;
-      }
+      if (path.includes('/payments/webhook')) return true;
     }
 
     return false;
