@@ -51,17 +51,12 @@ export class ProposalService {
     if (budgetRequest.userId === providerId) {
       throw new ForbiddenException('The requester cannot create a proposal for their own request');
     }
-    const provider = await this.userService.findById(providerId);
-    if (!provider) throw new NotFoundException('Provider not found');
-    if (!provider.hourlyRate || provider.hourlyRate <= 0) {
-      throw new BadRequestException('Provider must set a positive hourly rate before sending proposals');
-    }
+
     const proposal = Proposal.create({
       requestId: dto.requestId,
       clientId: budgetRequest.userId,
       providerId,
-      estimatedHours: dto.estimatedHours,
-      hourlyRate: provider.hourlyRate,
+      amount: dto.amount,
     });
     await this.proposalRepository.create(proposal);
     const created = await this.proposalRepository.findByRequestAndProvider(dto.requestId, providerId);

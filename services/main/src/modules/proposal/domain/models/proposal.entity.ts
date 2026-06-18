@@ -1,4 +1,4 @@
-﻿import { v4 as uuid } from 'uuid';
+import { v4 as uuid } from 'uuid';
 
 export enum ProposalStatus {
   PENDING = 'PENDING',
@@ -21,8 +21,6 @@ export class Proposal {
   private _requestId: string;
   private _clientId: string;
   private _providerId: string;
-  private _estimatedHours: number;
-  private _hourlyRate: number;
   private _amount: number;
   private _status: ProposalStatus;
   private _rejectionReason?: string;
@@ -46,8 +44,6 @@ export class Proposal {
   get requestId(): string { return this._requestId; }
   get clientId(): string { return this._clientId; }
   get providerId(): string { return this._providerId; }
-  get estimatedHours(): number { return this._estimatedHours; }
-  get hourlyRate(): number { return this._hourlyRate; }
   get amount(): number { return this._amount; }
   get status(): ProposalStatus { return this._status; }
   get rejectionReason(): string | undefined { return this._rejectionReason; }
@@ -65,16 +61,13 @@ export class Proposal {
     requestId: string;
     clientId: string;
     providerId: string;
-    estimatedHours: number;
-    hourlyRate: number;
+    amount: number;
   }): Proposal {
     const proposal = new Proposal();
     proposal._requestId = props.requestId;
     proposal._clientId = props.clientId;
     proposal._providerId = props.providerId;
-    proposal._estimatedHours = props.estimatedHours;
-    proposal._hourlyRate = props.hourlyRate;
-    proposal._amount = props.estimatedHours * props.hourlyRate;
+    proposal._amount = props.amount;
     proposal._status = ProposalStatus.PENDING;
     proposal._canResubmit = true;
     return proposal;
@@ -85,8 +78,6 @@ export class Proposal {
     requestId: string;
     clientId: string;
     providerId: string;
-    estimatedHours: number;
-    hourlyRate: number;
     amount: number;
     status: ProposalStatus;
     rejectionReason?: string;
@@ -104,8 +95,6 @@ export class Proposal {
     proposal._requestId = props.requestId;
     proposal._clientId = props.clientId;
     proposal._providerId = props.providerId;
-    proposal._estimatedHours = props.estimatedHours;
-    proposal._hourlyRate = props.hourlyRate;
     proposal._amount = props.amount;
     proposal._status = props.status;
     proposal._rejectionReason = props.rejectionReason;
@@ -165,12 +154,11 @@ export class Proposal {
     this._canResubmit = false;
   }
 
-  updateEstimate(estimatedHours: number): void {
+  updateAmount(amount: number): void {
     if (this._status !== ProposalStatus.NEGOTIATING) {
-      throw new Error('Cannot update estimate for a proposal that is not NEGOTIATING');
+      throw new Error('Cannot update amount for a proposal that is not NEGOTIATING');
     }
-    this._estimatedHours = estimatedHours;
-    this._amount = estimatedHours * this._hourlyRate;
+    this._amount = amount;
   }
 
   providerConfirm(): void {

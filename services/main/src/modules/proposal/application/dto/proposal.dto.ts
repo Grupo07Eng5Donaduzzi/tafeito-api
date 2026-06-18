@@ -18,7 +18,7 @@ export class CreateProposalDto {
 
   @IsNumber()
   @Min(0.01)
-  estimatedHours: number;
+  amount: number;
 }
 
 export class RejectProposalDto {
@@ -45,7 +45,7 @@ export class CreateNegotiationMessageDto {
 export class SendRevisedProposalDto {
   @IsNumber()
   @Min(0.01)
-  estimatedHours: number;
+  amount: number;
 
   @IsString()
   message: string;
@@ -56,8 +56,6 @@ export class ProposalDto {
   requestId: string;
   clientId: string;
   providerId: string;
-  estimatedHours: number;
-  hourlyRate: number;
   amount: number;
   status: ProposalStatus;
   rejectionReason?: string;
@@ -78,8 +76,6 @@ export class ProposalDto {
     dto.requestId = proposal.requestId;
     dto.clientId = proposal.clientId;
     dto.providerId = proposal.providerId;
-    dto.estimatedHours = proposal.estimatedHours;
-    dto.hourlyRate = proposal.hourlyRate;
     dto.amount = proposal.amount;
     dto.status = proposal.status;
     dto.rejectionReason = proposal.rejectionReason;

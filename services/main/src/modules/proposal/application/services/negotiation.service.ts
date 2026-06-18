@@ -83,7 +83,7 @@ export class NegotiationService {
       throw new BadRequestException('Proposal is not under negotiation');
     }
 
-    proposal.updateEstimate(dto.estimatedHours);
+    proposal.updateAmount(dto.amount);
     await this.proposalRepository.update(proposal);
 
     const message = NegotiationMessage.create({

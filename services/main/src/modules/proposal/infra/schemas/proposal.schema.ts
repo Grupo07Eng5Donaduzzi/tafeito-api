@@ -28,8 +28,6 @@ export const proposalsSchema = pgTable('proposals', {
   requestId: uuid('request_id').references(() => budgetRequestsSchema.id).notNull(),
   clientId: uuid('client_id').references(() => usersSchema.id).notNull(),
   providerId: uuid('provider_id').references(() => usersSchema.id).notNull(),
-  estimatedHours: numeric('estimated_hours', { precision: 10, scale: 2 }).notNull(),
-  hourlyRate: numeric('hourly_rate', { precision: 10, scale: 2 }).notNull(),
   amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
   status: proposalStatusEnum('status').notNull().default('PENDING'),
   rejectionReason: text('rejection_reason'),

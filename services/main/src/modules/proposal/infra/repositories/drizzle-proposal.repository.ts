@@ -26,8 +26,6 @@ export class DrizzleProposalRepository implements ProposalRepository {
       requestId: proposal.requestId,
       clientId: proposal.clientId,
       providerId: proposal.providerId,
-      estimatedHours: proposal.estimatedHours.toString(),
-      hourlyRate: proposal.hourlyRate.toString(),
       amount: proposal.amount.toString(),
       status: proposal.status,
       rejectionReason: proposal.rejectionReason,
@@ -48,8 +46,6 @@ export class DrizzleProposalRepository implements ProposalRepository {
       .update(proposalsSchema)
       .set({
         amount: proposal.amount.toString(),
-        estimatedHours: proposal.estimatedHours.toString(),
-        hourlyRate: proposal.hourlyRate.toString(),
         status: proposal.status,
         rejectionReason: proposal.rejectionReason,
         linkedChatId: proposal.linkedChatId,
@@ -166,8 +162,6 @@ export class DrizzleProposalRepository implements ProposalRepository {
       requestId: row.requestId,
       clientId: row.clientId,
       providerId: row.providerId,
-      estimatedHours: parseFloat(row.estimatedHours),
-      hourlyRate: parseFloat(row.hourlyRate),
       amount: parseFloat(row.amount),
       status: row.status as ProposalStatus,
       rejectionReason: row.rejectionReason ?? undefined,
