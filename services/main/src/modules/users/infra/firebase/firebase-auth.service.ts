@@ -151,6 +151,14 @@ export class FirebaseAuthService implements OnModuleInit {
     }
   }
 
+  async changePassword(uid: string, newPassword: string): Promise<void> {
+    try {
+      await this.auth.updateUser(uid, { password: newPassword });
+    } catch (err) {
+      mapFirebaseAdminError(err, 'changePassword');
+    }
+  }
+
   async verifyIdToken(token: string): Promise<admin.auth.DecodedIdToken> {
     return this.auth.verifyIdToken(token);
   }

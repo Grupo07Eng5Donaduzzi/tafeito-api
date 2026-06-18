@@ -7,6 +7,7 @@ import { ForgotPasswordDto } from '../../application/dto/forgot-password.dto';
 import { CreateUserDto } from '@users/application/dto/create-user.dto';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { BecomeProviderDto } from '../../application/dto/become-provider.dto';
+import { ChangePasswordDto } from '../../application/dto/change-password.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -37,6 +38,17 @@ export class AuthController {
     @Body() body: BecomeProviderDto,
   ): Promise<void> {
     await this.authService.becomeProvider(userId, body);
+  }
+
+  @ApiOperation({ summary: 'Alterar senha do usuário autenticado' })
+  @ApiBearerAuth('access-token')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Patch('change-password')
+  async changePassword(
+    @CurrentUser() userId: string,
+    @Body() body: ChangePasswordDto,
+  ): Promise<void> {
+    await this.authService.changePassword(userId, body);
   }
 
   @ApiOperation({ summary: 'Enviar e-mail de recuperação de senha' })

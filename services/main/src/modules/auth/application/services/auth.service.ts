@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { FirebaseAuthService } from '@users/infra/firebase/firebase-auth.service';
@@ -11,6 +13,7 @@ import type { StringValue } from 'ms';
 import jwt from 'jsonwebtoken';
 import { AuthJwtPayload } from '../../domain/models/auth-jwt-payload.model';
 import { BecomeProviderDto } from '../dto/become-provider.dto';
+import { ChangePasswordDto } from '../dto/change-password.dto';
 
 interface JwtModule {
   sign: (payload: AuthJwtPayload, secret: string, options?: any) => string;
@@ -57,6 +60,18 @@ export class AuthService {
     return this.userService.edit(userId, {
       pixKey: dto.pixKey,
     });
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
+    if (dto.newPassword !== dto.confirmNewPassword) {
+      throw new BadRequestException('As senhas não coincidem');
+    }
+
+    const user = await this.userService.findById(userId);
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+
+    await this.firebaseAuthService.signInWithEmailAndPassword(user.email, dto.currentPassword);
+    await this.firebaseAuthService.changePassword(user.firebaseUid, dto.newPassword);
   }
 
   async forgotPassword(email: string): Promise<void> {
