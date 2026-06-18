@@ -27,7 +27,6 @@ export class DrizzleUserRepository implements UserRepository {
         email: user.email,
         identification: user.identification,
         pixKey: user.pixKey ?? null,
-        hourlyRate: user.hourlyRate?.toString(),
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -48,7 +47,6 @@ export class DrizzleUserRepository implements UserRepository {
           email: user.email,
           identification: user.identification,
           pixKey: user.pixKey ?? null,
-          hourlyRate: user.hourlyRate?.toString(),
           updatedAt: new Date(),
         })
         .where(eq(usersSchema.id, user.id!));

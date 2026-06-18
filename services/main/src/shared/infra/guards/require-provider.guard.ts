@@ -7,7 +7,7 @@ export class RequireProviderGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<{ user: UserDto }>();
     const user = request.user;
 
-    if (!user?.hourlyRate) {
+    if (!user?.pixKey) {
       throw new ForbiddenException('Only providers can access this resource');
     }
 

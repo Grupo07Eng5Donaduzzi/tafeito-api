@@ -22,7 +22,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiConsumes, ApiParam } from '@nestjs/swagger';
 
 @ApiTags('Users')
 @ApiBearerAuth('access-token')
@@ -30,6 +30,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiConsumes } from '@nes
 export class UsersController {
   constructor(private readonly userService: UserService) {}
 
+  @ApiOperation({ summary: 'Retorna os dados do usuário autenticado' })
   @Get('me')
   @HateoasItem<UserDto>({
     basePath: '/users',
@@ -45,6 +46,8 @@ export class UsersController {
     return user;
   }
 
+  @ApiOperation({ summary: 'Busca um usuário pelo ID' })
+  @ApiParam({ name: 'id', description: 'UUID do usuário' })
   @Get(':id')
   @HateoasItem<UserDto>({
     basePath: '/users',
@@ -60,6 +63,8 @@ export class UsersController {
     return user;
   }
 
+  @ApiOperation({ summary: 'Atualiza os dados do usuário autenticado' })
+  @ApiParam({ name: 'id', description: 'UUID do usuário' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id')
   async update(
@@ -108,6 +113,8 @@ export class UsersController {
     return this.userService.uploadAvatar(userId, file.filename);
   }
 
+  @ApiOperation({ summary: 'Remove a conta do usuário autenticado' })
+  @ApiParam({ name: 'id', description: 'UUID do usuário' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async remove(

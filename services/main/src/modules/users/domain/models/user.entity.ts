@@ -5,7 +5,6 @@ export class User {
   private _email: string;
   private _identification: string;
   private _pixKey?: string;
-  private _hourlyRate?: number;
   private _avatarUrl?: string;
   private readonly _createdAt?: Date;
   private readonly _updatedAt?: Date;
@@ -38,10 +37,6 @@ export class User {
 
   get pixKey(): string | undefined {
     return this._pixKey;
-  }
-
-  get hourlyRate(): number | undefined {
-    return this._hourlyRate;
   }
 
   get avatarUrl(): string | undefined {
@@ -81,11 +76,6 @@ export class User {
     return this;
   }
 
-  withHourlyRate(hourlyRate?: number): this {
-    this._hourlyRate = hourlyRate;
-    return this;
-  }
-
   withAvatarUrl(avatarUrl?: string): this {
     this._avatarUrl = avatarUrl;
     return this;
@@ -98,7 +88,6 @@ export class User {
     email: string;
     identification: string;
     pixKey?: string | null;
-    hourlyRate?: number | string | null;
     avatarUrl?: string | null;
     createdAt?: Date;
     updatedAt?: Date;
@@ -110,10 +99,6 @@ export class User {
     user._email = props.email;
     user._identification = props.identification;
     user._pixKey = props.pixKey ?? undefined;
-    user._hourlyRate =
-      props.hourlyRate !== undefined && props.hourlyRate !== null
-        ? Number(props.hourlyRate)
-        : undefined;
     user._avatarUrl = props.avatarUrl ?? undefined;
     return user;
   }

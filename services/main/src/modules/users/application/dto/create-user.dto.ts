@@ -1,9 +1,7 @@
 import {
   IsEmail,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
-  IsPositive,
   IsString,
   Matches,
   MinLength,
@@ -39,12 +37,6 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   pixKey?: string;
-
-  @ApiPropertyOptional({ example: 50, description: 'Valor por hora em reais' })
-  @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  hourlyRate?: number;
 }
 
 export class UpdateUserDto {
@@ -80,10 +72,4 @@ export class UpdateUserDto {
   @IsString()
   @IsNotEmpty()
   pixKey?: string;
-
-  @ApiPropertyOptional({ example: 50 })
-  @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  hourlyRate?: number;
 }

@@ -21,9 +21,6 @@ export class UserDto {
   public pixKey: string | undefined;
 
   @ApiPropertyOptional()
-  public hourlyRate: number | undefined;
-
-  @ApiPropertyOptional()
   public avatarUrl: string | undefined;
 
   @ApiPropertyOptional()
@@ -39,7 +36,6 @@ export class UserDto {
     email: string,
     identification: string,
     pixKey: string | undefined,
-    hourlyRate: number | undefined,
     avatarUrl: string | undefined,
     createdAt: Date | undefined,
     updatedAt: Date | undefined,
@@ -50,7 +46,6 @@ export class UserDto {
     this.email = email;
     this.identification = identification;
     this.pixKey = pixKey;
-    this.hourlyRate = hourlyRate;
     this.avatarUrl = avatarUrl;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -65,7 +60,6 @@ export class UserDto {
       user.email,
       user.identification,
       user.pixKey,
-      user.hourlyRate,
       user.avatarUrl,
       user.createdAt,
       user.updatedAt,

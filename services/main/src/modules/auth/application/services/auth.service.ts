@@ -56,7 +56,6 @@ export class AuthService {
   async becomeProvider(userId: string, dto: BecomeProviderDto): Promise<UserDto> {
     return this.userService.edit(userId, {
       pixKey: dto.pixKey,
-      hourlyRate: dto.hourlyRate,
     });
   }
 

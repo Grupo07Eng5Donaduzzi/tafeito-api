@@ -166,7 +166,6 @@ export class UserService {
       email: dto.email,
       identification: dto.identification,
       pixKey: pixKeyTrimmed,
-      hourlyRate: dto.hourlyRate,
     });
 
     await this.userRepository.create(user!);
@@ -210,15 +209,6 @@ export class UserService {
     if (dto.pixKey !== undefined && dto.pixKey != null) {
       this.validatePixKey(dto.pixKey as string);
     }
-    if (dto.hourlyRate !== undefined && dto.hourlyRate != null) {
-      const hourlyRate = Number(dto.hourlyRate);
-      if (Number.isNaN(hourlyRate) || hourlyRate <= 0) {
-        throw new BadRequestException(
-          'Taxa horária deve ser um número positivo',
-        );
-      }
-    }
-
     let emailTrimmed = '';
     if (dto.email !== undefined && dto.email != null) {
       emailTrimmed = (dto.email as string).trim();
@@ -266,12 +256,6 @@ export class UserService {
         provider: true,
       });
       user.withPixKey(pixKeyTrimmed);
-    }
-
-    if (dto.hourlyRate !== undefined) {
-      user.withHourlyRate(
-        dto.hourlyRate === null ? undefined : Number(dto.hourlyRate),
-      );
     }
 
     await this.userRepository.update(user);
