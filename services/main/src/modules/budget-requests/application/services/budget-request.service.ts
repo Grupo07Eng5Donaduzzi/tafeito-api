@@ -50,13 +50,22 @@ export class BudgetRequestService {
     return result.map((s) => this.toDto(s));
   }
 
-  async findAvailableByServiceId(serviceId: string): Promise<BudgetRequestDto[]> {
+  async findAvailableByServiceId(serviceId: string, providerId: string): Promise<BudgetRequestDto[]> {
     if (!serviceId || serviceId.trim().length === 0) {
       throw new BadRequestException('serviceId is required');
     }
 
-    const result = await this.repository.findAvailableByServiceId(serviceId);
+    const result = await this.repository.findAvailableByServiceId(serviceId, providerId);
     return result.map((s) => this.toDto(s));
+  }
+
+  async declineRequest(id: string, providerId: string): Promise<void> {
+    const budgetRequest = await this.repository.findById(id);
+    if (!budgetRequest) throw new NotFoundException('Budget request not found');
+    if (budgetRequest.status !== 'pending') {
+      throw new BadRequestException('Cannot decline a request that is no longer pending');
+    }
+    await this.repository.declineByProvider(id, providerId);
   }
 
   async addPhotos(id: string, userId: string, filenames: string[]): Promise<BudgetRequestDto> {

@@ -3,7 +3,8 @@ import { DrizzleService } from '@shared/infra/database/drizzle.service';
 import { BudgetRequestRepository } from '../../domain/repositories/budget-request-repository.interface';
 import { BudgetRequest } from '../../domain/models/budget-request.entity';
 import { budgetRequestsSchema } from '../schemas/budget-request.schema';
-import { and, eq } from 'drizzle-orm';
+import { providerDeclinesSchema } from '../schemas/provider-decline.schema';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 
 
 @Injectable()
@@ -81,18 +82,57 @@ export class DrizzleBudgetRequestRepository implements BudgetRequestRepository {
 
   async findAvailableByServiceId(
     serviceId: string,
+    providerId: string,
   ): Promise<BudgetRequest[]> {
     const rows = await this.drizzleService.db
-      .select()
+      .select({
+        id: budgetRequestsSchema.id,
+        userId: budgetRequestsSchema.userId,
+        serviceId: budgetRequestsSchema.serviceId,
+        title: budgetRequestsSchema.title,
+        description: budgetRequestsSchema.description,
+        category: budgetRequestsSchema.category,
+        location: budgetRequestsSchema.location,
+        requestDate: budgetRequestsSchema.requestDate,
+        status: budgetRequestsSchema.status,
+        photos: budgetRequestsSchema.photos,
+        cancellationReason: budgetRequestsSchema.cancellationReason,
+        createdAt: budgetRequestsSchema.createdAt,
+        updatedAt: budgetRequestsSchema.updatedAt,
+      })
       .from(budgetRequestsSchema)
+      .leftJoin(
+        providerDeclinesSchema,
+        and(
+          eq(providerDeclinesSchema.budgetRequestId, budgetRequestsSchema.id),
+          eq(providerDeclinesSchema.providerId, providerId),
+        ),
+      )
       .where(
         and(
           eq(budgetRequestsSchema.serviceId, serviceId),
           eq(budgetRequestsSchema.status, 'pending'),
+          isNull(providerDeclinesSchema.id),
+          sql`${budgetRequestsSchema.id} NOT IN (
+            SELECT request_id FROM proposals
+            WHERE provider_id = ${providerId}::uuid
+            AND status != 'CANCELLED'
+          )`,
         ),
       );
 
     return rows.map((row) => BudgetRequest.restore(row)!);
+  }
+
+  async declineByProvider(budgetRequestId: string, providerId: string): Promise<void> {
+    await this.drizzleService.db
+      .insert(providerDeclinesSchema)
+      .values({
+        providerId,
+        budgetRequestId,
+        createdAt: new Date(),
+      })
+      .onConflictDoNothing();
   }
 }
 

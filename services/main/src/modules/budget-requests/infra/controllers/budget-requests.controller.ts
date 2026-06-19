@@ -10,6 +10,7 @@ import {
   Param,
   ParseUUIDPipe,
   Query,
+  UseGuards,
   UseInterceptors,
   UploadedFiles,
   BadRequestException,
@@ -21,6 +22,7 @@ import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 import { CurrentUser } from '@shared/infra/current-user.decorator';
+import { RequireProviderGuard } from '@shared/infra/guards/require-provider.guard';
 import { HateoasItem } from '@shared/infra/hateoas';
 import { BudgetRequestService } from '../../application/services/budget-request.service';
 import { CreateBudgetRequestDto } from '../../application/dto/create-budget-request.dto';
@@ -49,10 +51,14 @@ export class BudgetRequestsController {
     return this.service.findByUserId(userId);
   }
 
-  @ApiOperation({ summary: 'Listar orçamentos disponíveis para um serviço' })
+  @ApiOperation({ summary: 'Listar orçamentos disponíveis para um serviço (somente prestador)' })
   @Get('available')
-  findAvailable(@Query('service_id') serviceId: string) {
-    return this.service.findAvailableByServiceId(serviceId);
+  @UseGuards(RequireProviderGuard)
+  findAvailable(
+    @Query('service_id') serviceId: string,
+    @CurrentUser() providerId: string,
+  ) {
+    return this.service.findAvailableByServiceId(serviceId, providerId);
   }
 
   @ApiOperation({ summary: 'Buscar orçamento por ID' })
@@ -118,6 +124,17 @@ export class BudgetRequestsController {
       throw new BadRequestException('At least one image file is required');
     }
     return this.service.addPhotos(id, userId, files.map((f) => f.filename));
+  }
+
+  @ApiOperation({ summary: 'Prestador recusa/ignora uma solicitação de orçamento' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post(':id/providerDecline')
+  @UseGuards(RequireProviderGuard)
+  async providerDecline(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() providerId: string,
+  ): Promise<void> {
+    await this.service.declineRequest(id, providerId);
   }
 
   @ApiOperation({ summary: 'Cancelar um orçamento' })
