@@ -59,6 +59,10 @@ export class ServiceService {
     return this.repository.findAll();
   }
 
+  async listMine(userId: string): Promise<any[]> {
+    return this.repository.findByUserId(userId);
+  }
+
   async listCategories(): Promise<string[]> {
     return this.repository.findDistinctCategories();
   }

@@ -14,8 +14,10 @@ import {
   proposalsSchema,
   negotiationMessagesSchema,
 } from '../schemas/proposal.schema';
-import { eq, and } from 'drizzle-orm';
+import { alias, eq, and, inArray } from 'drizzle-orm';
 import { budgetRequestsSchema } from '../../../budget-requests/infra/schemas/budget-request.schema';
+import { servicesSchema } from '../../../services/infra/schemas/service.schema';
+import { usersSchema } from '@users/infra/schemas/user.schema';
 
 @Injectable()
 export class DrizzleProposalRepository implements ProposalRepository {
@@ -131,6 +133,76 @@ export class DrizzleProposalRepository implements ProposalRepository {
       .limit(1);
 
     return result[0] ? this.mapToEntity(result[0]) : null;
+  }
+
+  async findByProviderIdWithDetails(providerId: string): Promise<any[]> {
+    const clientUser = alias(usersSchema, 'client_user');
+    return this.drizzleService.db
+      .select({
+        id: proposalsSchema.id,
+        requestId: proposalsSchema.requestId,
+        clientId: proposalsSchema.clientId,
+        providerId: proposalsSchema.providerId,
+        amount: proposalsSchema.amount,
+        status: proposalsSchema.status,
+        rejectionReason: proposalsSchema.rejectionReason,
+        linkedChatId: proposalsSchema.linkedChatId,
+        canResubmit: proposalsSchema.canResubmit,
+        paymentId: proposalsSchema.paymentId,
+        qrCode: proposalsSchema.qrCode,
+        qrCodeBase64: proposalsSchema.qrCodeBase64,
+        ticketUrl: proposalsSchema.ticketUrl,
+        invoiceFile: proposalsSchema.invoiceFile,
+        createdAt: proposalsSchema.createdAt,
+        updatedAt: proposalsSchema.updatedAt,
+        brTitle: budgetRequestsSchema.title,
+        brServiceId: budgetRequestsSchema.serviceId,
+        svcId: servicesSchema.id,
+        svcName: servicesSchema.name,
+        clientUserId: clientUser.id,
+        clientUserName: clientUser.name,
+      })
+      .from(proposalsSchema)
+      .innerJoin(budgetRequestsSchema, eq(proposalsSchema.requestId, budgetRequestsSchema.id))
+      .innerJoin(servicesSchema, eq(budgetRequestsSchema.serviceId, servicesSchema.id))
+      .leftJoin(clientUser, eq(budgetRequestsSchema.userId, clientUser.id))
+      .where(eq(proposalsSchema.providerId, providerId))
+      .orderBy(proposalsSchema.createdAt);
+  }
+
+  async findByClientIdWithDetails(clientId: string): Promise<any[]> {
+    const providerUser = alias(usersSchema, 'provider_user');
+    return this.drizzleService.db
+      .select({
+        id: proposalsSchema.id,
+        requestId: proposalsSchema.requestId,
+        clientId: proposalsSchema.clientId,
+        providerId: proposalsSchema.providerId,
+        amount: proposalsSchema.amount,
+        status: proposalsSchema.status,
+        rejectionReason: proposalsSchema.rejectionReason,
+        linkedChatId: proposalsSchema.linkedChatId,
+        canResubmit: proposalsSchema.canResubmit,
+        paymentId: proposalsSchema.paymentId,
+        qrCode: proposalsSchema.qrCode,
+        qrCodeBase64: proposalsSchema.qrCodeBase64,
+        ticketUrl: proposalsSchema.ticketUrl,
+        invoiceFile: proposalsSchema.invoiceFile,
+        createdAt: proposalsSchema.createdAt,
+        updatedAt: proposalsSchema.updatedAt,
+        brTitle: budgetRequestsSchema.title,
+        brServiceId: budgetRequestsSchema.serviceId,
+        svcId: servicesSchema.id,
+        svcName: servicesSchema.name,
+        providerUserId: providerUser.id,
+        providerUserName: providerUser.name,
+      })
+      .from(proposalsSchema)
+      .innerJoin(budgetRequestsSchema, eq(proposalsSchema.requestId, budgetRequestsSchema.id))
+      .innerJoin(servicesSchema, eq(budgetRequestsSchema.serviceId, servicesSchema.id))
+      .leftJoin(providerUser, eq(proposalsSchema.providerId, providerUser.id))
+      .where(eq(proposalsSchema.clientId, clientId))
+      .orderBy(proposalsSchema.createdAt);
   }
 
   async findCompletedByServiceAndClient(

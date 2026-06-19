@@ -14,6 +14,8 @@ export interface ProposalRepository {
   findByRequestId(requestId: string): Promise<Proposal[]>;
   findByClientId(clientId: string): Promise<Proposal[]>;
   findByProviderId(providerId: string): Promise<Proposal[]>;
+  findByProviderIdWithDetails(providerId: string): Promise<any[]>;
+  findByClientIdWithDetails(clientId: string): Promise<any[]>;
   findByRequestAndProvider(
     requestId: string,
     providerId: string,

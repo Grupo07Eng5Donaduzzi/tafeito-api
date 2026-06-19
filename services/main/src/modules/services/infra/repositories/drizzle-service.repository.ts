@@ -7,6 +7,20 @@ import { reviewsSchema } from '@reviews/infra/schemas/review.schema';
 import { UpdateServiceDto } from '../../application/dto/update-service.dto';
 import { PricingType } from '../../application/dto/create-service.dto';
 
+const serviceWithProviderSelect = {
+  id: servicesSchema.id,
+  userId: servicesSchema.userId,
+  name: servicesSchema.name,
+  description: servicesSchema.description,
+  category: servicesSchema.category,
+  price: servicesSchema.price,
+  pricingType: servicesSchema.pricingType,
+  photo: servicesSchema.photo,
+  createdAt: servicesSchema.createdAt,
+  updatedAt: servicesSchema.updatedAt,
+  provider: { id: usersSchema.id, name: usersSchema.name },
+};
+
 @Injectable()
 export class DrizzleServiceRepository {
   constructor(private readonly drizzleService: DrizzleService) {}
@@ -49,8 +63,9 @@ export class DrizzleServiceRepository {
 
     const [data, [{ total }]] = await Promise.all([
       this.drizzleService.db
-        .select()
+        .select(serviceWithProviderSelect)
         .from(servicesSchema)
+        .leftJoin(usersSchema, eq(servicesSchema.userId, usersSchema.id))
         .where(where)
         .limit(limit)
         .offset(offset),
@@ -61,6 +76,14 @@ export class DrizzleServiceRepository {
     ]);
 
     return { data, total };
+  }
+
+  async findByUserId(userId: string): Promise<any[]> {
+    return this.drizzleService.db
+      .select(serviceWithProviderSelect)
+      .from(servicesSchema)
+      .leftJoin(usersSchema, eq(servicesSchema.userId, usersSchema.id))
+      .where(eq(servicesSchema.userId, userId));
   }
 
   async findByCategory(category: string): Promise<any[]> {

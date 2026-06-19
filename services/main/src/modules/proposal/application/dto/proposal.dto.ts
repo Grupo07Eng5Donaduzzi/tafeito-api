@@ -68,6 +68,14 @@ export class ProposalDto {
   invoiceFile?: string;
   createdAt: Date;
   updatedAt: Date;
+  budgetRequest?: {
+    id: string;
+    title: string;
+    serviceId: string;
+    service: { id: string; name: string } | null;
+    client: { id: string; name: string } | null;
+    provider: { id: string; name: string } | null;
+  };
 
   static from(proposal: Proposal | null): ProposalDto | null {
     if (!proposal) return null;
@@ -88,6 +96,35 @@ export class ProposalDto {
     dto.invoiceFile = proposal.invoiceFile;
     dto.createdAt = proposal.createdAt!;
     dto.updatedAt = proposal.updatedAt!;
+    return dto;
+  }
+
+  static fromRaw(row: any): ProposalDto {
+    const dto = new ProposalDto();
+    dto.id = row.id;
+    dto.requestId = row.requestId;
+    dto.clientId = row.clientId;
+    dto.providerId = row.providerId;
+    dto.amount = parseFloat(row.amount);
+    dto.status = row.status;
+    dto.rejectionReason = row.rejectionReason ?? undefined;
+    dto.linkedChatId = row.linkedChatId ?? undefined;
+    dto.canResubmit = row.canResubmit;
+    dto.paymentId = row.paymentId ?? undefined;
+    dto.qrCode = row.qrCode ?? undefined;
+    dto.qrCodeBase64 = row.qrCodeBase64 ?? undefined;
+    dto.ticketUrl = row.ticketUrl ?? undefined;
+    dto.invoiceFile = row.invoiceFile ?? undefined;
+    dto.createdAt = row.createdAt;
+    dto.updatedAt = row.updatedAt;
+    dto.budgetRequest = {
+      id: row.requestId,
+      title: row.brTitle ?? '',
+      serviceId: row.brServiceId ?? '',
+      service: row.svcId ? { id: row.svcId, name: row.svcName } : null,
+      client: row.clientUserId ? { id: row.clientUserId, name: row.clientUserName } : null,
+      provider: row.providerUserId ? { id: row.providerUserId, name: row.providerUserName } : null,
+    };
     return dto;
   }
 }
