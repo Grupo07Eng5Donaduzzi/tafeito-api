@@ -61,6 +61,13 @@ export class ServicesController {
     return this.serviceService.listCategories();
   }
 
+  @ApiOperation({ summary: 'Listar serviços do prestador autenticado' })
+  @Get('mine')
+  @UseGuards(RequireProviderGuard)
+  async findMine(@CurrentUser() userId: string): Promise<any[]> {
+    return this.serviceService.listMine(userId);
+  }
+
   @ApiOperation({ summary: 'Buscar detalhes de um serviço com provedor e avaliações' })
   @Get(':id')
   async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<any> {

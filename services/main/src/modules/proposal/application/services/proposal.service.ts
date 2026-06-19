@@ -227,13 +227,13 @@ export class ProposalService {
   }
 
   async getProposalsByProvider(providerId: string): Promise<ProposalDto[]> {
-    const proposals = await this.proposalRepository.findByProviderId(providerId);
-    return proposals.map((p) => ProposalDto.from(p)!);
+    const rows = await this.proposalRepository.findByProviderIdWithDetails(providerId);
+    return rows.map(ProposalDto.fromRaw);
   }
 
   async getProposalsByClient(clientId: string): Promise<ProposalDto[]> {
-    const proposals = await this.proposalRepository.findByClientId(clientId);
-    return proposals.map((p) => ProposalDto.from(p)!);
+    const rows = await this.proposalRepository.findByClientIdWithDetails(clientId);
+    return rows.map(ProposalDto.fromRaw);
   }
 
   async getProposal(proposalId: string, userId?: string): Promise<ProposalDto> {
