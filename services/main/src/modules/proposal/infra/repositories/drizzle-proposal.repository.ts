@@ -14,7 +14,8 @@ import {
   proposalsSchema,
   negotiationMessagesSchema,
 } from '../schemas/proposal.schema';
-import { alias, eq, and, inArray } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
+import { eq, and, inArray } from 'drizzle-orm';
 import { budgetRequestsSchema } from '../../../budget-requests/infra/schemas/budget-request.schema';
 import { servicesSchema } from '../../../services/infra/schemas/service.schema';
 import { usersSchema } from '@users/infra/schemas/user.schema';
