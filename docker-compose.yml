@@ -72,6 +72,7 @@ services:
       PORT: 4001
       JWT_SECRET: super-secret
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/tafeito_main
+      CHAT_DATABASE_URL: postgres://postgres:postgres@postgres:5432/tafeito_chat
       RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
       FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
       FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
