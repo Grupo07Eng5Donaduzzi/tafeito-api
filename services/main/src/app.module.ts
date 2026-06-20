@@ -9,6 +9,7 @@ import { ServicesModule } from './modules/services/services.module';
 import { BudgetRequestsModule } from './modules/budget-requests/budget-requests.module';
 import { ProposalModule } from './modules/proposal/proposal.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
     BudgetRequestsModule,
     ProposalModule,
     ReviewsModule,
+    AdminModule,
   ],
   providers: [
     {

@@ -8,6 +8,7 @@ export const usersSchema = pgTable('users', {
   identification: text('identification').notNull().unique(),
   pixKey: text('pix_key'),
   avatarUrl: text('avatar_url'),
+  status: text('status').notNull().default('active'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
 });

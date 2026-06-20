@@ -6,6 +6,7 @@ export class User {
   private _identification: string;
   private _pixKey?: string;
   private _avatarUrl?: string;
+  private _status: string;
   private readonly _createdAt?: Date;
   private readonly _updatedAt?: Date;
 
@@ -41,6 +42,10 @@ export class User {
 
   get avatarUrl(): string | undefined {
     return this._avatarUrl;
+  }
+
+  get status(): string {
+    return this._status;
   }
 
   get createdAt(): Date | undefined {
@@ -89,6 +94,7 @@ export class User {
     identification: string;
     pixKey?: string | null;
     avatarUrl?: string | null;
+    status?: string | null;
     createdAt?: Date;
     updatedAt?: Date;
   }): User | null {
@@ -100,6 +106,7 @@ export class User {
     user._identification = props.identification;
     user._pixKey = props.pixKey ?? undefined;
     user._avatarUrl = props.avatarUrl ?? undefined;
+    user._status = props.status ?? 'active';
     return user;
   }
 }
