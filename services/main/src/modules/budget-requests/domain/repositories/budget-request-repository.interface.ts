@@ -12,4 +12,3 @@ export interface BudgetRequestRepository {
   findAll(): Promise<BudgetRequest[]>;
   declineByProvider(budgetRequestId: string, providerId: string): Promise<void>;
 }
-

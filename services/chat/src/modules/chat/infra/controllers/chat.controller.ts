@@ -38,8 +38,6 @@ export class ChatController {
     private readonly conversationService: ConversationService,
   ) {}
 
-  // ── Conversations ──────────────────────────────────────────────────────────
-
   @ApiOperation({ summary: 'Garantir que existe uma conversa entre o usuário autenticado e outro usuário' })
   @Post('conversations/ensure')
   async ensureConversation(
@@ -75,8 +73,6 @@ export class ChatController {
   ): Promise<ConversationResponseDto> {
     return this.conversationService.getConversationById(id);
   }
-
-  // ── Messages ───────────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: 'Enviar uma nova mensagem (cria conversa automaticamente se necessario)' })
   @Post('messages')

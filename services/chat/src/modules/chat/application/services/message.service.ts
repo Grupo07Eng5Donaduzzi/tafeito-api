@@ -43,7 +43,6 @@ export class MessageService {
     return this.toDto(created!);
   }
 
-  // Used by WebSocket gateway — serviceId field contains the conversationId (legacy naming).
   async sendMessageAsUser(
     dto: Omit<SendMessageDto, 'senderId'>,
     senderId: string,

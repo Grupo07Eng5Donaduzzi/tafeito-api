@@ -28,8 +28,6 @@ type AdminRequest = {
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  // ─── Users ───────────────────────────────────────────────────────────────
-
   @ApiOperation({ summary: 'Listar todos os usuários' })
   @Get('users')
   listUsers() {
@@ -70,8 +68,6 @@ export class AdminController {
     return { message: 'Usuário ativado' };
   }
 
-  // ─── Chats ───────────────────────────────────────────────────────────────
-
   @ApiOperation({ summary: 'Listar conversas (propostas com chat vinculado)' })
   @Get('chats')
   listChats() {
@@ -87,8 +83,6 @@ export class AdminController {
   ) {
     return this.adminService.getChatMessages(id, page, pageSize);
   }
-
-  // ─── Payments ────────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: 'Listar todos os pagamentos' })
   @Get('payments')
@@ -117,8 +111,6 @@ export class AdminController {
     await this.adminService.refundPayment(id, pixKey, req.admin.id);
     return { message: 'Reembolso registrado' };
   }
-
-  // ─── Audit ───────────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: 'Listar logs de auditoria' })
   @Get('audit')

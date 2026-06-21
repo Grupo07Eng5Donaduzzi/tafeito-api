@@ -107,7 +107,6 @@ export class Proposal {
     this._rejectionReason = reason;
   }
 
-  // Provider submits a revised amount → proposal goes back to PENDING for client to review
   revise(amount: number): void {
     if (this._status !== ProposalStatus.NEGOTIATING) {
       throw new Error('Cannot revise a proposal that is not NEGOTIATING');
