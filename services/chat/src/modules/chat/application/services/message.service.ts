@@ -43,87 +43,28 @@ export class MessageService {
     return this.toDto(created!);
   }
 
+  // Used by WebSocket gateway — serviceId field contains the conversationId (legacy naming).
   async sendMessageAsUser(
     dto: Omit<SendMessageDto, 'senderId'>,
     senderId: string,
   ): Promise<MessageResponseDto> {
-    let { conversationId } = dto;
+    const conversationId = dto.conversationId ?? dto.serviceId;
 
-    if (!conversationId) {
-      const existing = await this.conversationService.getServiceConversations(dto.serviceId);
-      const matched = existing.find(
-        (c) => c.participantIds.includes(senderId) && c.participantIds.includes(dto.recipientId),
-      );
-      if (matched) {
-        conversationId = matched.id;
-      } else {
-        const created = await this.conversationService.createConversation(
-          dto.serviceId,
-          senderId,
-          [senderId, dto.recipientId],
-        );
-        conversationId = created.id;
-      }
+    const conversation = await this.conversationService.getConversationById(conversationId);
+    if (!conversation.participantIds.includes(senderId)) {
+      throw new ForbiddenException('You cannot send messages in this chat');
     }
 
-    return this.sendMessage({ ...dto, conversationId, senderId });
-  }
+    const message = await this.sendMessage({
+      serviceId: conversationId,
+      conversationId,
+      senderId,
+      recipientId: dto.recipientId,
+      content: dto.content,
+    });
 
-  async getServiceMessages(
-    serviceId: string,
-    page: number = 1,
-    pageSize: number = 50,
-  ): Promise<MessageListDto> {
-    const offset = (page - 1) * pageSize;
-    const messages = await this.messageRepository.findByServiceId(
-      serviceId,
-      pageSize,
-      offset,
-    );
-    const total = await this.messageRepository.countByServiceId(serviceId);
-
-    return {
-      data: messages.map((msg) => this.toDto(msg)),
-      total,
-      page,
-      pageSize,
-      hasMore: page * pageSize < total,
-    };
-  }
-
-  async getServiceMessagesForUser(
-    serviceId: string,
-    userId: string,
-    page: number = 1,
-    pageSize: number = 50,
-  ): Promise<MessageListDto> {
-    const offset = (page - 1) * pageSize;
-    const messages = await this.messageRepository.findByServiceIdAndParticipant(
-      serviceId,
-      userId,
-      pageSize,
-      offset,
-    );
-    const total = await this.messageRepository.countByServiceIdAndParticipant(
-      serviceId,
-      userId,
-    );
-
-    return {
-      data: messages.map((msg) => this.toDto(msg)),
-      total,
-      page,
-      pageSize,
-      hasMore: page * pageSize < total,
-    };
-  }
-
-  async getMessageById(id: string): Promise<MessageResponseDto> {
-    const message = await this.messageRepository.findById(id);
-    if (!message) {
-      throw new NotFoundException('Message not found');
-    }
-    return this.toDto(message);
+    await this.conversationService.updateLastMessage(conversationId);
+    return message;
   }
 
   async sendConversationMessage(
@@ -143,7 +84,7 @@ export class MessageService {
     }
 
     const message = await this.sendMessage({
-      serviceId: conversation.serviceId,
+      serviceId: conversationId,
       conversationId,
       senderId,
       recipientId,
@@ -192,19 +133,6 @@ export class MessageService {
     return this.toDto(message);
   }
 
-  async markAsRead(messageId: string): Promise<MessageResponseDto> {
-    const message = await this.messageRepository.findById(messageId);
-    if (!message) {
-      throw new NotFoundException('Message not found');
-    }
-
-    message.markAsRead();
-    await this.messageRepository.update(message);
-
-    const updated = await this.messageRepository.findById(messageId);
-    return this.toDto(updated!);
-  }
-
   async markAsReadForUser(
     messageId: string,
     userId: string,
@@ -213,19 +141,6 @@ export class MessageService {
     this.assertRecipient(message, userId);
 
     message.markAsRead();
-    await this.messageRepository.update(message);
-
-    const updated = await this.messageRepository.findById(messageId);
-    return this.toDto(updated!);
-  }
-
-  async markAsDelivered(messageId: string): Promise<MessageResponseDto> {
-    const message = await this.messageRepository.findById(messageId);
-    if (!message) {
-      throw new NotFoundException('Message not found');
-    }
-
-    message.markAsDelivered();
     await this.messageRepository.update(message);
 
     const updated = await this.messageRepository.findById(messageId);
@@ -244,15 +159,6 @@ export class MessageService {
 
     const updated = await this.messageRepository.findById(messageId);
     return this.toDto(updated!);
-  }
-
-  async deleteMessage(messageId: string): Promise<void> {
-    const message = await this.messageRepository.findById(messageId);
-    if (!message) {
-      throw new NotFoundException('Message not found');
-    }
-
-    await this.messageRepository.delete(messageId);
   }
 
   async deleteMessageForUser(messageId: string, userId: string): Promise<void> {

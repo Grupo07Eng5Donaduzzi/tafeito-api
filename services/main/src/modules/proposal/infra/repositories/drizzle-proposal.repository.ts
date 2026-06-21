@@ -1,21 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
-import {
-  Proposal,
-  NegotiationMessage,
-  ProposalStatus,
-  SenderRole,
-} from '../../domain/models/proposal.entity';
-import {
-  ProposalRepository,
-  NegotiationMessageRepository,
-} from '../../domain/repositories/proposal-repository.interface';
-import {
-  proposalsSchema,
-  negotiationMessagesSchema,
-} from '../schemas/proposal.schema';
+import { Proposal, ProposalStatus } from '../../domain/models/proposal.entity';
+import { ProposalRepository } from '../../domain/repositories/proposal-repository.interface';
+import { proposalsSchema } from '../schemas/proposal.schema';
 import { alias } from 'drizzle-orm/pg-core';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { budgetRequestsSchema } from '../../../budget-requests/infra/schemas/budget-request.schema';
 import { servicesSchema } from '../../../services/infra/schemas/service.schema';
 import { usersSchema } from '@users/infra/schemas/user.schema';
@@ -32,7 +21,6 @@ export class DrizzleProposalRepository implements ProposalRepository {
       amount: proposal.amount.toString(),
       status: proposal.status,
       rejectionReason: proposal.rejectionReason,
-      linkedChatId: proposal.linkedChatId,
       canResubmit: proposal.canResubmit,
       paymentId: proposal.paymentId,
       qrCode: proposal.qrCode,
@@ -51,7 +39,6 @@ export class DrizzleProposalRepository implements ProposalRepository {
         amount: proposal.amount.toString(),
         status: proposal.status,
         rejectionReason: proposal.rejectionReason,
-        linkedChatId: proposal.linkedChatId,
         canResubmit: proposal.canResubmit,
         paymentId: proposal.paymentId,
         qrCode: proposal.qrCode,
@@ -136,6 +123,22 @@ export class DrizzleProposalRepository implements ProposalRepository {
     return result[0] ? this.mapToEntity(result[0]) : null;
   }
 
+  async findNegotiatingBetween(clientId: string, providerId: string): Promise<Proposal[]> {
+    const result = await this.drizzleService.db
+      .select()
+      .from(proposalsSchema)
+      .where(
+        and(
+          eq(proposalsSchema.clientId, clientId),
+          eq(proposalsSchema.providerId, providerId),
+          eq(proposalsSchema.status, ProposalStatus.NEGOTIATING),
+        ),
+      )
+      .orderBy(proposalsSchema.updatedAt);
+
+    return result.map(this.mapToEntity);
+  }
+
   async findByProviderIdWithDetails(providerId: string): Promise<any[]> {
     const clientUser = alias(usersSchema, 'client_user');
     return this.drizzleService.db
@@ -147,7 +150,6 @@ export class DrizzleProposalRepository implements ProposalRepository {
         amount: proposalsSchema.amount,
         status: proposalsSchema.status,
         rejectionReason: proposalsSchema.rejectionReason,
-        linkedChatId: proposalsSchema.linkedChatId,
         canResubmit: proposalsSchema.canResubmit,
         paymentId: proposalsSchema.paymentId,
         qrCode: proposalsSchema.qrCode,
@@ -182,7 +184,6 @@ export class DrizzleProposalRepository implements ProposalRepository {
         amount: proposalsSchema.amount,
         status: proposalsSchema.status,
         rejectionReason: proposalsSchema.rejectionReason,
-        linkedChatId: proposalsSchema.linkedChatId,
         canResubmit: proposalsSchema.canResubmit,
         paymentId: proposalsSchema.paymentId,
         qrCode: proposalsSchema.qrCode,
@@ -238,7 +239,6 @@ export class DrizzleProposalRepository implements ProposalRepository {
       amount: parseFloat(row.amount),
       status: row.status as ProposalStatus,
       rejectionReason: row.rejectionReason ?? undefined,
-      linkedChatId: row.linkedChatId ?? undefined,
       canResubmit: row.canResubmit,
       paymentId: row.paymentId ?? undefined,
       qrCode: row.qrCode ?? undefined,
@@ -247,61 +247,6 @@ export class DrizzleProposalRepository implements ProposalRepository {
       invoiceFile: row.invoiceFile ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-    });
-  }
-}
-
-@Injectable()
-export class DrizzleNegotiationMessageRepository
-  implements NegotiationMessageRepository
-{
-  constructor(private readonly drizzleService: DrizzleService) {}
-
-  async create(message: NegotiationMessage): Promise<NegotiationMessage> {
-    const [inserted] = await this.drizzleService.db
-      .insert(negotiationMessagesSchema)
-      .values({
-        proposalId: message.proposalId,
-        senderRole: message.senderRole,
-        senderUserId: message.senderUserId,
-        message: message.message,
-        revisedAmount: message.revisedAmount?.toString(),
-        createdAt: new Date(),
-      })
-      .returning();
-
-    return this.mapToEntity(inserted);
-  }
-
-  async findByProposalId(proposalId: string): Promise<NegotiationMessage[]> {
-    const result = await this.drizzleService.db
-      .select()
-      .from(negotiationMessagesSchema)
-      .where(eq(negotiationMessagesSchema.proposalId, proposalId))
-      .orderBy(negotiationMessagesSchema.createdAt);
-
-    return result.map(this.mapToEntity);
-  }
-
-  async findById(id: string): Promise<NegotiationMessage | null> {
-    const result = await this.drizzleService.db
-      .select()
-      .from(negotiationMessagesSchema)
-      .where(eq(negotiationMessagesSchema.id, id))
-      .limit(1);
-
-    return result[0] ? this.mapToEntity(result[0]) : null;
-  }
-
-  private mapToEntity(row: any): NegotiationMessage {
-    return NegotiationMessage.restore({
-      id: row.id,
-      proposalId: row.proposalId,
-      senderRole: row.senderRole as SenderRole,
-      senderUserId: row.senderUserId,
-      message: row.message,
-      revisedAmount: row.revisedAmount ? parseFloat(row.revisedAmount) : undefined,
-      createdAt: row.createdAt,
     });
   }
 }

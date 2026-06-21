@@ -8,8 +8,6 @@ import {
 import {
   Proposal,
   ProposalStatus,
-  NegotiationMessage,
-  SenderRole,
 } from '../../domain/models/proposal.entity';
 
 export class CreateProposalDto {
@@ -32,23 +30,10 @@ export class ContestProposalDto {
   reason: string;
 }
 
-export class CreateNegotiationMessageDto {
-  @IsString()
-  message: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0.01)
-  revisedAmount?: number;
-}
-
-export class SendRevisedProposalDto {
+export class ReviseProposalDto {
   @IsNumber()
   @Min(0.01)
   amount: number;
-
-  @IsString()
-  message: string;
 }
 
 export class ProposalDto {
@@ -59,7 +44,6 @@ export class ProposalDto {
   amount: number;
   status: ProposalStatus;
   rejectionReason?: string;
-  linkedChatId?: string;
   canResubmit: boolean;
   paymentId?: string;
   qrCode?: string;
@@ -87,7 +71,6 @@ export class ProposalDto {
     dto.amount = proposal.amount;
     dto.status = proposal.status;
     dto.rejectionReason = proposal.rejectionReason;
-    dto.linkedChatId = proposal.linkedChatId;
     dto.canResubmit = proposal.canResubmit;
     dto.paymentId = proposal.paymentId;
     dto.qrCode = proposal.qrCode;
@@ -108,7 +91,6 @@ export class ProposalDto {
     dto.amount = parseFloat(row.amount);
     dto.status = row.status;
     dto.rejectionReason = row.rejectionReason ?? undefined;
-    dto.linkedChatId = row.linkedChatId ?? undefined;
     dto.canResubmit = row.canResubmit;
     dto.paymentId = row.paymentId ?? undefined;
     dto.qrCode = row.qrCode ?? undefined;
@@ -129,6 +111,17 @@ export class ProposalDto {
   }
 }
 
+export class ContestResponseDto {
+  proposal: ProposalDto;
+  conversationId: string;
+  isNew: boolean;
+}
+
+export class ReviseResponseDto {
+  proposal: ProposalDto;
+  conversationId: string;
+}
+
 export class PaymentCheckResponseDto {
   paid: boolean;
   status: string;
@@ -137,27 +130,4 @@ export class PaymentCheckResponseDto {
   qrCode?: string;
   qrCodeBase64?: string;
   ticketUrl?: string;
-}
-
-export class NegotiationMessageDto {
-  id: string;
-  proposalId: string;
-  senderRole: SenderRole;
-  senderUserId: string;
-  message: string;
-  revisedAmount?: number;
-  createdAt: Date;
-
-  static from(msg: NegotiationMessage | null): NegotiationMessageDto | null {
-    if (!msg) return null;
-    const dto = new NegotiationMessageDto();
-    dto.id = msg.id!;
-    dto.proposalId = msg.proposalId;
-    dto.senderRole = msg.senderRole;
-    dto.senderUserId = msg.senderUserId;
-    dto.message = msg.message;
-    dto.revisedAmount = msg.revisedAmount;
-    dto.createdAt = msg.createdAt!;
-    return dto;
-  }
 }

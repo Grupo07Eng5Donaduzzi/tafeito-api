@@ -23,7 +23,11 @@ import {
   MessageResponseDto,
   MessageListDto,
 } from '../../application/dto/message.dto';
-import { ConversationResponseDto } from '../../application/dto/conversation.dto';
+import {
+  ConversationResponseDto,
+  EnsureConversationDto,
+  EnsureConversationResponseDto,
+} from '../../application/dto/conversation.dto';
 
 @ApiTags('Chat')
 @ApiBearerAuth('access-token')
@@ -33,6 +37,46 @@ export class ChatController {
     private readonly messageService: MessageService,
     private readonly conversationService: ConversationService,
   ) {}
+
+  // ── Conversations ──────────────────────────────────────────────────────────
+
+  @ApiOperation({ summary: 'Garantir que existe uma conversa entre o usuário autenticado e outro usuário' })
+  @Post('conversations/ensure')
+  async ensureConversation(
+    @Body() dto: EnsureConversationDto,
+    @CurrentUser() currentUserId: string,
+  ): Promise<EnsureConversationResponseDto> {
+    return this.conversationService.getOrCreateConversationBetween(
+      currentUserId,
+      dto.participantId,
+    );
+  }
+
+  @ApiOperation({ summary: 'Listar conversas do usuário autenticado' })
+  @Get('conversations')
+  async getMyConversations(
+    @CurrentUser() currentUserId: string,
+  ): Promise<ConversationResponseDto[]> {
+    return this.conversationService.getUserConversations(currentUserId);
+  }
+
+  @ApiOperation({ summary: 'Buscar dados de uma conversa por ID' })
+  @Get('conversations/:id')
+  @HateoasItem<ConversationResponseDto>({
+    basePath: '/chat/conversations',
+    itemLinks: (item) => ({
+      self: { href: `/chat/conversations/${item.id}`, method: 'GET' },
+      messages: { href: `/chat/conversations/${item.id}/messages`, method: 'GET' },
+      sendMessage: { href: `/chat/conversations/${item.id}/messages`, method: 'POST' },
+    }),
+  })
+  async getConversation(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ConversationResponseDto> {
+    return this.conversationService.getConversationById(id);
+  }
+
+  // ── Messages ───────────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: 'Enviar uma nova mensagem (cria conversa automaticamente se necessario)' })
   @Post('messages')
@@ -102,22 +146,6 @@ export class ChatController {
     );
   }
 
-  @ApiOperation({ summary: 'Listar mensagens de um servico com paginacao' })
-  @Get('services/:serviceId/messages')
-  async getServiceMessages(
-    @Param('serviceId', ParseUUIDPipe) serviceId: string,
-    @CurrentUser() currentUserId: string,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('pageSize', new DefaultValuePipe(50), ParseIntPipe) pageSize: number,
-  ): Promise<MessageListDto> {
-    return this.messageService.getServiceMessagesForUser(
-      serviceId,
-      currentUserId,
-      page,
-      pageSize,
-    );
-  }
-
   @ApiOperation({ summary: 'Listar mensagens recebidas/enviadas por um usuario' })
   @Get('users/:userId/messages')
   async getUserMessages(
@@ -156,33 +184,5 @@ export class ChatController {
     @CurrentUser() currentUserId: string,
   ): Promise<void> {
     return this.messageService.deleteMessageForUser(id, currentUserId);
-  }
-
-  @ApiOperation({ summary: 'Listar conversas de um servico' })
-  @Get('services/:serviceId/conversations')
-  async getServiceConversations(
-    @Param('serviceId', ParseUUIDPipe) serviceId: string,
-  ): Promise<ConversationResponseDto[]> {
-    return this.conversationService.getServiceConversations(serviceId);
-  }
-
-  @ApiOperation({ summary: 'Buscar dados de uma conversa por ID' })
-  @Get('conversations/:id')
-  @HateoasItem<ConversationResponseDto>({
-    basePath: '/chat/conversations',
-    itemLinks: (item) => ({
-      self: { href: `/chat/conversations/${item.id}`, method: 'GET' },
-      messages: { href: `/chat/conversations/${item.id}/messages`, method: 'GET' },
-      sendMessage: { href: `/chat/conversations/${item.id}/messages`, method: 'POST' },
-      service: { href: `/services/${item.serviceId}`, method: 'GET' },
-      proposal: item.proposalId
-        ? { href: `/proposals/${item.proposalId}`, method: 'GET' }
-        : null,
-    }),
-  })
-  async getConversation(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<ConversationResponseDto> {
-    return this.conversationService.getConversationById(id);
   }
 }

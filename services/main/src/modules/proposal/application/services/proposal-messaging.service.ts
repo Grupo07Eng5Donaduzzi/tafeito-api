@@ -4,7 +4,6 @@ import {
   ProposalExchangeName,
   ProposalRoutingKey,
   ProposalAcceptedPayload,
-  ProposalContestedPayload,
   ProposalClientConfirmedPayload,
 } from '@shared/contracts/events/proposal-events.enum';
 
@@ -14,7 +13,6 @@ export class ProposalMessagingService implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     await this.messagingService.assertExchange(ProposalExchangeName.ACCEPTED);
-    await this.messagingService.assertExchange(ProposalExchangeName.CONTESTED);
     await this.messagingService.assertExchange(ProposalExchangeName.CLIENT_CONFIRMED);
   }
 
@@ -22,14 +20,6 @@ export class ProposalMessagingService implements OnModuleInit {
     await this.messagingService.publish(
       ProposalExchangeName.ACCEPTED,
       ProposalRoutingKey.ACCEPTED,
-      payload,
-    );
-  }
-
-  async publishProposalContested(payload: ProposalContestedPayload): Promise<void> {
-    await this.messagingService.publish(
-      ProposalExchangeName.CONTESTED,
-      ProposalRoutingKey.CONTESTED,
       payload,
     );
   }
