@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
-import { eq, desc, asc, isNotNull } from 'drizzle-orm';
+import { eq, desc, asc, inArray } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { usersSchema } from '@users/infra/schemas/user.schema';
 import {
@@ -62,26 +62,36 @@ export class AdminService {
   }
 
   async listChats() {
-    const clientUser = alias(usersSchema, 'chat_client_user');
-    const providerUser = alias(usersSchema, 'chat_provider_user');
-
-    const rows = await this.drizzleService.db
+    const conversations = await this.chatDrizzle.db
       .select({
-        conversationId: proposalsSchema.linkedChatId,
-        proposalId: proposalsSchema.id,
-        clientName: clientUser.name,
-        providerName: providerUser.name,
-        status: proposalsSchema.status,
-        amount: proposalsSchema.amount,
-        updatedAt: proposalsSchema.updatedAt,
+        id: chatConversationsSchema.id,
+        participantIds: chatConversationsSchema.participantIds,
+        lastMessageAt: chatConversationsSchema.lastMessageAt,
+        isActive: chatConversationsSchema.isActive,
+        createdAt: chatConversationsSchema.createdAt,
       })
-      .from(proposalsSchema)
-      .leftJoin(clientUser, eq(proposalsSchema.clientId, clientUser.id))
-      .leftJoin(providerUser, eq(proposalsSchema.providerId, providerUser.id))
-      .where(isNotNull(proposalsSchema.linkedChatId))
-      .orderBy(desc(proposalsSchema.updatedAt));
+      .from(chatConversationsSchema)
+      .orderBy(desc(chatConversationsSchema.lastMessageAt));
 
-    return rows;
+    const allUserIds = [...new Set(conversations.flatMap((c) => c.participantIds))];
+
+    const users = allUserIds.length > 0
+      ? await this.drizzleService.db
+          .select({ id: usersSchema.id, name: usersSchema.name })
+          .from(usersSchema)
+          .where(inArray(usersSchema.id, allUserIds))
+      : [];
+
+    const nameById = Object.fromEntries(users.map((u) => [u.id, u.name]));
+
+    return conversations.map((c) => ({
+      conversationId: c.id,
+      participantIds: c.participantIds,
+      participantNames: c.participantIds.map((id) => nameById[id] ?? id),
+      lastMessageAt: c.lastMessageAt,
+      isActive: c.isActive,
+      createdAt: c.createdAt,
+    }));
   }
 
   async getChatMessages(
@@ -122,7 +132,6 @@ export class AdminService {
         amount: proposalsSchema.amount,
         status: proposalsSchema.status,
         paymentId: proposalsSchema.paymentId,
-        linkedChatId: proposalsSchema.linkedChatId,
         invoiceFile: proposalsSchema.invoiceFile,
         createdAt: proposalsSchema.createdAt,
         updatedAt: proposalsSchema.updatedAt,
