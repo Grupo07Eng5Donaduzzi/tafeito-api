@@ -10,15 +10,6 @@ import {
 } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 
-const FIREBASE_CLIENT_ERRORS = new Set([
-  'EMAIL_NOT_FOUND',
-  'INVALID_EMAIL',
-  'INVALID_LOGIN_CREDENTIALS',
-  'USER_DISABLED',
-  'MISSING_EMAIL',
-  'WEAK_PASSWORD',
-]);
-
 function mapFirebaseAdminError(err: unknown, context: string): never {
   const code: string = (err as { code?: string })?.code ?? '';
   const message: string = (err as { message?: string })?.message ?? String(err);
@@ -62,22 +53,6 @@ export class FirebaseAuthService implements OnModuleInit {
       return record.uid;
     } catch (err) {
       mapFirebaseAdminError(err, 'createUser');
-    }
-  }
-
-  async ensureUserByEmail(email: string): Promise<string> {
-    const existing = await this.getUserByEmail(email);
-    if (existing) return existing.uid;
-
-    try {
-      const record = await this.auth.createUser({ email });
-      return record.uid;
-    } catch (err) {
-      if ((err as { code?: string })?.code === 'auth/email-already-exists') {
-        const concurrentRecord = await this.getUserByEmail(email);
-        if (concurrentRecord) return concurrentRecord.uid;
-      }
-      mapFirebaseAdminError(err, 'ensureUserByEmail');
     }
   }
 
@@ -139,33 +114,6 @@ export class FirebaseAuthService implements OnModuleInit {
     }
 
     return payload.localId;
-  }
-
-  async sendPasswordResetEmail(email: string): Promise<void> {
-    const apiKey = process.env.FIREBASE_API_KEY;
-    if (!apiKey) {
-      throw new InternalServerErrorException('FIREBASE_API_KEY is not configured.');
-    }
-
-    const response = await fetch(
-      `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestType: 'PASSWORD_RESET', email }),
-      },
-    );
-
-    if (!response.ok) {
-      type FirebaseErrorResponse = { error?: { message?: string } };
-      const data = (await response.json()) as FirebaseErrorResponse;
-      const errorCode = data?.error?.message ?? '';
-
-      if (FIREBASE_CLIENT_ERRORS.has(errorCode)) {
-        throw new BadRequestException('E-mail inválido ou não encontrado');
-      }
-      throw new InternalServerErrorException('Falha ao enviar e-mail de recuperação de senha');
-    }
   }
 
   async changePassword(uid: string, newPassword: string): Promise<void> {

@@ -74,13 +74,6 @@ export class AuthService {
     await this.firebaseAuthService.changePassword(user.firebaseUid, dto.newPassword);
   }
 
-  async forgotPassword(email: string): Promise<void> {
-    const user = await this.userService.ensureFirebaseUserByEmail(email);
-    if (!user) return;
-
-    await this.firebaseAuthService.sendPasswordResetEmail(user.email);
-  }
-
   private buildAuthResponse(user: UserDto): { accessToken: string; user: UserDto } {
     const payload: AuthJwtPayload = {
       sub: user.id!,

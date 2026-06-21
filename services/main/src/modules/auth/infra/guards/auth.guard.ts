@@ -49,7 +49,6 @@ export class AuthGuard extends JwtAuthGuard {
       if (
         path.endsWith('/auth/login') ||
         path.endsWith('/auth/register') ||
-        path.endsWith('/auth/forgot-password') ||
         path.endsWith('/admin/auth/login')
       ) {
         return true;

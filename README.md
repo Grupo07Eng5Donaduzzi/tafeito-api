@@ -100,7 +100,7 @@ Observações importantes:
 - O `JWT_SECRET` deve ser o mesmo em todos os serviços.
 - O `DATABASE_URL` muda de acordo com o banco de cada microsserviço.
 - O `PORT` muda de acordo com o serviço.
-- O `FIREBASE_*` é necessário no `main` para cadastro, login e recuperação de senha. A conta de
+- O `FIREBASE_*` é necessário no `main` para cadastro e login. A conta de
   serviço (`PROJECT_ID`, `CLIENT_EMAIL` e `PRIVATE_KEY`) e a `API_KEY` devem pertencer ao mesmo
   projeto Firebase.
 - O `ASAAS_ACCESS_TOKEN` pode ser obtido no [painel sandbox da Asaas](https://sandbox.asaas.com/).
@@ -193,7 +193,6 @@ Gerencia o núcleo do domínio: autenticação, usuários, serviços, orçamento
 Principais rotas:
 - `POST /v1/auth/register`
 - `POST /v1/auth/login`
-- `POST /v1/auth/forgot-password`
 - `PATCH /v1/auth/becomeProvider`
 - `GET /v1/users/me`
 - `POST /v1/users/me/avatar`
@@ -296,7 +295,7 @@ Swagger:
 - O login é feito em `POST /v1/auth/login`.
 - O token JWT emitido pelo `main` deve ser enviado como `Bearer Token` em todos os serviços.
 - Para se tornar prestador, o usuário logado deve chamar `PATCH /v1/auth/becomeProvider` com `pixKey` e `hourlyRate`.
-- Rotas públicas: `POST /auth/register`, `POST /auth/login`, `POST /auth/forgot-password` e `POST /payments/webhook/asaas`.
+- Rotas públicas: `POST /auth/register`, `POST /auth/login` e `POST /payments/webhook/asaas`.
 
 ## Ordem sugerida para testes integrados
 

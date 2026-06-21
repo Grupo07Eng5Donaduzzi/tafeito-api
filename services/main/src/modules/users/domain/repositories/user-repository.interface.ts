@@ -5,7 +5,6 @@ export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
 export interface UserRepository {
   create(user: User): Promise<void>;
   update(user: User): Promise<void>;
-  updateFirebaseUid(id: string, firebaseUid: string): Promise<void>;
   updateAvatar(id: string, avatarUrl: string): Promise<void>;
   anonymize(id: string): Promise<void>;
   findAll(): Promise<User[]>;

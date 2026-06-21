@@ -3,7 +3,6 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from '../../application/services/auth.service';
 import { AuthResponseDto } from '../../application/dto/auth-response.dto';
 import { LoginUserDto } from '../../application/dto/login-user.dto';
-import { ForgotPasswordDto } from '../../application/dto/forgot-password.dto';
 import { CreateUserDto } from '@users/application/dto/create-user.dto';
 import { CurrentUser } from '@shared/infra/current-user.decorator';
 import { BecomeProviderDto } from '../../application/dto/become-provider.dto';
@@ -51,10 +50,4 @@ export class AuthController {
     await this.authService.changePassword(userId, body);
   }
 
-  @ApiOperation({ summary: 'Enviar e-mail de recuperação de senha' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @Post('forgot-password')
-  async forgotPassword(@Body() body: ForgotPasswordDto): Promise<void> {
-    await this.authService.forgotPassword(body.email);
-  }
 }
