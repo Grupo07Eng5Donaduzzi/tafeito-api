@@ -6,11 +6,10 @@ import { AdminAuthService } from './application/services/admin-auth.service';
 import { AdminController } from './infra/controllers/admin.controller';
 import { AdminAuthController } from './infra/controllers/admin-auth.controller';
 import { AdminGuard } from './infra/guards/admin.guard';
-import { ChatDrizzleService } from './infra/database/chat-drizzle.service';
 
 @Module({
   imports: [SharedModule, UsersModule],
   controllers: [AdminController, AdminAuthController],
-  providers: [AdminService, AdminAuthService, AdminGuard, ChatDrizzleService],
+  providers: [AdminService, AdminAuthService, AdminGuard],
 })
 export class AdminModule {}

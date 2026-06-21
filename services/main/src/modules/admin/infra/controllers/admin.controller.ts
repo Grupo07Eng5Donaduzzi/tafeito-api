@@ -1,14 +1,11 @@
 import {
   Body,
   Controller,
-  DefaultValuePipe,
   Get,
   Param,
-  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
-  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -66,22 +63,6 @@ export class AdminController {
       description: `Usuário ${id} reativado`,
     });
     return { message: 'Usuário ativado' };
-  }
-
-  @ApiOperation({ summary: 'Listar conversas (propostas com chat vinculado)' })
-  @Get('chats')
-  listChats() {
-    return this.adminService.listChats();
-  }
-
-  @ApiOperation({ summary: 'Ver mensagens de uma conversa (read-only)' })
-  @Get('chats/:id/messages')
-  getChatMessages(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('pageSize', new DefaultValuePipe(50), ParseIntPipe) pageSize: number,
-  ) {
-    return this.adminService.getChatMessages(id, page, pageSize);
   }
 
   @ApiOperation({ summary: 'Listar todos os pagamentos' })

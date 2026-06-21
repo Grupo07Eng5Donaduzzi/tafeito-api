@@ -1,5 +1,4 @@
 import {
-  boolean,
   pgTable,
   text,
   timestamp,
@@ -27,23 +26,3 @@ export const adminAuditLogsSchema = pgTable('admin_audit_logs', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
 });
 
-export const chatConversationsSchema = pgTable('conversations', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  participantIds: text('participant_ids').array().notNull(),
-  lastMessageAt: timestamp('last_message_at', { withTimezone: true }),
-  isActive: boolean('is_active').notNull().default(true),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
-});
-
-export const chatMessagesSchema = pgTable('messages', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  serviceId: uuid('service_id').notNull(),
-  conversationId: uuid('conversation_id'),
-  senderId: uuid('sender_id').notNull(),
-  recipientId: uuid('recipient_id').notNull(),
-  content: text('content').notNull(),
-  status: text('status').notNull().default('sent'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
-});

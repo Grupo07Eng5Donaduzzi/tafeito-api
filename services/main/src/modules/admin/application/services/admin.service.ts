@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
-import { eq, desc, asc, inArray } from 'drizzle-orm';
+import { eq, desc, asc } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { usersSchema } from '@users/infra/schemas/user.schema';
 import {
@@ -13,16 +13,12 @@ import {
 import {
   adminsSchema,
   adminAuditLogsSchema,
-  chatConversationsSchema,
-  chatMessagesSchema,
 } from '../../infra/schemas/admin.schema';
-import { ChatDrizzleService } from '../../infra/database/chat-drizzle.service';
 
 @Injectable()
 export class AdminService {
   constructor(
     private readonly drizzleService: DrizzleService,
-    private readonly chatDrizzle: ChatDrizzleService,
   ) {}
 
   async listUsers() {
@@ -59,65 +55,6 @@ export class AdminService {
       .update(usersSchema)
       .set({ status, updatedAt: new Date() })
       .where(eq(usersSchema.id, id));
-  }
-
-  async listChats() {
-    const conversations = await this.chatDrizzle.db
-      .select({
-        id: chatConversationsSchema.id,
-        participantIds: chatConversationsSchema.participantIds,
-        lastMessageAt: chatConversationsSchema.lastMessageAt,
-        isActive: chatConversationsSchema.isActive,
-        createdAt: chatConversationsSchema.createdAt,
-      })
-      .from(chatConversationsSchema)
-      .orderBy(desc(chatConversationsSchema.lastMessageAt));
-
-    const allUserIds = [...new Set(conversations.flatMap((c) => c.participantIds))];
-
-    const users = allUserIds.length > 0
-      ? await this.drizzleService.db
-          .select({ id: usersSchema.id, name: usersSchema.name })
-          .from(usersSchema)
-          .where(inArray(usersSchema.id, allUserIds))
-      : [];
-
-    const nameById = Object.fromEntries(users.map((u) => [u.id, u.name]));
-
-    return conversations.map((c) => ({
-      conversationId: c.id,
-      participantIds: c.participantIds,
-      participantNames: c.participantIds.map((id) => nameById[id] ?? id),
-      lastMessageAt: c.lastMessageAt,
-      isActive: c.isActive,
-      createdAt: c.createdAt,
-    }));
-  }
-
-  async getChatMessages(
-    conversationId: string,
-    page: number = 1,
-    pageSize: number = 50,
-  ) {
-    const offset = (page - 1) * pageSize;
-
-    const [conv] = await this.chatDrizzle.db
-      .select({ id: chatConversationsSchema.id })
-      .from(chatConversationsSchema)
-      .where(eq(chatConversationsSchema.id, conversationId))
-      .limit(1);
-
-    if (!conv) throw new NotFoundException('Conversa não encontrada');
-
-    const messages = await this.chatDrizzle.db
-      .select()
-      .from(chatMessagesSchema)
-      .where(eq(chatMessagesSchema.conversationId, conversationId))
-      .orderBy(asc(chatMessagesSchema.createdAt))
-      .limit(pageSize)
-      .offset(offset);
-
-    return messages;
   }
 
   async listPayments() {
