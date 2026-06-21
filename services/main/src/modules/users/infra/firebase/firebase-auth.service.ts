@@ -65,6 +65,22 @@ export class FirebaseAuthService implements OnModuleInit {
     }
   }
 
+  async ensureUserByEmail(email: string): Promise<string> {
+    const existing = await this.getUserByEmail(email);
+    if (existing) return existing.uid;
+
+    try {
+      const record = await this.auth.createUser({ email });
+      return record.uid;
+    } catch (err) {
+      if ((err as { code?: string })?.code === 'auth/email-already-exists') {
+        const concurrentRecord = await this.getUserByEmail(email);
+        if (concurrentRecord) return concurrentRecord.uid;
+      }
+      mapFirebaseAdminError(err, 'ensureUserByEmail');
+    }
+  }
+
   async updateUser(uid: string, email?: string): Promise<void> {
     try {
       await this.auth.updateUser(uid, { email });
@@ -94,8 +110,9 @@ export class FirebaseAuthService implements OnModuleInit {
   async getUserByEmail(email: string): Promise<admin.auth.UserRecord | null> {
     try {
       return await this.auth.getUserByEmail(email);
-    } catch {
-      return null;
+    } catch (err) {
+      if ((err as { code?: string })?.code === 'auth/user-not-found') return null;
+      mapFirebaseAdminError(err, 'getUserByEmail');
     }
   }
 

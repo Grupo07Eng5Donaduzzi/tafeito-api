@@ -3,7 +3,7 @@ import type { UserRepository } from '@users/domain/repositories/user-repository.
 import { usersSchema } from '@users/infra/schemas/user.schema';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 const PG_UNIQUE_VIOLATION = '23505';
 
@@ -58,6 +58,20 @@ export class DrizzleUserRepository implements UserRepository {
     }
   }
 
+  async updateFirebaseUid(id: string, firebaseUid: string): Promise<void> {
+    try {
+      await this.drizzleService.db
+        .update(usersSchema)
+        .set({ firebaseUid, updatedAt: new Date() })
+        .where(eq(usersSchema.id, id));
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictException('Usuário Firebase já vinculado a outra conta');
+      }
+      throw err;
+    }
+  }
+
   async updateAvatar(id: string, avatarUrl: string): Promise<void> {
     await this.drizzleService.db
       .update(usersSchema)
@@ -102,7 +116,7 @@ export class DrizzleUserRepository implements UserRepository {
     const result = await this.drizzleService.db
       .select()
       .from(usersSchema)
-      .where(eq(usersSchema.email, email))
+      .where(sql`lower(${usersSchema.email}) = lower(${email})`)
       .limit(1);
     return User.restore(result[0]);
   }

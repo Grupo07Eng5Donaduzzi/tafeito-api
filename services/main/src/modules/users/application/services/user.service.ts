@@ -282,6 +282,26 @@ export class UserService {
     return UserDto.from(user);
   }
 
+  async ensureFirebaseUserByEmail(email: string): Promise<UserDto | null> {
+    const user = await this.userRepository.findByEmail(email.trim());
+    if (!user?.id) return null;
+
+    const firebaseUid = await this.firebaseAuthService.ensureUserByEmail(user.email);
+    if (user.firebaseUid !== firebaseUid) {
+      await this.userRepository.updateFirebaseUid(user.id, firebaseUid);
+      user.withFirebaseUid(firebaseUid);
+    }
+
+    if (user.pixKey) {
+      await this.firebaseAuthService.setCustomUserClaims(firebaseUid, {
+        pixKey: user.pixKey,
+        provider: true,
+      });
+    }
+
+    return UserDto.from(user);
+  }
+
   async uploadAvatar(id: string, filename: string): Promise<UserDto> {
     const user = await this.userRepository.findById(id);
     if (!user) throw new NotFoundException('Usuário não encontrado');

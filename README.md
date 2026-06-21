@@ -70,6 +70,7 @@ JWT_SECRET=your-jwt-secret
 FIREBASE_PROJECT_ID=your-firebase-project-id
 FIREBASE_CLIENT_EMAIL=your-firebase-client-email
 FIREBASE_PRIVATE_KEY="your-firebase-private-key"
+FIREBASE_API_KEY=your-firebase-web-api-key
 ```
 
 ### `payment`
@@ -99,7 +100,9 @@ Observações importantes:
 - O `JWT_SECRET` deve ser o mesmo em todos os serviços.
 - O `DATABASE_URL` muda de acordo com o banco de cada microsserviço.
 - O `PORT` muda de acordo com o serviço.
-- O `FIREBASE_*` só é necessário no `main` e apenas para o endpoint de recuperação de senha.
+- O `FIREBASE_*` é necessário no `main` para cadastro, login e recuperação de senha. A conta de
+  serviço (`PROJECT_ID`, `CLIENT_EMAIL` e `PRIVATE_KEY`) e a `API_KEY` devem pertencer ao mesmo
+  projeto Firebase.
 - O `ASAAS_ACCESS_TOKEN` pode ser obtido no [painel sandbox da Asaas](https://sandbox.asaas.com/).
 - Os arquivos de exemplo já existem em `services/*/.env.example`.
 

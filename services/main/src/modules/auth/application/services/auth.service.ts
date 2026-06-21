@@ -75,7 +75,10 @@ export class AuthService {
   }
 
   async forgotPassword(email: string): Promise<void> {
-    await this.firebaseAuthService.sendPasswordResetEmail(email);
+    const user = await this.userService.ensureFirebaseUserByEmail(email);
+    if (!user) return;
+
+    await this.firebaseAuthService.sendPasswordResetEmail(user.email);
   }
 
   private buildAuthResponse(user: UserDto): { accessToken: string; user: UserDto } {
