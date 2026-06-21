@@ -12,7 +12,7 @@ import {
 import { UserService } from '../../../users/application/services/user.service';
 import { BudgetRequestService } from '../../../budget-requests/application/services/budget-request.service';
 import { ProposalMessagingService } from './proposal-messaging.service';
-import { ChatHttpService } from './chat-http.service';
+import { ChatMessagingService } from './chat-messaging.service';
 import { Proposal, ProposalStatus } from '../../domain/models/proposal.entity';
 import type { ProposalRepository } from '../../domain/repositories/proposal-repository.interface';
 import { PROPOSAL_REPOSITORY } from '../../domain/repositories/proposal-repository.interface';
@@ -37,7 +37,7 @@ export class ProposalService {
     private readonly budgetRequestService: BudgetRequestService,
     private readonly userService: UserService,
     private readonly proposalMessagingService: ProposalMessagingService,
-    private readonly chatHttpService: ChatHttpService,
+    private readonly chatMessagingService: ChatMessagingService,
   ) {}
 
   async createProposal(providerId: string, dto: CreateProposalDto): Promise<ProposalDto> {
@@ -87,10 +87,13 @@ export class ProposalService {
     let conversationId: string;
     let isNew = false;
     try {
-      const result = await this.chatHttpService.ensureConversation(clientId, proposal.providerId);
+      const result = await this.chatMessagingService.ensureConversationAndSendMessage({
+        initiatorId: clientId,
+        participantId: proposal.providerId,
+        content: autoMessage,
+      });
       conversationId = result.conversationId;
       isNew = result.isNew;
-      await this.chatHttpService.sendMessage(conversationId, clientId, proposal.providerId, autoMessage);
     } catch (err) {
       this.logger.warn(`Failed to create chat for proposal ${proposalId}: ${(err as Error).message}`);
       conversationId = '';
@@ -119,14 +122,12 @@ export class ProposalService {
 
     let conversationId: string = '';
     try {
-      const result = await this.chatHttpService.ensureConversation(providerId, proposal.clientId);
+      const result = await this.chatMessagingService.ensureConversationAndSendMessage({
+        initiatorId: providerId,
+        participantId: proposal.clientId,
+        content: 'Revisei a proposta! Confira seus orçamentos para ver o novo valor.',
+      });
       conversationId = result.conversationId;
-      await this.chatHttpService.sendMessage(
-        conversationId,
-        providerId,
-        proposal.clientId,
-        'Revisei a proposta! Confira seus orçamentos para ver o novo valor.',
-      );
     } catch (err) {
       this.logger.warn(`Failed to send revision message for proposal ${proposalId}: ${(err as Error).message}`);
     }

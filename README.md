@@ -24,11 +24,15 @@ O domínio foi separado em três contextos:
 
 | Microsserviço | Publica eventos                                        | Consome eventos                                  |
 | ------------- | ------------------------------------------------------ | ------------------------------------------------ |
-| `main`        | `proposal.accepted`, `proposal.contested`, `proposal.client-confirmed` | `payment.created`, `payment.confirmed`, `conversation.created` |
+| `main`        | `proposal.accepted`, `proposal.client-confirmed` e comandos de chat via RabbitMQ | `payment.created`, `payment.confirmed` |
 | `payment`     | `payment.created`, `payment.confirmed`                 | `proposal.accepted`, `proposal.client-confirmed` |
-| `chat`        | `conversation.created`                                 | `proposal.accepted`, `proposal.contested`        |
+| `chat`        | Respostas correlacionadas dos comandos de chat         | `proposal.accepted` e comandos de chat via RabbitMQ |
 
 Como os serviços mantêm projeções locais a partir de eventos, o ideal é subir todos antes de começar a cadastrar dados.
+
+O `main` não chama endpoints HTTP internos do `chat`. A criação de conversa e o envio das
+mensagens automáticas de negociação usam request/reply pelo RabbitMQ, com `correlationId` e fila
+de resposta exclusiva. O evento `proposal.accepted` também garante a criação assíncrona da conversa.
 
 ## Fluxo de negócio
 
