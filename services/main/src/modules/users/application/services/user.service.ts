@@ -269,7 +269,7 @@ export class UserService {
     if (!user) throw new NotFoundException('Usuário não encontrado');
 
     await this.firebaseAuthService.deleteUser(user.firebaseUid);
-    await this.userRepository.delete(id);
+    await this.userRepository.anonymize(id);
   }
 
   async findById(id: string): Promise<UserDto | null> {

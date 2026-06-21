@@ -65,9 +65,18 @@ export class DrizzleUserRepository implements UserRepository {
       .where(eq(usersSchema.id, id));
   }
 
-  async delete(id: string): Promise<void> {
+  async anonymize(id: string): Promise<void> {
     await this.drizzleService.db
-      .delete(usersSchema)
+      .update(usersSchema)
+      .set({
+        name: '[conta excluída]',
+        email: `deleted_${id}@deleted.invalid`,
+        identification: `deleted_${id}`,
+        pixKey: null,
+        avatarUrl: null,
+        status: 'suspended',
+        updatedAt: new Date(),
+      })
       .where(eq(usersSchema.id, id));
   }
 
