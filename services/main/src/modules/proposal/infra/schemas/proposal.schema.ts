@@ -1,4 +1,4 @@
-﻿import {
+import {
   pgTable,
   uuid,
   numeric,
@@ -21,8 +21,6 @@ export const proposalStatusEnum = pgEnum('proposal_status', [
   'CANCELLED',
 ]);
 
-export const senderRoleEnum = pgEnum('sender_role', ['CLIENT', 'PROVIDER']);
-
 export const proposalsSchema = pgTable('proposals', {
   id: uuid('id').primaryKey().defaultRandom(),
   requestId: uuid('request_id').references(() => budgetRequestsSchema.id).notNull(),
@@ -31,7 +29,6 @@ export const proposalsSchema = pgTable('proposals', {
   amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
   status: proposalStatusEnum('status').notNull().default('PENDING'),
   rejectionReason: text('rejection_reason'),
-  linkedChatId: uuid('linked_chat_id'),
   canResubmit: boolean('can_resubmit').notNull().default(true),
   paymentId: text('payment_id'),
   qrCode: text('qr_code'),
@@ -40,14 +37,4 @@ export const proposalsSchema = pgTable('proposals', {
   invoiceFile: text('invoice_file'),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull(),
-});
-
-export const negotiationMessagesSchema = pgTable('negotiation_messages', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  proposalId: uuid('proposal_id').notNull(),
-  senderRole: senderRoleEnum('sender_role').notNull(),
-  senderUserId: uuid('sender_user_id').notNull(),
-  message: text('message').notNull(),
-  revisedAmount: numeric('revised_amount', { precision: 10, scale: 2 }),
-  createdAt: timestamp('created_at').notNull(),
 });

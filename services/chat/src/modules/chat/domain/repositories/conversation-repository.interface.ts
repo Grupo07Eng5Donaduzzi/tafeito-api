@@ -5,7 +5,7 @@ export const CONVERSATION_REPOSITORY = Symbol('CONVERSATION_REPOSITORY');
 export interface ConversationRepository {
   create(conversation: Conversation): Promise<void>;
   findById(id: string): Promise<Conversation | null>;
-  findByProposalId(proposalId: string): Promise<Conversation | null>;
-  findByServiceId(serviceId: string): Promise<Conversation[]>;
+  findByParticipants(userId1: string, userId2: string): Promise<Conversation | null>;
+  findByParticipantId(userId: string): Promise<Conversation[]>;
   update(conversation: Conversation): Promise<void>;
 }

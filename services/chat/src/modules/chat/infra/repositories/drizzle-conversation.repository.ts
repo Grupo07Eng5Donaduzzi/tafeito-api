@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { sql, eq } from 'drizzle-orm';
 import { DrizzleService } from '@shared/infra/database/drizzle.service';
 import { conversationSchema } from '../database/schemas/conversation.schema';
 import { Conversation } from '../../domain/models/conversation.entity';
 import type { ConversationRepository } from '../../domain/repositories/conversation-repository.interface';
-import { eq } from 'drizzle-orm';
 
 @Injectable()
 export class DrizzleConversationRepository implements ConversationRepository {
@@ -16,8 +15,6 @@ export class DrizzleConversationRepository implements ConversationRepository {
 
     await this.drizzleService.db.insert(conversationSchema).values({
       id: conversation.id,
-      serviceId: conversation.serviceId,
-      proposalId: conversation.proposalId,
       initiatorId: conversation.initiatorId,
       participantIds: conversation.participantIds,
       lastMessageAt: conversation.lastMessageAt,
@@ -36,21 +33,24 @@ export class DrizzleConversationRepository implements ConversationRepository {
     return result.length > 0 ? Conversation.restore(result[0]) : null;
   }
 
-  async findByProposalId(proposalId: string): Promise<Conversation | null> {
+  async findByParticipants(userId1: string, userId2: string): Promise<Conversation | null> {
     const result = await this.drizzleService.db
       .select()
       .from(conversationSchema)
-      .where(eq(conversationSchema.proposalId, proposalId))
+      .where(
+        sql`${userId1} = ANY(${conversationSchema.participantIds}) AND ${userId2} = ANY(${conversationSchema.participantIds})`,
+      )
       .limit(1);
 
     return result.length > 0 ? Conversation.restore(result[0]) : null;
   }
 
-  async findByServiceId(serviceId: string): Promise<Conversation[]> {
+  async findByParticipantId(userId: string): Promise<Conversation[]> {
     const results = await this.drizzleService.db
       .select()
       .from(conversationSchema)
-      .where(eq(conversationSchema.serviceId, serviceId));
+      .where(sql`${userId} = ANY(${conversationSchema.participantIds})`)
+      .orderBy(conversationSchema.lastMessageAt);
 
     return (results as any[]).map((row) => Conversation.restore(row)!);
   }
@@ -60,7 +60,6 @@ export class DrizzleConversationRepository implements ConversationRepository {
       .update(conversationSchema)
       .set({
         participantIds: conversation.participantIds,
-        proposalId: conversation.proposalId,
         lastMessageAt: conversation.lastMessageAt,
         isActive: conversation.isActive,
         updatedAt: conversation.updatedAt,

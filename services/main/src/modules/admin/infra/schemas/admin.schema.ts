@@ -28,7 +28,6 @@ export const adminAuditLogsSchema = pgTable('admin_audit_logs', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
 });
 
-// Read-only references to chat service tables (same PostgreSQL DB)
 export const chatConversationsSchema = pgTable(
   'conversations',
   {

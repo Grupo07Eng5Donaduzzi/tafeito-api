@@ -26,15 +26,14 @@ import { RequireProviderGuard } from '@shared/infra/guards/require-provider.guar
 import { HateoasItem } from '@shared/infra/hateoas';
 import { ProposalStatus } from '../../domain/models/proposal.entity';
 import { ProposalService } from '../../application/services/proposal.service';
-import { NegotiationService } from '../../application/services/negotiation.service';
 import {
   ContestProposalDto,
+  ContestResponseDto,
   CreateProposalDto,
   RejectProposalDto,
-  CreateNegotiationMessageDto,
-  SendRevisedProposalDto,
+  ReviseProposalDto,
+  ReviseResponseDto,
   ProposalDto,
-  NegotiationMessageDto,
   PaymentCheckResponseDto,
 } from '../../application/dto/proposal.dto';
 
@@ -86,6 +85,16 @@ export class ProposalsController {
     return this.proposalService.getProviderServiceHistory(providerId);
   }
 
+  @ApiOperation({ summary: 'Listar propostas em negociação entre o prestador autenticado e um cliente' })
+  @Get('negotiating-with/:clientId')
+  @UseGuards(RequireProviderGuard)
+  async getNegotiatingWith(
+    @Param('clientId', ParseUUIDPipe) clientId: string,
+    @CurrentUser() providerId: string,
+  ): Promise<ProposalDto[]> {
+    return this.proposalService.getNegotiatingProposals(providerId, clientId);
+  }
+
   @ApiOperation({ summary: 'Buscar proposta por ID' })
   @Get(':id')
   @HateoasItem<ProposalDto>({
@@ -93,9 +102,6 @@ export class ProposalsController {
     itemLinks: (item) => ({
       self: { href: `/proposals/${item.id}`, method: 'GET' },
       budgetRequest: { href: `/budgetRequests/${item.requestId}`, method: 'GET' },
-      chat: item.linkedChatId
-        ? { href: `/proposals/${item.id}/chat`, method: 'GET' }
-        : null,
       payment: item.status === ProposalStatus.AWAITING_PAYMENT
         ? { href: `/proposals/${item.id}/payment`, method: 'GET' }
         : null,
@@ -104,6 +110,9 @@ export class ProposalsController {
         : null,
       contest: item.status === ProposalStatus.PENDING
         ? { href: `/proposals/${item.id}/contest`, method: 'PATCH' }
+        : null,
+      revise: item.status === ProposalStatus.NEGOTIATING
+        ? { href: `/proposals/${item.id}/revise`, method: 'PATCH' }
         : null,
       reject: (item.status === ProposalStatus.PENDING || item.status === ProposalStatus.NEGOTIATING)
         ? { href: `/proposals/${item.id}/reject`, method: 'PATCH' }
@@ -129,15 +138,25 @@ export class ProposalsController {
     return this.proposalService.getProposal(id, userId);
   }
 
-  @ApiOperation({ summary: 'Contestar uma proposta e iniciar negociação' })
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Contestar uma proposta e iniciar negociação — cria chat automaticamente' })
   @Patch(':id/contest')
   async contest(
     @Param('id', ParseUUIDPipe) proposalId: string,
     @CurrentUser() clientId: string,
     @Body() body: ContestProposalDto,
-  ): Promise<void> {
-    await this.proposalService.contestProposal(proposalId, clientId, body);
+  ): Promise<ContestResponseDto> {
+    return this.proposalService.contestProposal(proposalId, clientId, body);
+  }
+
+  @ApiOperation({ summary: 'Prestador envia proposta revisada — volta para PENDING e notifica cliente via chat' })
+  @Patch(':id/revise')
+  @UseGuards(RequireProviderGuard)
+  async revise(
+    @Param('id', ParseUUIDPipe) proposalId: string,
+    @CurrentUser() providerId: string,
+    @Body() body: ReviseProposalDto,
+  ): Promise<ReviseResponseDto> {
+    return this.proposalService.reviseProposal(proposalId, providerId, body);
   }
 
   @ApiOperation({ summary: 'Recusar uma proposta definitivamente' })
@@ -239,52 +258,5 @@ export class ProposalsController {
       'Content-Disposition': `attachment; filename="${filename}"`,
     });
     return new StreamableFile(createReadStream(filePath));
-  }
-
-}
-
-@ApiTags('Negotiations')
-@ApiBearerAuth('access-token')
-@Controller('negotiations')
-export class NegotiationsController {
-  constructor(private readonly negotiationService: NegotiationService) {}
-
-  @ApiOperation({ summary: 'Enviar mensagem de negociação' })
-  @Post(':proposalId/messages')
-  async sendMessage(
-    @Param('proposalId', ParseUUIDPipe) proposalId: string,
-    @CurrentUser() userId: string,
-    @Body() body: CreateNegotiationMessageDto,
-  ): Promise<NegotiationMessageDto> {
-    return this.negotiationService.sendMessage(proposalId, userId, body);
-  }
-
-  @ApiOperation({ summary: 'Enviar proposta revisada (somente prestador)' })
-  @Post(':proposalId/revisedProposal')
-  @UseGuards(RequireProviderGuard)
-  async sendRevisedProposal(
-    @Param('proposalId', ParseUUIDPipe) proposalId: string,
-    @CurrentUser() providerId: string,
-    @Body() body: SendRevisedProposalDto,
-  ): Promise<NegotiationMessageDto> {
-    return this.negotiationService.sendRevisedProposal(proposalId, providerId, body);
-  }
-
-  @ApiOperation({ summary: 'Encerrar uma negociação' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @Patch(':proposalId/close')
-  async closeNegotiation(
-    @Param('proposalId', ParseUUIDPipe) proposalId: string,
-    @CurrentUser() userId: string,
-  ): Promise<void> {
-    await this.negotiationService.closeNegotiation(proposalId, userId);
-  }
-
-  @ApiOperation({ summary: 'Listar mensagens de negociação de uma proposta' })
-  @Get(':proposalId/messages')
-  async getMessages(
-    @Param('proposalId', ParseUUIDPipe) proposalId: string,
-  ): Promise<NegotiationMessageDto[]> {
-    return this.negotiationService.getMessages(proposalId);
   }
 }

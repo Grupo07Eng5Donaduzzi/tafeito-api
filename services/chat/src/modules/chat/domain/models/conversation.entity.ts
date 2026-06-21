@@ -1,7 +1,5 @@
 export class Conversation {
   public id?: string;
-  public serviceId: string;
-  public proposalId?: string;
   public initiatorId: string;
   public participantIds: string[];
   public lastMessageAt?: Date;
@@ -10,8 +8,6 @@ export class Conversation {
   public updatedAt: Date;
 
   constructor(data: {
-    serviceId: string;
-    proposalId?: string;
     initiatorId: string;
     participantIds: string[];
     lastMessageAt?: Date;
@@ -21,8 +17,6 @@ export class Conversation {
     updatedAt?: Date;
   }) {
     this.id = data.id;
-    this.serviceId = data.serviceId;
-    this.proposalId = data.proposalId;
     this.initiatorId = data.initiatorId;
     this.participantIds = data.participantIds;
     this.lastMessageAt = data.lastMessageAt;
@@ -35,8 +29,6 @@ export class Conversation {
     if (!row) return null;
     return new Conversation({
       id: row.id,
-      serviceId: row.serviceId ?? row.service_id,
-      proposalId: row.proposalId ?? row.proposal_id,
       initiatorId: row.initiatorId ?? row.initiator_id,
       participantIds: row.participantIds ?? row.participant_ids ?? [],
       lastMessageAt: row.lastMessageAt ?? row.last_message_at,

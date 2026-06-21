@@ -6,7 +6,6 @@ import { budgetRequestsSchema } from '../schemas/budget-request.schema';
 import { providerDeclinesSchema } from '../schemas/provider-decline.schema';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 
-
 @Injectable()
 export class DrizzleBudgetRequestRepository implements BudgetRequestRepository {
   constructor(private readonly drizzleService: DrizzleService) {}
@@ -135,4 +134,3 @@ export class DrizzleBudgetRequestRepository implements BudgetRequestRepository {
       .onConflictDoNothing();
   }
 }
-

@@ -11,11 +11,6 @@ export enum ProposalStatus {
   CANCELLED = 'CANCELLED',
 }
 
-export enum SenderRole {
-  CLIENT = 'CLIENT',
-  PROVIDER = 'PROVIDER',
-}
-
 export class Proposal {
   private readonly _id?: string;
   private _requestId: string;
@@ -24,7 +19,6 @@ export class Proposal {
   private _amount: number;
   private _status: ProposalStatus;
   private _rejectionReason?: string;
-  private _linkedChatId?: string;
   private _canResubmit: boolean;
   private _paymentId?: string;
   private _qrCode?: string;
@@ -47,7 +41,6 @@ export class Proposal {
   get amount(): number { return this._amount; }
   get status(): ProposalStatus { return this._status; }
   get rejectionReason(): string | undefined { return this._rejectionReason; }
-  get linkedChatId(): string | undefined { return this._linkedChatId; }
   get canResubmit(): boolean { return this._canResubmit; }
   get paymentId(): string | undefined { return this._paymentId; }
   get qrCode(): string | undefined { return this._qrCode; }
@@ -81,7 +74,6 @@ export class Proposal {
     amount: number;
     status: ProposalStatus;
     rejectionReason?: string;
-    linkedChatId?: string;
     canResubmit: boolean;
     paymentId?: string;
     qrCode?: string;
@@ -98,7 +90,6 @@ export class Proposal {
     proposal._amount = props.amount;
     proposal._status = props.status;
     proposal._rejectionReason = props.rejectionReason;
-    proposal._linkedChatId = props.linkedChatId;
     proposal._canResubmit = props.canResubmit;
     proposal._paymentId = props.paymentId;
     proposal._qrCode = props.qrCode;
@@ -114,6 +105,14 @@ export class Proposal {
     }
     this._status = ProposalStatus.NEGOTIATING;
     this._rejectionReason = reason;
+  }
+
+  revise(amount: number): void {
+    if (this._status !== ProposalStatus.NEGOTIATING) {
+      throw new Error('Cannot revise a proposal that is not NEGOTIATING');
+    }
+    this._amount = amount;
+    this._status = ProposalStatus.PENDING;
   }
 
   definitivelyReject(reason?: string): void {
@@ -154,13 +153,6 @@ export class Proposal {
     this._canResubmit = false;
   }
 
-  updateAmount(amount: number): void {
-    if (this._status !== ProposalStatus.NEGOTIATING) {
-      throw new Error('Cannot update amount for a proposal that is not NEGOTIATING');
-    }
-    this._amount = amount;
-  }
-
   providerConfirm(): void {
     if (this._status !== ProposalStatus.ACCEPTED) {
       throw new Error('Cannot confirm completion for a proposal that is not ACCEPTED');
@@ -175,10 +167,6 @@ export class Proposal {
     this._status = ProposalStatus.COMPLETED;
   }
 
-  linkChat(conversationId: string): void {
-    this._linkedChatId = conversationId;
-  }
-
   attachInvoice(filename: string): void {
     if (
       this._status !== ProposalStatus.ACCEPTED &&
@@ -188,62 +176,5 @@ export class Proposal {
       throw new Error('Invoice can only be attached when the service is in progress or completed');
     }
     this._invoiceFile = filename;
-  }
-}
-
-export class NegotiationMessage {
-  private readonly _id?: string;
-  private _proposalId: string;
-  private _senderRole: SenderRole;
-  private _senderUserId: string;
-  private _message: string;
-  private _revisedAmount?: number;
-  private readonly _createdAt?: Date;
-
-  private constructor(id?: string, createdAt?: Date) {
-    this._id = id;
-    this._createdAt = createdAt;
-  }
-
-  get id(): string | undefined { return this._id; }
-  get proposalId(): string { return this._proposalId; }
-  get senderRole(): SenderRole { return this._senderRole; }
-  get senderUserId(): string { return this._senderUserId; }
-  get message(): string { return this._message; }
-  get revisedAmount(): number | undefined { return this._revisedAmount; }
-  get createdAt(): Date | undefined { return this._createdAt; }
-
-  static create(props: {
-    proposalId: string;
-    senderRole: SenderRole;
-    senderUserId: string;
-    message: string;
-    revisedAmount?: number;
-  }): NegotiationMessage {
-    const msg = new NegotiationMessage();
-    msg._proposalId = props.proposalId;
-    msg._senderRole = props.senderRole;
-    msg._senderUserId = props.senderUserId;
-    msg._message = props.message;
-    msg._revisedAmount = props.revisedAmount;
-    return msg;
-  }
-
-  static restore(props: {
-    id: string;
-    proposalId: string;
-    senderRole: SenderRole;
-    senderUserId: string;
-    message: string;
-    revisedAmount?: number;
-    createdAt: Date;
-  }): NegotiationMessage {
-    const msg = new NegotiationMessage(props.id, props.createdAt);
-    msg._proposalId = props.proposalId;
-    msg._senderRole = props.senderRole;
-    msg._senderUserId = props.senderUserId;
-    msg._message = props.message;
-    msg._revisedAmount = props.revisedAmount;
-    return msg;
   }
 }

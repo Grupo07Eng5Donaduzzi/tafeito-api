@@ -1,4 +1,4 @@
-﻿import { existsSync } from 'fs';
+import { existsSync } from 'fs';
 import { join } from 'path';
 import {
   Injectable,
@@ -12,14 +12,18 @@ import {
 import { UserService } from '../../../users/application/services/user.service';
 import { BudgetRequestService } from '../../../budget-requests/application/services/budget-request.service';
 import { ProposalMessagingService } from './proposal-messaging.service';
+import { ChatHttpService } from './chat-http.service';
 import { Proposal, ProposalStatus } from '../../domain/models/proposal.entity';
 import type { ProposalRepository } from '../../domain/repositories/proposal-repository.interface';
 import { PROPOSAL_REPOSITORY } from '../../domain/repositories/proposal-repository.interface';
 import {
   ContestProposalDto,
+  ContestResponseDto,
   CreateProposalDto,
   ProposalDto,
   RejectProposalDto,
+  ReviseProposalDto,
+  ReviseResponseDto,
   PaymentCheckResponseDto,
 } from '../dto/proposal.dto';
 
@@ -33,6 +37,7 @@ export class ProposalService {
     private readonly budgetRequestService: BudgetRequestService,
     private readonly userService: UserService,
     private readonly proposalMessagingService: ProposalMessagingService,
+    private readonly chatHttpService: ChatHttpService,
   ) {}
 
   async createProposal(providerId: string, dto: CreateProposalDto): Promise<ProposalDto> {
@@ -63,25 +68,79 @@ export class ProposalService {
     return ProposalDto.from(created)!;
   }
 
-  async contestProposal(proposalId: string, clientId: string, dto: ContestProposalDto): Promise<ProposalDto> {
+  async contestProposal(
+    proposalId: string,
+    clientId: string,
+    dto: ContestProposalDto,
+  ): Promise<ContestResponseDto> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) throw new NotFoundException('Proposal not found');
     this.ensureClient(proposal, clientId);
     this.tryEntityOp(() => proposal.contest(dto.reason));
     await this.proposalRepository.update(proposal);
+
     const budgetRequest = await this.budgetRequestService.findById(proposal.requestId);
+    const serviceTitle = budgetRequest?.title ?? 'serviço';
+    const formattedAmount = proposal.amount.toFixed(2).replace('.', ',');
+    const autoMessage = `Quero negociar a proposta para "${serviceTitle}" no valor de R$ ${formattedAmount}.`;
+
+    let conversationId: string;
+    let isNew = false;
     try {
-      await this.proposalMessagingService.publishProposalContested({
-        proposalId,
-        clientId: proposal.clientId,
-        providerId: proposal.providerId,
-        serviceId: budgetRequest?.serviceId ?? '',
-      });
+      const result = await this.chatHttpService.ensureConversation(clientId, proposal.providerId);
+      conversationId = result.conversationId;
+      isNew = result.isNew;
+      await this.chatHttpService.sendMessage(conversationId, clientId, proposal.providerId, autoMessage);
     } catch (err) {
-      this.logger.warn(`Failed to publish proposal.contested for ${proposalId}: ${(err as Error).message}`);
+      this.logger.warn(`Failed to create chat for proposal ${proposalId}: ${(err as Error).message}`);
+      conversationId = '';
     }
+
     const updated = await this.proposalRepository.findById(proposalId);
-    return ProposalDto.from(updated)!;
+    const response = new ContestResponseDto();
+    response.proposal = ProposalDto.from(updated)!;
+    response.conversationId = conversationId;
+    response.isNew = isNew;
+    return response;
+  }
+
+  async reviseProposal(
+    proposalId: string,
+    providerId: string,
+    dto: ReviseProposalDto,
+  ): Promise<ReviseResponseDto> {
+    const proposal = await this.proposalRepository.findById(proposalId);
+    if (!proposal) throw new NotFoundException('Proposal not found');
+    if (proposal.providerId !== providerId) {
+      throw new ForbiddenException('Only the provider can revise a proposal');
+    }
+    this.tryEntityOp(() => proposal.revise(dto.amount));
+    await this.proposalRepository.update(proposal);
+
+    let conversationId: string = '';
+    try {
+      const result = await this.chatHttpService.ensureConversation(providerId, proposal.clientId);
+      conversationId = result.conversationId;
+      await this.chatHttpService.sendMessage(
+        conversationId,
+        providerId,
+        proposal.clientId,
+        'Revisei a proposta! Confira seus orçamentos para ver o novo valor.',
+      );
+    } catch (err) {
+      this.logger.warn(`Failed to send revision message for proposal ${proposalId}: ${(err as Error).message}`);
+    }
+
+    const updated = await this.proposalRepository.findById(proposalId);
+    const response = new ReviseResponseDto();
+    response.proposal = ProposalDto.from(updated)!;
+    response.conversationId = conversationId;
+    return response;
+  }
+
+  async getNegotiatingProposals(providerId: string, clientId: string): Promise<ProposalDto[]> {
+    const proposals = await this.proposalRepository.findNegotiatingBetween(clientId, providerId);
+    return proposals.map((p) => ProposalDto.from(p)!);
   }
 
   async rejectProposal(proposalId: string, clientId: string, dto: RejectProposalDto): Promise<ProposalDto> {
