@@ -144,10 +144,10 @@ export class ProposalService {
     return proposals.map((p) => ProposalDto.from(p)!);
   }
 
-  async rejectProposal(proposalId: string, clientId: string, dto: RejectProposalDto): Promise<ProposalDto> {
+  async rejectProposal(proposalId: string, userId: string, dto: RejectProposalDto): Promise<ProposalDto> {
     const proposal = await this.proposalRepository.findById(proposalId);
     if (!proposal) throw new NotFoundException('Proposal not found');
-    this.ensureClient(proposal, clientId);
+    this.ensureParticipant(proposal, userId);
     this.tryEntityOp(() => proposal.definitivelyReject(dto.reason));
     await this.proposalRepository.update(proposal);
     const updated = await this.proposalRepository.findById(proposalId);

@@ -1,3 +1,5 @@
+import { IsUUID } from 'class-validator';
+
 export class ConversationResponseDto {
   id?: string;
   initiatorId!: string;
@@ -10,6 +12,7 @@ export class ConversationResponseDto {
 }
 
 export class EnsureConversationDto {
+  @IsUUID()
   participantId!: string;
 }
 

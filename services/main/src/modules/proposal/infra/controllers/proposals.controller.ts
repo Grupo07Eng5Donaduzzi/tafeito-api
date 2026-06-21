@@ -159,15 +159,15 @@ export class ProposalsController {
     return this.proposalService.reviseProposal(proposalId, providerId, body);
   }
 
-  @ApiOperation({ summary: 'Recusar uma proposta definitivamente' })
+  @ApiOperation({ summary: 'Recusar uma proposta ou negociação (cliente ou prestador)' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Patch(':id/reject')
   async reject(
     @Param('id', ParseUUIDPipe) proposalId: string,
-    @CurrentUser() clientId: string,
+    @CurrentUser() userId: string,
     @Body() body: RejectProposalDto,
   ): Promise<void> {
-    await this.proposalService.rejectProposal(proposalId, clientId, body);
+    await this.proposalService.rejectProposal(proposalId, userId, body);
   }
 
   @ApiOperation({ summary: 'Aceitar uma proposta — QR code PIX disponível em GET :id/payment após processamento' })
