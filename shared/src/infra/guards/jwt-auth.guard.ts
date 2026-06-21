@@ -36,8 +36,8 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const payload = jwt.verify(token, jwtSecret) as { sub: string };
-      request.user = { id: payload.sub };
+      const payload = jwt.verify(token, jwtSecret) as { sub: string; uid?: string };
+      request.user = { id: payload.sub, firebaseUid: payload.uid };
       return true;
     } catch {
       throw new UnauthorizedException('Token inválido ou expirado');
