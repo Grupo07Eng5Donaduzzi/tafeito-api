@@ -7,7 +7,7 @@ export class ChatHttpService {
   private readonly chatServiceUrl: string;
 
   constructor() {
-    this.chatServiceUrl = process.env.CHAT_SERVICE_URL ?? 'http://localhost:4002';
+    this.chatServiceUrl = process.env.CHAT_SERVICE_URL ?? 'http://localhost:4003';
   }
 
   private generateToken(userId: string): string {
@@ -21,7 +21,7 @@ export class ChatHttpService {
     participantId: string,
   ): Promise<{ conversationId: string; isNew: boolean }> {
     const token = this.generateToken(initiatorId);
-    const res = await fetch(`${this.chatServiceUrl}/chat/conversations/ensure`, {
+    const res = await fetch(`${this.chatServiceUrl}/v1/chat/conversations/ensure`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ export class ChatHttpService {
   ): Promise<void> {
     const token = this.generateToken(senderId);
     const res = await fetch(
-      `${this.chatServiceUrl}/chat/conversations/${conversationId}/messages`,
+      `${this.chatServiceUrl}/v1/chat/conversations/${conversationId}/messages`,
       {
         method: 'POST',
         headers: {
